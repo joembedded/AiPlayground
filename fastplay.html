@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- http://localhost/wrk/ai/playground/fastplay.html -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    FAST - Audio-Test<br>
+    <audio controls ></audio><br>
+    <button id="laden">Neu Laden & Play</button><br>
+    <div id="log"></div>
+</body>
+<script>
+    const audio = document.querySelector('audio');
+    const logDiv = document.getElementById('log');
+    logDiv.innerHTML += 'Starte Test...<br>';
+
+    // Abspielen sobald möglich
+    audio.addEventListener('canplay', function () {
+        logDiv.innerHTML += 'Spiele Audio ab...<br>';
+        audio.play().catch(error => {
+            logDiv.innerHTML += 'Autoplay prevented: ' + error;
+        });
+    });
+    document.getElementById('laden').addEventListener('click', () => {
+        logDiv.innerHTML += 'Lade Audio-Datei...<br>';
+        audio.src = './api/oai_tts.php?text=' + encodeURIComponent('Dies ist ein einfacher Test der Sprachausgabe mit der OpenAI API. Wir prüfen, ob die Audioausgabe korrekt funktioniert.') + '&voice=narrator_m_vilo&stream=1';
+        audio.load();
+    });
+
+</script>
+
+</html>

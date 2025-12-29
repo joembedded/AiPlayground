@@ -1,21 +1,20 @@
 <?php
 
 /**
- * audio_post.php
- * Receives audio file via POST and saves it locally
+ * oai_stt.php - (C) JoEmbedded - 29.12.2025
+ * Receives audio file via POST for OpenAI STT transcription.
+ * *todo*: AUTH und LANG als parameter
  */
 
 declare(strict_types=1);
-
-$log = 2; // 0: Silent, 1: Log upload 2: Log upload + response(JSON mit Tokens)
+$log = 2; // 0: Silent, 1: Log upload (audio .webm) 2: Log upload + response(.json) mit Tokens, resultm ...
 
 // CORS and Content-Type headers
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
-
-// OPTIONS request for CORS preflight
+// OPTIONS request for CORS preflight - Wichtig!
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
@@ -23,27 +22,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 include_once __DIR__ . '/../secret/keys.inc.php';
 $apiKey = OPENAI_API_KEY;
+$uploadDir = __DIR__ . '/../audio/uploads'; // fuer logs
+$maxFileSize = 1 * 1024 * 1024; // 1 MB
+$allowedMimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/wav'];
 
 try {
     if (!$apiKey) {
         http_response_code(500);
         throw new Exception('OPENAI_API_KEY missing');
     }
-
     // Only POST allowed
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         http_response_code(405);
         throw new Exception('Method not allowed');
     }
 
-    if ($log > 0) {
-        // Configuration
-        $uploadDir = __DIR__ . '/../uploads';
-    }
-    $allowedMimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/wav'];
-    $maxFileSize = 1 * 1024 * 1024; // 1 MB
-
-    // Create upload directory
+    // Create upload directory - immer gut
     if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
         http_response_code(500);
         throw new Exception('Failed to create upload directory');
@@ -54,7 +48,6 @@ try {
         http_response_code(400);
         throw new Exception('No audio content');
     }
-
     $file = $_FILES['audio'];
 
     // Validation: Upload error UPLOAD_ERR_OK: 0
@@ -93,18 +86,16 @@ try {
     if ($log > 0) {
         // Determine file extension from MIME type
         $extension = match ($file['type']) {
-            'audio/webm' => 'webm',
-            'audio/ogg' => 'ogg',
-            'audio/mp4' => 'mp4',
-            'audio/wav' => 'wav',
+            'audio/webm' => 'opus',
+            'audio/mpeg' => 'mp3',
             default => 'dat'
         };
         // Generate secure filename
-        $timestamp = date('Y-m-d_H-i-s');
+        $timestamp = date('Ymd_His');
         $filename = 'audio_' . $timestamp . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
         $filepath = $uploadDir . '/' . $filename;
-        // Move file
-        if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+        // Copy file
+        if (!copy($file['tmp_name'], $filepath)) {
             http_response_code(500);
             throw new Exception('Failed to save file');
         }
@@ -113,10 +104,10 @@ try {
     // STT via OpenAI API
     $ch = curl_init('https://api.openai.com/v1/audio/transcriptions');
     $postFields = [
-        'model' => 'gpt-4o-mini-transcribe',  // leichtgewichtig
+        'model' => 'gpt-4o-mini-transcribe',  // leichtgewichtig- Mini-Variante ist die fixeste
         'language' => 'de',                   // Deutsch erzwingen
         // optional: 'temperature' => '0',
-        'file' => new CURLFile($filepath, $file['type'], basename($filepath)),
+        'file' => new CURLFile($file['tmp_name'], $file['type'], $file['name']),
     ];
 
     curl_setopt_array($ch, [
@@ -136,11 +127,11 @@ try {
     }
 
     if ($httpCode < 200 || $httpCode >= 300) {
-        throw new Exception("xURL HTTP $httpCode: $response");
+        throw new Exception("cURL HTTP $httpCode: $response");
     }
 
     if ($log > 1) { // Dateinamen mit Response verknuepfen
-        file_put_contents($uploadDir . '/stt_response_' . $filename . '.json', $response);
+        file_put_contents($uploadDir . '/stt_' . $filename . '.json', $response);
     }
 
     $data = json_decode($response, true);

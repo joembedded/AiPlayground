@@ -1,0 +1,8 @@
+{
+  "model": "gpt-4o-mini-tts",
+  "voice": "sage",
+  "input": "USER",
+  "instructions": "Sprich auf Deutsch.\nStimme: ruhig und festlich. Mit viel Gefühl und Zuneigung.",
+  "speed": 1,
+  "response_format": "FORMAT"
+}

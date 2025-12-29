@@ -1,0 +1,8 @@
+{
+  "model": "gpt-4o-mini-tts",
+  "voice": "cedar",
+  "input": "USER",
+  "instructions": "Sprich auf Deutsch.\nDu erzählst ein sehr spannendes Abenteuer! Sprich mit ernster Stimme.",
+  "speed": 1,
+  "response_format": "FORMAT"
+}

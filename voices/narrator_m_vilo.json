@@ -1,0 +1,8 @@
+{
+  "model": "gpt-4o-mini-tts",
+  "voice": "verse",
+  "input": "USER",
+  "instructions": "Sprich auf Deutsch.\nStimme: ruhig, sehr sanft und warm.\nTempo ruhig, mit kleinen Pausen.\nKeine laute Betonung, keine Hektik.\nNicht theatralisch, nicht albern.",
+  "speed": 1,
+  "response_format": "FORMAT"
+}
