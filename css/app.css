@@ -1,0 +1,26 @@
+* {
+    margin: 2px;
+    padding: 2px;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 0.8rem;
+}
+
+.visualizer {
+    width: 100%;
+    height: 100px;
+    background-color: silver;
+}
+.terminal {
+background-color: lightsteelblue
+}
+
+/* Umweg ueber CSS-Variable fuer Box-Shadow-Spread */
+.micro {
+  --spread: 0px;
+  --scolor: silver;
+  box-shadow: 0 0 var(--spread) var(--spread) var(--scolor);
+}

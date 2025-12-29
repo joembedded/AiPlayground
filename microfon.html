@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<!-- http://localhost/wrk/ai/playground/microfon.html -->
+<!-- Einfacher Test fuer Speech_to_Text mit OpenAI API -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/app.css">
+
+    <!-- Nun erst Hauptscript -->
+    <script src="./src/main.js" defer type="module"></script>
+
+    <title>AI Playground - Index</title>
+</head>
+
+<body>
+    <div>
+        <b>*** AI Playground ***</b>
+    </div>
+    <div>
+        <canvas class="visualizer" width="800" height="100"></canvas>
+    </div>
+    <div id="buttons">
+        <button class="micro" disabled>Micro ist AUS</button>
+        &nbsp;&nbsp;&nbsp; Status: <span id="status">idle</span>
+    </div>
+    <div class="terminal">
+    </div>
+    <div>
+        <audio class="stdplayer" controls></audio><br>
+        <button class = "postbtn">POST</button>
+    </div>
+
+
+</body>
+
+</html>

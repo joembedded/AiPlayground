@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="de-DE">
+<!-- Speech-2-Text und Text-2-Speech kosten auch Geld/Tokens. 
+Kostenlos geht es mit den Default-APIs.
+Die Erkennungqualitaet und Sprache (besonders mit Google) sind auch shcon hier
+Auf EDGE gibt es nur die Microsoft-Stimmen.
+Auf Firefox keine Spracherkennung!
+wirklich sehr gut 
+
+2 Besonderheiten: 
+ Auf Android geht continous nicht und offline kommen IMMER Interimresults,  
+auf alten Tabletts aber NetworkError (event.error = 'network'), offline geht also nicht,
+weitere Aufrufe von start haengen dann irgendwo.
+Wenn online und interim an, dann alle FINAL, daher Empfehlung:
+interim immer false und continus nur auf PC, niemals auf Android
+-->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHROMSR</title>
+</head>
+
+<body>
+    <div>
+        <b>SpeechRecognitionTest</b><br>
+        Einfacher Test der Web Speech API (SpeechRecognition/Text2Speech) V0.31
+    </div>
+    <div>
+        🎤 <button>KlickMich...</button>
+        &nbsp; <input type="checkbox" id="continuous"><label for="continuous">Continuous</label>
+        &nbsp; <input type="checkbox" id="interim"><label for="interimResults">InterimResults</label>
+    </div>
+    <div> ---Output---
+        <div class="output"></div>
+        ------------
+    </div>
+</body>
+<script>
+    // Allgemeines
+    const diagnostic = document.querySelector(".output");
+    const startBtn = document.querySelector("button");
+    const language = navigator.language || 'en-US';
+    diagnostic.innerHTML += `> Browser-Sprache: ${language}<br>`;
+
+    // Helper
+    async function jsSleepMs(ms = 1) { // use: await qrSleepMs()
+        let np = new Promise(resolve => setTimeout(resolve, ms))
+        return np
+    }
+
+
+    // Sprachausgabe
+    // Modul fuer Sprachausgabe
+    let foundVoices = []
+    let voiceidx = 0
+    let voiceCallCnt = 0;
+    async function joSagmal(txt2say, zlang = "en", stopflag = false) {
+        if (window.speechSynthesis === undefined) {
+            diagnostic.innerHTML += `ERROR Speech: API not found<br>`;
+            return // Synthi Nicht vorhanden
+        }
+        if (stopflag) window.speechSynthesis.cancel()
+        const slang = zlang.toLowerCase().substring(0, 2)
+
+        // Laden der Sprachen etwas ungewohnt, max. 1 sec warten, kann bis zu 10 sec dauern...
+        // Bei Chrome sind die Stimmen von GOOGLE schoener als MICROSOFT
+        if (!foundVoices.length || voiceCallCnt < 3) {
+            voiceCallCnt++;
+            for (let w = 0; w < 200; w++) {
+                const voices = window.speechSynthesis.getVoices()
+                await jsSleepMs(50)
+                if (voices.find(v => v.lang.indexOf(slang) >= 0)) {
+                    await jsSleepMs(200) // Zur Sicherheit noch etwas warten
+                    const ofl = foundVoices.length;
+                    foundVoices = voices.filter(v => v.lang.indexOf(slang) >= 0);
+                    if (foundVoices.length && ofl !== foundVoices.length) {
+                        diagnostic.innerHTML += `> Verfügbare Sprachen für '${slang}':<br>${foundVoices.map((v, x) => ` - ${v.name}[${x}] (${v.lang})`).join("<br>")}<br>`;
+                    }
+                    break // This Language found
+                }
+            }
+        }
+        if (!foundVoices.length) {
+            diagnostic.innerHTML += `ERROR Speech: No voices found<br>`;
+            return // Sprache fehlt
+        }
+
+        const sprichDas = new SpeechSynthesisUtterance(txt2say)
+
+        // Suche nach GOOGLE-Stimme, sonst nehme 0
+        const googleIdx = foundVoices.findIndex(v => v.name.toUpperCase().includes("GOOGLE"));
+        voiceidx = googleIdx >= 0 ? googleIdx : 0;
+        const myvoice = foundVoices[voiceidx];
+        diagnostic.innerHTML += `> Sprich mit Stimme: ${myvoice.name}[${voiceidx}]<br>`;
+        if (myvoice !== undefined) {
+            sprichDas.default = false
+            sprichDas.voice = myvoice
+            sprichDas.lang = slang
+        }
+        window.speechSynthesis.speak(sprichDas);
+    }
+
+    // Spracheingabe  
+    if (window.SpeechRecognition === undefined && window.webkitSpeechRecognition === undefined) {
+        diagnostic.innerHTML += `ERROR SpeechRecognition: API not found<br>`;
+        startBtn.disabled = true;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    //console.log(recognition);
+
+    let isRecognitionRunning = false;
+    function startRecognition() {
+        startBtn.innerText = "Warte auf Sprache...";
+        recognition.continuous = document.querySelector("#continuous").checked; //  false; // Continous ist problematisch, da nicht überall 
+        recognition.lang = language;
+        recognition.interimResults = document.querySelector("#interim").checked;
+        recognition.maxAlternatives = 1;
+        recognition.start();
+        isRecognitionRunning = true;
+
+        document.querySelector("#continuous").disabled = true;
+        document.querySelector("#interim").disabled = true;
+    }
+    function endRecognition() {
+        isRecognitionRunning = false;
+
+        recognition.stop();
+        startBtn.innerText = "KlickMich...";
+
+        document.querySelector("#continuous").disabled = false;
+        document.querySelector("#interim").disabled = false;
+    }
+
+    startBtn.onclick = () => {
+        if (!isRecognitionRunning) {
+            startRecognition();
+        } else {
+            endRecognition();
+        }
+    };
+
+    // Gibt noch einige Events: https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition
+    recognition.onresult = (event) => {
+        //console.log(event);
+        const rix = event.resultIndex;
+        const res = event.results[rix][0].transcript;
+        const isFinal = event.results[rix].isFinal;
+        diagnostic.innerHTML += `Erkannt[${rix}]: '${res}'${isFinal ? " *FINAL*" : ""}<br>`;
+        if (isFinal) joSagmal(res, language);
+    };
+
+    recognition.audiostart = () => {
+        endRecognition();
+        console.log("Audio capture started");
+    };
+    recognition.audioend = () => {
+        console.log("Audio capture ended");
+    };
+    recognition.onstart = () => {
+        console.log("Speech recognition service started");
+    };
+    recognition.end = () => {
+        endRecognition();
+        console.log("Speech recognition service disconnected");
+    };
+    recognition.onerror = (event) => { // z.B. No-Speech
+        endRecognition();
+        diagnostic.innerHTML += `ERROR occurred in recognition: ${event.error}<br>`;
+    };
+    recognition.onnomatch = (event) => {
+        diagnostic.innerHTML += `No speech match found.<br>`;
+    };
+    recognition.onsoundstart = () => {
+        console.log("Sound has been detected");
+    };
+    recognition.onsoundend = () => {
+        endRecognition();
+        console.log("Sound has stopped being detected");
+    };
+    recognition.onspeechstart = () => {
+        console.log("Speech has been detected");
+    };
+    recognition.onspeechend = () => {
+        endRecognition();
+        console.log("Speech has stopped being detected");
+    };
+
+</script>
+
+</html>
