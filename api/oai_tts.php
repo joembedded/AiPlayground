@@ -59,7 +59,8 @@ try {
     // Wenn schon da, aus CACHE nehmen
     if (file_exists($diskPath)) {
         $cachedAudio = file_get_contents($diskPath);
-        touch($diskPath);
+        @touch($diskPath);
+        @touch($diskPath . '.json');
         header("Content-Type: $audioContent");
         header("Content-Length: " . strlen($cachedAudio));
         echo $cachedAudio;
@@ -128,7 +129,7 @@ try {
         file_put_contents($diskPath, $stream ? $audioStreamed : $audioBytes);
         if ($log > 1) {
             $logjson = ['text' => $text, 'voice' => $voice, 'date' => date('Y-m-d H:i:s')];
-            file_put_contents($speechDir . '/' . $diskFname . '.json', json_encode($logjson, JSON_UNESCAPED_UNICODE));
+            file_put_contents($diskPath . '.json', json_encode($logjson, JSON_UNESCAPED_UNICODE));
         }
     }
 } catch (Exception $e) {
