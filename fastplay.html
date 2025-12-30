@@ -12,6 +12,10 @@
     FAST - Audio-Test<br>
     <audio controls ></audio><br>
     <button id="laden">Neu Laden & Play</button><br>
+    <hr>
+    <h3>Verfügbare Audiodateien (speech):</h3>
+    <div id="audioList">Lade Dateiliste...</div>
+    <hr>
     <div id="log"></div>
 </body>
 <script>
@@ -26,11 +30,66 @@
             logDiv.innerHTML += 'Autoplay prevented: ' + error;
         });
     });
+
     document.getElementById('laden').addEventListener('click', () => {
         logDiv.innerHTML += 'Lade Audio-Datei...<br>';
         audio.src = './api/oai_tts.php?text=' + encodeURIComponent('Dies ist ein einfacher Test der Sprachausgabe mit der OpenAI API. Wir prüfen, ob die Audioausgabe korrekt funktioniert.') + '&voice=narrator_m_vilo&stream=1';
         audio.load();
     });
+    // Fehlerbehandlung für Audio-Quelle - Wichtig!
+    audio.addEventListener('error', function () {
+        console.error('Audio-Fehler:', audio.error);
+        logDiv.innerHTML += 'Audio-Fehler: ' + (audio.error ? audio.error.message : 'Unbekannter Fehler') + '<br>';
+    });
+
+    // Audiodatei-Liste laden
+    async function loadAudioList() {
+        const audioListDiv = document.getElementById('audioList');
+        try {
+            const response = await fetch('./api/oai_listaudio.php?dir=audio/speech');
+            if (!response.ok) {
+                throw new Error('HTTP-Fehler: ' + response.status);
+            }
+            const data = await response.json();
+            
+            if (data.error) {
+                audioListDiv.innerHTML = 'Fehler: ' + data.error;
+                return;
+            }
+            
+            // Liste erstellen
+            let html = `<div style="max-height: 400px; overflow-y: auto;">`;
+            html += `<p><strong>${data.count} Dateien gefunden</strong></p>`;
+            html += '<ul style="list-style: none; padding: 0;">';
+            
+            data.files.forEach(file => {
+                const filePath = `audio/speech/${file.filename}`;
+                const sizeKB = Math.round(file.size / 1024);
+                html += `<li style="margin: 5px 0; padding: 8px; background: #f0f0f0; border-radius: 4px; cursor: pointer;" 
+                         onclick="playAudioFile('${filePath}')">
+                    <strong>${file.filename}</strong><br>
+                    <small>Größe: ${sizeKB} KB | Geändert: ${file.modified}</small>
+                </li>`;
+            });
+            
+            html += '</ul></div>';
+            audioListDiv.innerHTML = html;
+            
+        } catch (error) {
+            audioListDiv.innerHTML = 'Fehler beim Laden der Liste: ' + error.message;
+            console.error('Fehler:', error);
+        }
+    }
+    
+    // Audiodatei abspielen
+    function playAudioFile(filePath) {
+        logDiv.innerHTML += `Spiele: ${filePath}<br>`;
+        audio.src = './' + filePath;
+        audio.load();
+    }
+    
+    // Liste beim Laden der Seite abrufen
+    loadAudioList();
 
 </script>
 

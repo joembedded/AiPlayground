@@ -44,24 +44,30 @@ sie rechnet das Böse nicht zu.
     <script>
         const infoDiv = document.getElementById("info");
         async function speak(text) {
-            infoDiv.innerText = "Warte auf Audio...";
-            const form = new FormData();
-            form.append("text", text);
-            const selectedVoice = document.getElementById("voiceSelect").value;
-            form.append("voice", selectedVoice);
-            const streamEnabled = document.getElementById("streamCheckbox").checked;
-            if (streamEnabled) {
-                form.append("stream", "1");
-            }
-            const res = await fetch("./api/oai_tts.php", { method: "POST", body: form });
-            infoDiv.innerText = "Sprachausgabe erhalten, spiele ab...";
-            const blob = await res.blob();
-            infoDiv.innerText = "Fertig!";
-            const player = document.getElementById("player");
-            player.src = URL.createObjectURL(blob);
-            if (!streamEnabled) { // Manuell anwerfen, wenn nicht gestreamt wird
-                infoDiv.innerText = "Play!";
-                player.play();
+            try {
+                infoDiv.innerText = "Warte auf Audio...";
+                const form = new FormData();
+                form.append("text", text);
+                const selectedVoice = document.getElementById("voiceSelect").value;
+                form.append("voice", selectedVoice);
+                const streamEnabled = document.getElementById("streamCheckbox").checked;
+                if (streamEnabled) {
+                    form.append("stream", "1");
+                }
+                const res = await fetch("./api/oai_tts.php", { method: "POST", body: form });
+                if (!res.ok)   throw new Error(`HTTP-Fehler: ${res.status} ${res.statusText}`);
+                
+                infoDiv.innerText = "Sprachausgabe erhalten, spiele ab...";
+                const blob = await res.blob();
+                infoDiv.innerText = "Fertig!";
+                const player = document.getElementById("player");
+                player.src = URL.createObjectURL(blob);
+                if (!streamEnabled) { // Manuell anwerfen, wenn nicht gestreamt wird
+                    infoDiv.innerText = "Play!";
+                    player.play();
+                }
+            } catch (error) {
+                infoDiv.innerText = "Fehler: " + error.message;
             }
         }
 

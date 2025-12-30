@@ -15,12 +15,12 @@ const canvas = document.querySelector(".visualizer");
 const canvasCtx = canvas.getContext("2d");
 const stdPlayer = document.querySelector(".stdplayer");
 const postBtn = document.querySelector(".postbtn");
-
+const dbgInfo = document.getElementById('dbginfo');
 
 const thresholdSlider = document.getElementById('threshold');
 const thresholdFeedback = document.getElementById('thresholdFeedback');
 const maxpauseSlider = document.getElementById('maxpause');
-const maxpauseFeedback = document.getElementById('maxpauseFeedback');   
+const maxpauseFeedback = document.getElementById('maxpauseFeedback');
 
 
 
@@ -44,29 +44,27 @@ const MIN_LEN = (200 + maxPauseMs); // msec min. Sprachdauer
 let speechState = 0; // Sprach-Zustandsmaschine
 let speechStateTime0; // Zeitstempel Sprachbeginn
 
-let recordAudio = false;
+let recordAudio = 0;   // 0: Nix, timeslice, 1: Aufnehmen, 2: Warten auf Abholung
 let speechStartTime;
 let speechTotalDur;
 let audioChunks = [];
-let isPlaying = false;
-let lastPauseIdx = -1;
 
-// Problematik der Pre-Junks:
-//  Chunk 0 enthält wichtige Informationen und darf nicht gelöscht werden.
-// Ohne Pre-Junks (= 0) evtl. Probleme bei 1. Silbe. Bei 2 sind recht genau 200 msec Trailer
-const PRE_CHUNKS = 2; //n Chunks vor Sprache merken
+let isPlaying = false;
 
 function addAudioChunk(data) {
-    if (!recordAudio) {
-        if (audioChunks.length > PRE_CHUNKS) audioChunks.splice(1, 1);
-    }
     audioChunks.push(data);
-    //console.log('Audio chunk:', data.size, 'bytes', "Total Chunks:", audioChunks.length);
+    terminalPrint('Audio chunk: ' + data.size + ' bytes, Total Chunks: ' + audioChunks.length);
+}
+
+async function jsSleepMs(ms = 1) { // Helper
+    let np = new Promise(resolve => setTimeout(resolve, ms))
+    return np
 }
 
 async function startMicro() {
     try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!MediaRecorder.isTypeSupported(useMime)) throw new Error(`MIME-Type not supported: ${useMime}`);
         mediaRecorder = new MediaRecorder(stream, { mimeType: useMime });
         mediaRecorder.ondataavailable = (e) => {
             addAudioChunk(e.data);
@@ -80,10 +78,10 @@ async function startMicro() {
         source.connect(analyser);
         speechState = 0;
         speechStateTime0 = performance.now();
-    
-        recordAudio = false;
+
+        recordAudio = 0;
         audioChunks = [];
-        if (PRE_CHUNKS) mediaRecorder.start(100);
+                
         frameMonitor();
     } catch (e) {
         console.error('ERROR:', e);
@@ -115,6 +113,8 @@ function microBtnCLick() {
         frq_ping();
         startMicro();
         isMicroOn = true;
+        isPlaying = false;
+
         microBtn.textContent = 'Micro ist AN';
         setStatus('Micro init...', 'yellow');
     } else {
@@ -158,10 +158,9 @@ function computeRMSFromTimeDomain(byteArray) {
 // Process Audio - Audio-Chunks zu einem Blob zusammenfassen und senden
 function processAudio(e) {
     if (isMicroOn) {
-        const maxChunks = Math.max(lastPauseIdx + 1, PRE_CHUNKS * 2); // Pause hinten kappen
-        const blobChunks = audioChunks.slice(0, maxChunks);
-        const blob = new Blob(blobChunks, { type: useMime });
+        const blob = new Blob(audioChunks, { type: useMime });
         audioChunks = [];
+        
         const info = "Len: " + blob.size + " bytes (" + speechTotalDur + " msec) " + useMime;
         terminalPrint("Audio recorded: " + info);
         const audioURL = window.URL.createObjectURL(blob);
@@ -174,26 +173,27 @@ function processAudio(e) {
 // Sprach-Zustandsmaschine
 function updateSpeechState(frameRms) {
     const dur = performance.now() - speechStateTime0;
-   
+    dbgInfo.textContent = `State: ${speechState}  Dur: ${dur.toFixed(0)} msec isPlaying: ${isPlaying}`;
     if (speechState === 0) {    // Zustand 0: MICRO_INIT msec lang AVG anlernen
         if (dur > MICRO_INIT) {
             speechState = 1;
+            recordAudio = 0;
+
             setStatus('Listening...', 'yellow');
         }
     } else if (speechState === 1) { // ** Zustand 1 **: Warten auf Sprache
         if (frameRms > thresholdRms && !isPlaying) { // Sprache erkannt
-            if (!PRE_CHUNKS && mediaRecorder.state === "inactive") mediaRecorder.start();
+            if (mediaRecorder.state === "inactive") mediaRecorder.start();
             speechState = 2;
-            recordAudio = true;
+            recordAudio = 1;    // Aufnahme starten
             speechStateTime0 = performance.now();
             speechStartTime = speechStateTime0; // Fuer Alles und Pausen
             setStatus('Speech Start', 'lime');
         }
     } else if (speechState === 2) { // Zustand 2: Sprache laeuft
-        if (frameRms < thresholdRms  / 2) {   // Als Pause erkannt
+        if (frameRms < thresholdRms / 2) {   // Als Pause erkannt
             speechState = 3;
             speechStateTime0 = performance.now();
-            lastPauseIdx = audioChunks.length;  // Merke Index der Pause
             setStatus('Speech Pause', 'lightgreen');
         }
     } else if (speechState === 3) { // Zustand 3: In Sprachpause
@@ -203,15 +203,15 @@ function updateSpeechState(frameRms) {
         } else if (dur > maxPauseMs) { // Pause laenger als x sec => Ende
             speechTotalDur = (performance.now() - speechStartTime).toFixed(0);
             if (speechTotalDur > MIN_LEN) {
-                //terminalPrint(`Speech End (${speechTotalDur} msec)`);
+                terminalPrint(`Speech End (${speechTotalDur} msec)`);
                 mediaRecorder.stop();
             } else {
                 terminalPrint(`Speech too short (${speechTotalDur} msec), discarded.`);
             }
             speechStateTime0 = performance.now();
             speechState = 0;
-            recordAudio = false;
-            if (PRE_CHUNKS && mediaRecorder.state === "inactive") mediaRecorder.start(100);
+            recordAudio = 2;
+
         }
     }
 }
@@ -225,9 +225,9 @@ function frameMonitor() {
     analyser.getByteTimeDomainData(dataArray);
     const frameRms = computeRMSFromTimeDomain(dataArray);
     maxRms *= 0.9;
-    if(frameRms > maxRms) maxRms = frameRms;
-    updateSpeechState(maxRms );
-    bloomMicroButton(((maxRms  / thresholdRms ) - 0.5) * 3);
+    if (frameRms > maxRms) maxRms = frameRms;
+    updateSpeechState(maxRms);
+    bloomMicroButton(((maxRms / thresholdRms) - 0.5) * 3);
     // Zeichnen
     const w = canvas.width, h = canvas.height;
     // Hintergrund
@@ -332,9 +332,9 @@ try {
                 thresholdFeedback.textContent = thresholdSlider.value;
                 thresholdRms = parseFloat(thresholdSlider.value);
             });
-            maxpauseSlider.addEventListener('input', () => {  
+            maxpauseSlider.addEventListener('input', () => {
                 maxpauseFeedback.textContent = maxpauseSlider.value;
-                maxPauseMs = parseInt( maxpauseSlider.value);    
+                maxPauseMs = parseInt(maxpauseSlider.value);
             });
             thresholdSlider.disabled = false;
             maxpauseSlider.disabled = false;

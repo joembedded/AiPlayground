@@ -49,9 +49,11 @@ try {
         http_response_code(400);
         throw new Exception('No audio content');
     }
-    $file = $_FILES['audio'];
+
+    $dbgpost = (int)($_POST['dbgpost'] ?? 0);
 
     // Validation: Upload error UPLOAD_ERR_OK: 0
+    $file = $_FILES['audio'];
     if ($file['error'] !== UPLOAD_ERR_OK) {
         http_response_code(400);
         $errorMessages = [
@@ -94,19 +96,20 @@ try {
         // Generate secure filename
         $timestamp = date('Ymd_His');
         $filename = 'audio_' . $timestamp . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+        if ($dbgpost > 0)      $filename = 'dbg_' . $filename; // Debug-Präfix
+
         $filepath = $uploadDir . '/' . $filename;
+
         // Copy file
         if (!copy($file['tmp_name'], $filepath)) {
             http_response_code(500);
             throw new Exception('Failed to save file');
         }
     } // $log
-
-    $dbgpost=(int)($_POST['dbgpost'] ?? 0);
-    if ($dbgpost>0) {
+    if ($dbgpost > 0) {
         // Nur speichern
         http_response_code(201);
-        echo json_encode(['success' => true, 'message' => 'File uploaded for debugging', 'filename'=>$filename], JSON_UNESCAPED_SLASHES);
+        echo json_encode(['success' => true, 'message' => 'File uploaded for debugging', 'filename' => $filename ?? '(null)'], JSON_UNESCAPED_SLASHES);
         exit;
     }
 
