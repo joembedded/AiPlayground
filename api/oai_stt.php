@@ -4,6 +4,7 @@
  * oai_stt.php - (C) JoEmbedded - 29.12.2025
  * Receives audio file via POST for OpenAI STT transcription.
  * *todo*: AUTH und LANG als parameter
+ * Optona Parameter dbgpost>0: Nur speichern
  */
 
 declare(strict_types=1);
@@ -100,6 +101,14 @@ try {
             throw new Exception('Failed to save file');
         }
     } // $log
+
+    $dbgpost=(int)($_POST['dbgpost'] ?? 0);
+    if ($dbgpost>0) {
+        // Nur speichern
+        http_response_code(201);
+        echo json_encode(['success' => true, 'message' => 'File uploaded for debugging', 'filename'=>$filename], JSON_UNESCAPED_SLASHES);
+        exit;
+    }
 
     // STT via OpenAI API
     $ch = curl_init('https://api.openai.com/v1/audio/transcriptions');

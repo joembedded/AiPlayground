@@ -2,6 +2,7 @@
 <html lang="de">
 <!-- http://localhost/wrk/ai/playground/microfon.html -->
 <!-- Einfacher Test fuer Speech_to_Text mit OpenAI API -->
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,6 +21,15 @@
     <div>
         <canvas class="visualizer" width="800" height="100"></canvas>
     </div>
+
+    <div>
+        <input disabled type="range" id="threshold" min="0.02" max="0.2" value="0.05" step="0.01" />
+        <label for="threshold">Threshold (Noisecancel): <span id="thresholdFeedback">0,05</span></label>
+        &nbsp;&nbsp;&nbsp;
+        <input disabled type="range" id="maxpause" min="200" max="2200" value="750" step="50" />
+        <label for="maxpause">Max Pause (msec): <span id="maxpauseFeedback">750</span></label>
+    </div>
+
     <div id="buttons">
         <button class="micro" disabled>Micro ist AUS</button>
         &nbsp;&nbsp;&nbsp; Status: <span id="status">idle</span>
@@ -28,7 +38,7 @@
     </div>
     <div>
         <audio class="stdplayer" controls></audio><br>
-        <button class = "postbtn">POST</button>
+        <button class="postbtn">POST</button> &nbsp; <input class="dbgpost" type="checkbox"> Debug POST
     </div>
 
 
