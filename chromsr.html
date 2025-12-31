@@ -27,9 +27,10 @@ interim immer false und continus nur auf PC, niemals auf Android
         Einfacher Test der Web Speech API (SpeechRecognition/Text2Speech) V0.31
     </div>
     <div>
-        🎤 <button>KlickMich...</button>
+        🎤 <button id="startBtn">KlickMich...</button>
         &nbsp; <input type="checkbox" id="continuous"><label for="continuous">Continuous</label>
         &nbsp; <input type="checkbox" id="interim"><label for="interimResults">InterimResults</label>
+        <button id="indiBtn">Indirekt</button>
     </div>
     <div> ---Output---
         <div class="output"></div>
@@ -39,8 +40,20 @@ interim immer false und continus nur auf PC, niemals auf Android
 <script>
     // Allgemeines
     const diagnostic = document.querySelector(".output");
-    const startBtn = document.querySelector("button");
+    const startBtn = document.getElementById("startBtn");
     const language = navigator.language || 'en-US';
+    
+    document.getElementById("indiBtn").onclick = () => {
+        setInterval(() => {
+            // sagmal startet oft erst 20-50 msec nach Soundende, das beruecksichtigen via LOCK
+            // Auto-Sttart macht aber nur maseesig SInn, da es auf Android bimmelt...
+            console.log("R:", isRecognitionRunning, "S:", window.speechSynthesis.speaking);
+            if (!isRecognitionRunning && !window.speechSynthesis.speaking) {
+                console.log("Auto-Klick Recogn.Start");
+                startBtn.click();
+            }
+        }, 500);
+    };
     diagnostic.innerHTML += `> Browser-Sprache: ${language}<br>`;
 
     // Helper
@@ -55,11 +68,12 @@ interim immer false und continus nur auf PC, niemals auf Android
     let foundVoices = []
     let voiceidx = 0
     let voiceCallCnt = 0;
-    async function joSagmal(txt2say, zlang = "en", stopflag = false) {
+    async function joSagmal(txt2say, zlang = "en-US", stopflag = false) {
         if (window.speechSynthesis === undefined) {
             diagnostic.innerHTML += `ERROR Speech: API not found<br>`;
             return // Synthi Nicht vorhanden
         }
+        // Abfragbar ueber Prop window.speechSynthesis.speaking
         if (stopflag) window.speechSynthesis.cancel()
         const slang = zlang.toLowerCase().substring(0, 2)
 
@@ -96,7 +110,8 @@ interim immer false und continus nur auf PC, niemals auf Android
         if (myvoice !== undefined) {
             sprichDas.default = false
             sprichDas.voice = myvoice
-            sprichDas.lang = slang
+            sprichDas.lang = zlang // 4-letter code . Fuer Dt. allerdings nur de-DE
+            sprichDas.pitch = 1 // 0 bis 2
         }
         window.speechSynthesis.speak(sprichDas);
     }
@@ -110,6 +125,7 @@ interim immer false und continus nur auf PC, niemals auf Android
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     //console.log(recognition);
+    let startTime;
 
     let isRecognitionRunning = false;
     function startRecognition() {
@@ -118,15 +134,16 @@ interim immer false und continus nur auf PC, niemals auf Android
         recognition.lang = language;
         recognition.interimResults = document.querySelector("#interim").checked;
         recognition.maxAlternatives = 1;
+        startTime = performance.now();
         recognition.start();
         isRecognitionRunning = true;
 
         document.querySelector("#continuous").disabled = true;
         document.querySelector("#interim").disabled = true;
     }
-    function endRecognition() {
+    function endRecognition(reason = "?") {
         isRecognitionRunning = false;
-
+        console.log("End Recognition:", reason, performance.now()-startTime);
         recognition.stop();
         startBtn.innerText = "KlickMich...";
 
@@ -138,7 +155,7 @@ interim immer false und continus nur auf PC, niemals auf Android
         if (!isRecognitionRunning) {
             startRecognition();
         } else {
-            endRecognition();
+            endRecognition("Klick");
         }
     };
 
@@ -149,11 +166,15 @@ interim immer false und continus nur auf PC, niemals auf Android
         const res = event.results[rix][0].transcript;
         const isFinal = event.results[rix].isFinal;
         diagnostic.innerHTML += `Erkannt[${rix}]: '${res}'${isFinal ? " *FINAL*" : ""}<br>`;
-        if (isFinal) joSagmal(res, language);
+        if (isFinal) {
+            // Wichtig: FINAL scheint manchmal erst mit einer Verzögerung nach endRecognition zu kommen
+            console.log("Final erkannt, sage nach",performance.now()-startTime);
+            joSagmal(res, language);
+        }
     };
 
     recognition.audiostart = () => {
-        endRecognition();
+        
         console.log("Audio capture started");
     };
     recognition.audioend = () => {
@@ -163,12 +184,12 @@ interim immer false und continus nur auf PC, niemals auf Android
         console.log("Speech recognition service started");
     };
     recognition.end = () => {
-        endRecognition();
         console.log("Speech recognition service disconnected");
+        endRecognition("end");
     };
     recognition.onerror = (event) => { // z.B. No-Speech
-        endRecognition();
         diagnostic.innerHTML += `ERROR occurred in recognition: ${event.error}<br>`;
+        endRecognition("error:"+event.error);
     };
     recognition.onnomatch = (event) => {
         diagnostic.innerHTML += `No speech match found.<br>`;
@@ -177,14 +198,13 @@ interim immer false und continus nur auf PC, niemals auf Android
         console.log("Sound has been detected");
     };
     recognition.onsoundend = () => {
-        endRecognition();
         console.log("Sound has stopped being detected");
+        endRecognition("soundend");
     };
     recognition.onspeechstart = () => {
         console.log("Speech has been detected");
     };
     recognition.onspeechend = () => {
-        endRecognition();
         console.log("Speech has stopped being detected");
     };
 

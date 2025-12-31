@@ -42,18 +42,25 @@
         logDiv.innerHTML += 'Audio-Fehler: ' + (audio.error ? audio.error.message : 'Unbekannter Fehler') + '<br>';
     });
 
-    // Audiodatei-Liste laden
+    // Audiodatei-Liste laden - -Auto-Generated-
     async function loadAudioList() {
         const audioListDiv = document.getElementById('audioList');
         try {
             const response = await fetch('./api/oai_listaudio.php?dir=audio/speech');
             if (!response.ok) {
-                throw new Error('HTTP-Fehler: ' + response.status);
+                throw new Error(`HTTP-Fehler: ${response.status} ${response.statusText}`);
             }
+
+            // Aufm Live-Server liefert PHP sich selbst...
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Ungültige Antwort: Kein JSON-Format erhalten');
+            }
+            
             const data = await response.json();
             
             if (data.error) {
-                audioListDiv.innerHTML = 'Fehler: ' + data.error;
+                audioListDiv.innerHTML = 'Fehler-AudioList: ' + data.error;
                 return;
             }
             
@@ -65,7 +72,7 @@
             data.files.forEach(file => {
                 const filePath = `audio/speech/${file.filename}`;
                 const sizeKB = Math.round(file.size / 1024);
-                html += `<li style="margin: 5px 0; padding: 8px; background: #f0f0f0; border-radius: 4px; cursor: pointer;" 
+                html += `<li style="margin: 2px 0; padding: 2px; background: #f0f0f0; cursor: pointer;" 
                          onclick="playAudioFile('${filePath}')">
                     <strong>${file.filename}</strong><br>
                     <small>Größe: ${sizeKB} KB | Geändert: ${file.modified}</small>

@@ -29,6 +29,7 @@ let isMicroOn = false; // Flag absolut Micro
 // Helpers fuer Microfondaten und Analyse
 let analyser = null;
 let stream = null;
+let delayedStream = null;
 let audioCtx = null;
 let dataArray = null;
 let frameMoniId = null;
@@ -36,15 +37,15 @@ let mediaRecorder = null;
 const useMime = 'audio/webm;codecs=opus';
 // rms Statistik
 
-let thresholdRms = 0.05; // 0.1: Laute umgebung 
-let maxPauseMs = 750; // msec max. Sprachpause
+let thresholdRms = 0.1; // 0.1: Laute umgebung - Ext. via Slider
+let maxPauseMs = 1000; // >200 , msec max. Sprachpause - Ext. via Slider
+const maxlenMs = 30000; // msec max. Sprachdauer
 
 const MICRO_INIT = 100; // msec Mikrofon-(Re-)Initialisierung
 const MIN_LEN = (200 + maxPauseMs); // msec min. Sprachdauer
 let speechState = 0; // Sprach-Zustandsmaschine
 let speechStateTime0; // Zeitstempel Sprachbeginn
 
-let recordAudio = 0;   // 0: Nix, timeslice, 1: Aufnehmen, 2: Warten auf Abholung
 let speechStartTime;
 let speechTotalDur;
 let audioChunks = [];
@@ -64,24 +65,33 @@ async function jsSleepMs(ms = 1) { // Helper
 async function startMicro() {
     try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        if (!MediaRecorder.isTypeSupported(useMime)) throw new Error(`MIME-Type not supported: ${useMime}`);
-        mediaRecorder = new MediaRecorder(stream, { mimeType: useMime });
-        mediaRecorder.ondataavailable = (e) => {
-            addAudioChunk(e.data);
-        };
-        mediaRecorder.onstop = processAudio;
         audioCtx = new AudioContext();
+        if (audioCtx.state !== "running") await audioCtx.resume();
         const source = audioCtx.createMediaStreamSource(stream);
         analyser = audioCtx.createAnalyser();
         analyser.fftSize = 2048; // keine FFT, hier nur Zeitbereich
         dataArray = new Uint8Array(analyser.fftSize);
         source.connect(analyser);
+
+        const delaySeconds = 0.2; // sec Delay, ca. 150 msec Vorlauf mind. 
+        const delayNode = audioCtx.createDelay(delaySeconds); // Def. ist 1
+        delayNode.delayTime.value = delaySeconds; // sec
+        const destination = audioCtx.createMediaStreamDestination();
+        source.connect(delayNode);
+
+        delayNode.connect(destination); // Das Ziel ist der verzögerte Stream
+        delayedStream = destination.stream;
+
+        if (!MediaRecorder.isTypeSupported(useMime)) throw new Error(`MIME-Type not supported: ${useMime}`);
+        mediaRecorder = new MediaRecorder(delayedStream, { mimeType: useMime });
+        mediaRecorder.ondataavailable = (e) => {
+            addAudioChunk(e.data);
+        };
+        mediaRecorder.onstop = processAudio;
         speechState = 0;
         speechStateTime0 = performance.now();
-
-        recordAudio = 0;
         audioChunks = [];
-                
+
         frameMonitor();
     } catch (e) {
         console.error('ERROR:', e);
@@ -101,6 +111,11 @@ function stopMicro() {
         const tracks = stream.getTracks();
         tracks.forEach(track => track.stop());
         stream = null;
+    }
+    if (delayedStream) {
+        const tracks = delayedStream.getTracks();
+        tracks.forEach(track => track.stop());
+        delayedStream = null;
     }
     if (audioCtx) {
         audioCtx.close();
@@ -129,7 +144,7 @@ function microBtnCLick() {
 
 // Ping-Helper
 let acx = null;
-function frq_ping(frq = 440, dura = 0.1, vol = 0.05) { // Helper, extern available
+function frq_ping(frq = 440, dura = 0.2, vol = 0.07) { // Helper, extern available
     if (!acx) acx = new AudioContext()
     const oscillator = acx.createOscillator()
     oscillator.frequency.value = frq
@@ -155,19 +170,18 @@ function computeRMSFromTimeDomain(byteArray) {
     return Math.sqrt(sumSq / length);
 }
 
-// Process Audio - Audio-Chunks zu einem Blob zusammenfassen und senden
+// Process Audio - Audio-Chunks zu einem Blob zusammenfassen, wenn nicht zu kurz
 function processAudio(e) {
-    if (isMicroOn) {
+    if (isMicroOn &&  (speechTotalDur > MIN_LEN) ) {
         const blob = new Blob(audioChunks, { type: useMime });
         audioChunks = [];
-        
         const info = "Len: " + blob.size + " bytes (" + speechTotalDur + " msec) " + useMime;
         terminalPrint("Audio recorded: " + info);
         const audioURL = window.URL.createObjectURL(blob);
-
         stdPlayer.src = audioURL;
         stdPlayer.play();
-    }
+    } else  audioChunks = []; // Verwerfen
+
 }
 
 // Sprach-Zustandsmaschine
@@ -177,7 +191,7 @@ function updateSpeechState(frameRms) {
     if (speechState === 0) {    // Zustand 0: MICRO_INIT msec lang AVG anlernen
         if (dur > MICRO_INIT) {
             speechState = 1;
-            recordAudio = 0;
+
 
             setStatus('Listening...', 'yellow');
         }
@@ -185,7 +199,7 @@ function updateSpeechState(frameRms) {
         if (frameRms > thresholdRms && !isPlaying) { // Sprache erkannt
             if (mediaRecorder.state === "inactive") mediaRecorder.start();
             speechState = 2;
-            recordAudio = 1;    // Aufnahme starten
+
             speechStateTime0 = performance.now();
             speechStartTime = speechStateTime0; // Fuer Alles und Pausen
             setStatus('Speech Start', 'lime');
@@ -195,6 +209,14 @@ function updateSpeechState(frameRms) {
             speechState = 3;
             speechStateTime0 = performance.now();
             setStatus('Speech Pause', 'lightgreen');
+        } else {
+            speechTotalDur = (performance.now() - speechStartTime).toFixed(0);
+            if (speechTotalDur > maxlenMs) { // Max. Dauer erreicht
+                terminalPrint(`Speech Max Length reached (${speechTotalDur} msec), stopping.`);
+                speechStateTime0 = performance.now();
+                speechState = 0;
+                mediaRecorder.stop();
+            }
         }
     } else if (speechState === 3) { // Zustand 3: In Sprachpause
         if (frameRms > thresholdRms) {
@@ -202,16 +224,14 @@ function updateSpeechState(frameRms) {
             setStatus('Speech Resume', 'lime');
         } else if (dur > maxPauseMs) { // Pause laenger als x sec => Ende
             speechTotalDur = (performance.now() - speechStartTime).toFixed(0);
+            mediaRecorder.stop();
             if (speechTotalDur > MIN_LEN) {
                 terminalPrint(`Speech End (${speechTotalDur} msec)`);
-                mediaRecorder.stop();
             } else {
                 terminalPrint(`Speech too short (${speechTotalDur} msec), discarded.`);
             }
             speechStateTime0 = performance.now();
             speechState = 0;
-            recordAudio = 2;
-
         }
     }
 }
@@ -329,8 +349,9 @@ try {
             microBtn.addEventListener('click', microBtnCLick);
 
             thresholdSlider.addEventListener('input', () => {
-                thresholdFeedback.textContent = thresholdSlider.value;
-                thresholdRms = parseFloat(thresholdSlider.value);
+                const h = parseFloat(thresholdSlider.value);
+                thresholdRms = (h * h / 200) + 0.05; // Quadratisch
+                thresholdFeedback.textContent = thresholdRms.toFixed(3);
             });
             maxpauseSlider.addEventListener('input', () => {
                 maxpauseFeedback.textContent = maxpauseSlider.value;

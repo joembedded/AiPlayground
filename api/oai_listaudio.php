@@ -3,7 +3,7 @@
 /**
  * oai_getaudio.php - (C) JoEmbedded - 29.12.2025
  * Param: dir=<verzeichnis>
- * http://localhost/wrk/ai/playground/api/oai_getaudio.php?dir=audio/uploads
+ * http://localhost/wrk/ai/playground/api/oai_listaudio.php?dir=audio/uploads
  */
 
 declare(strict_types=1);
