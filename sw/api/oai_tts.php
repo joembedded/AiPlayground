@@ -1,6 +1,7 @@
 <?php
+
 /**
- * oai_tts.php - Text-to-Speech mit OpenAI API - (C) JoEmbedded - 31.12.2025
+ * oai_tts.php - Text-to-Speech mit OpenAI API - (C) JoEmbedded - 01.01.2026
  * Parameter:
  *   text   - Vorlese-Text
  *   voice  - Stimme (Dateiname ohne .json aus /voices)
@@ -10,10 +11,11 @@
 
 declare(strict_types=1);
 
-// Configuration
-$log = 2; // 0: Silent, 1: Log audio, 2: Log audio + metadata
+// Configuration - Loglevel
+$log = 1; // 0: Silent, 1: Logfile schreiben
+$xlog = ""; // Debug-Ausgaben sammeln
+$cache = true; // Cache fuer audiofiles aktivieren
 $format = 'opus'; // opus oder mp3 / Ogg kennt er nicht
-
 // CORS headers
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -31,6 +33,8 @@ $apiKey = OPENAI_API_KEY;
 $speechDir = __DIR__ . '/../../' . USERDIR . '/audio/speech';
 $voicesDir = __DIR__ . '/../voices';
 
+include_once __DIR__ . '/../php_tools/logfile.php';
+
 try {
     // Validate API password
     if (($_REQUEST['apipw'] ?? '') !== API_PASSWORD) {
@@ -43,14 +47,8 @@ try {
         throw new Exception('OPENAI_API_KEY missing');
     }
 
-    // Create speech directory - immer gur
-    if (!is_dir($speechDir) && !mkdir($speechDir, 0755, true)) {
-        http_response_code(500);
-        throw new Exception('Failed to create speech directory');
-    }
-
     // Vorlese-Text (z. B. aus POST/GET)
-    $text = trim($_REQUEST['text'] ?? '', " \n\r\t\v\0\"");
+    $text = trim(str_replace(["\r\n", "\n", "\r"], ' ', $_REQUEST['text'] ?? ''), " \n\r\t\v\0\"");
     if (!$text) {
         http_response_code(400);
         throw new Exception('ERROR: Kein Text');
@@ -59,10 +57,10 @@ try {
 
     $audioContent = match ($format) {
         'mp3' => 'audio/mpeg',
+        'opus' => 'audio/webm; codecs=opus',
         'ogg' => 'audio/ogg; codecs=opus',
         default => 'application/octet-stream'
     };
-
     // Validate and sanitize voice
     $voice = preg_replace('/[^a-zA-Z0-9_-]/', '_', $_REQUEST['voice'] ?? 'unknown');
     if (strlen($voice) < 1 || strlen($voice) > 32) {
@@ -78,7 +76,7 @@ try {
 
     $hash = hash('md5', $text);
     $diskFname = $hash . '.' . $format;
-    $diskPath = $speechDir . '/'.$voice . '/' ;
+    $diskPath = $speechDir . '/' . $voice . '/';
 
     // Create upload directory for voice
     if (!is_dir($diskPath) && !mkdir($diskPath, 0755, true)) {
@@ -86,15 +84,18 @@ try {
         throw new Exception('Failed to create upload directory');
     }
     $diskPath .= $diskFname;
+    $slen = strlen($text);
+    $xlog .= "Voice:$voice Text[$slen]:'" . (substr($text, 0, 120)) . ($slen > 120 ? "...'" : "'");
 
     // Wenn schon da, aus CACHE nehmen
     if (file_exists($diskPath)) {
         $cachedAudio = file_get_contents($diskPath);
         @touch($diskPath);
-        @touch($diskPath . '.json');
         header("Content-Type: $audioContent");
         header("Content-Length: " . strlen($cachedAudio));
         echo $cachedAudio;
+        $xlog .= " File[" . strlen($cachedAudio) . "]:$diskFname (Cached)";
+        log2file($xlog);
         exit;
     }
 
@@ -107,7 +108,7 @@ try {
     $payload['input'] = $text;
     $payload['response_format'] = $format;
 
- 
+
 
     $ch = curl_init("https://api.openai.com/v1/audio/speech");
     curl_setopt_array($ch, [
@@ -152,16 +153,13 @@ try {
         header("Content-Length: " . strlen($audioBytes));
         echo $audioBytes;
     }
-    if ($log > 0) {
-        // Logfile/Audio speichern
-        file_put_contents($diskPath, $stream ? $audioStreamed : $audioBytes);
-        if ($log > 1) {
-            $logjson = ['text' => $text, 'voice' => $voice, 'date' => date('Y-m-d H:i:s')];
-            file_put_contents($diskPath . '.json', json_encode($logjson, JSON_UNESCAPED_UNICODE));
-        }
-    }
+
+    // Aufschreiben, entweder gestreamt oder normal
+    if ($cache)      file_put_contents($diskPath, $stream ? $audioStreamed : $audioBytes);
+    $xlog .= " File[" . strlen($stream ? $audioStreamed : $audioBytes) . "]:$diskFname " . ($stream ? "(Stream-CREATED)" : "(CREATED)");
+
 } catch (Exception $e) {
-    // Error handling
+    header('Content-Type: application/json; charset=UTF-8');
     if (http_response_code() === 200) {
         http_response_code(500);
     }
@@ -169,4 +167,6 @@ try {
         'success' => false,
         'error' => $e->getMessage()
     ], JSON_UNESCAPED_SLASHES);
+    $xlog = "ERROR:'" . $e->getMessage()."' " . $xlog;
 }
+log2file($xlog);
