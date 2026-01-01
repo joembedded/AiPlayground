@@ -8,7 +8,10 @@
 declare(strict_types=1);
 
 // Configuration
-$log = 2; // 0: Silent, 1: Log upload, 2: Log upload + response
+$log = 2; // 0: Silent, 1: Logfile schreiben 2:Upload speichern
+$xlog = "oas_stt"; // Debug-Ausgaben sammeln
+include_once __DIR__ . '/../php_tools/logfile.php';
+
 $maxFileSize = 1024 * 1024; // 1 MB
 $allowedMimeTypes = ['audio/webm', 'audio/ogg', 'audio/mpeg'];
 
@@ -43,6 +46,7 @@ try {
         throw new Exception('User must be 1-32 characters');
     }
     $uploadDir .= '/' . $user;
+    $xlog .= " User:'$user'";
 
     // Validate language
     $lang = $_REQUEST['lang'] ?? 'de-DE';
@@ -50,7 +54,6 @@ try {
         http_response_code(400);
         throw new Exception('Invalid language format (expected: xx or xx-XX)');
     }
-
     // Validate prerequisites
     if (!$apiKey) {
         http_response_code(500);
@@ -132,6 +135,8 @@ try {
             'message' => 'File uploaded for debugging',
             'filename' => $filename ?? '(null)'
         ], JSON_UNESCAPED_SLASHES);
+        $xlog.= " DbgPost:'$filename'";
+        log2file($xlog);
         exit;
     }
 
@@ -159,6 +164,7 @@ try {
         throw new Exception("cURL HTTP $httpCode: $response");
     }
 
+
     // Log response
     if ($log > 1) {
         file_put_contents($uploadDir . '/stt_' . $filename . '.json', $response);
@@ -167,6 +173,8 @@ try {
     // Extract transcription text
     $data = json_decode($response, true);
     $stt = $data['text'] ?? $response;
+
+    $xlog .= " Text:'$stt'";
 
     // Success response
     http_response_code(201);
@@ -180,4 +188,9 @@ try {
         'success' => false,
         'error' => $e->getMessage()
     ], JSON_UNESCAPED_SLASHES);
+
+    $ip=$_SERVER['REMOTE_ADDR'];
+    if(isset($ip))  $xlog = "IP:$ip ".$xlog;
+
 }
+log2file($xlog);

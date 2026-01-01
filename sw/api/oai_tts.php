@@ -13,7 +13,9 @@ declare(strict_types=1);
 
 // Configuration - Loglevel
 $log = 1; // 0: Silent, 1: Logfile schreiben
-$xlog = ""; // Debug-Ausgaben sammeln
+$xlog = "oai_tts"; // Debug-Ausgaben sammeln
+include_once __DIR__ . '/../php_tools/logfile.php';
+
 $cache = true; // Cache fuer audiofiles aktivieren
 $format = 'opus'; // opus oder mp3 / Ogg kennt er nicht
 // CORS headers
@@ -32,8 +34,6 @@ include_once __DIR__ . '/../secret/keys.inc.php';
 $apiKey = OPENAI_API_KEY;
 $speechDir = __DIR__ . '/../../' . USERDIR . '/audio/speech';
 $voicesDir = __DIR__ . '/../voices';
-
-include_once __DIR__ . '/../php_tools/logfile.php';
 
 try {
     // Validate API password
@@ -85,7 +85,7 @@ try {
     }
     $diskPath .= $diskFname;
     $slen = strlen($text);
-    $xlog .= "Voice:$voice Text[$slen]:'" . (substr($text, 0, 120)) . ($slen > 120 ? "...'" : "'");
+    $xlog .= " Voice:$voice Text[$slen]:'" . (substr($text, 0, 120)) . ($slen > 120 ? "...'" : "'");
 
     // Wenn schon da, aus CACHE nehmen
     if (file_exists($diskPath)) {
@@ -168,5 +168,7 @@ try {
         'error' => $e->getMessage()
     ], JSON_UNESCAPED_SLASHES);
     $xlog = "ERROR:'" . $e->getMessage()."' " . $xlog;
+    $ip=$_SERVER['REMOTE_ADDR'];
+    if(isset($ip))  $xlog = "IP:$ip ".$xlog;     
 }
 log2file($xlog);
