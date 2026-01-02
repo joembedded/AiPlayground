@@ -1,189 +1,69 @@
 <!DOCTYPE html>
 <html lang="de">
-<!-- http://localhost/wrk/ai/playground/sw/minichat.html -->
+
 <head>
+    <!-- http://localhost/wrk/ai/playground/sw/minichat.html  -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" type="image/x-icon" href="./static/favicon.ico">
+    <link rel="stylesheet" href="./static/icons/bootstrap-icons.min.css">
+
     <title>Minichat</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
 
-        body {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-        }
+    <link rel="stylesheet" href="./css/minichat.css">
+    <script src="./src/minichat.js" type="module" defer></script>
 
-        header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
-        #chat-verlauf {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            background-color: #f5f5f5;
-            scroll-behavior: smooth;
-        }
-
-        .message {
-            margin-bottom: 10px;
-            padding: 8px 12px;
-            border-radius: 5px;
-            max-width: 80%;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            white-space: pre-wrap;
-        }
-
-        .message.user {
-            background-color: #e3f2fd;
-            margin-left: auto;
-            text-align: right;
-        }
-
-        .message.bot {
-            background-color: #fff;
-            border: 1px solid #ddd;
-        }
-
-        #eingabe-bereich {
-            display: flex;
-            gap: 10px;
-            padding: 15px;
-            background-color: #fff;
-            border-top: 1px solid #ddd;
-            flex-shrink: 0;
-        }
-
-        #eingabe-bereich button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            align-self: flex-start;
-            height: fit-content;
-        }
-
-        #eingabe-bereich button:hover {
-            background-color: #45a049;
-        }
-
-        #eingabe-bereich textarea {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
-            resize: vertical;
-            font-family: Arial, sans-serif;
-        }
-
-        footer {
-            background-color: #333;
-            color: white;
-            padding: 10px;
-            text-align: center;
-            flex-shrink: 0;
-            font-size: 0.9rem;
-        }
-    </style>
 </head>
+
 <body>
+    <div id="overlay"></div>
+    <div id="sidebar">
+        <h2><button id="sidebar-close"
+                style="background: none; border: none; color: #4CAF50; font-size: 1.5rem; cursor: pointer; padding: 0; margin-right: 10px; vertical-align: middle;">
+                <i class="bi bi-list"></i></button>Hauptmenü</h2>
+        <ul>
+            <li><a href="#"><i class="bi bi-house-fill"></i> Startseite</a></li>
+            <li><a href="#"><i class="bi bi-gear-fill"></i> Einstellungen</a></li>
+            <li><a href="#"><i class="bi bi-info-circle-fill"></i> Info</a></li>
+            <li><a href="#"><i class="bi bi-box-arrow-right"></i> Abmelden</a></li>
+            <div>
+                <label for="threshold">Threshold (Noisecancel): <span id="thresholdFeedback">x</span></label><br>
+                <input disabled type="range" id="threshold" min="0" max="5" value="2" step="0.1" /><br>
+                <label for="maxpause">Max Pause (msec): <span id="maxpauseFeedback">x</span></label><br>
+                <input disabled type="range" id="maxpause" min="200" max="2200" value="1000" step="50" />
+            </div>
+        </ul>
+    </div>
+
     <header>
+        <button id="menu-toggle">
+            <i class="bi bi-list"></i>
+        </button>
         <h1>Minichat</h1>
     </header>
 
     <div id="chat-verlauf"></div>
 
+    <div _hidden>
+        <audio class="stdplayer" controls></audio>
+        <pre id="dbginfo"></pre>
+        <div class="terminal"></div>
+    </div>
+
     <div id="eingabe-bereich">
-        <button id="btn-micro">Micro</button>
+        <div style="display: inline-block; vertical-align: top;">
+            <button id="btn-micro" class="micro"><i class="bi bi-mic-fill" style="font-size: 1.2rem;"></i> <span id="btn-micro-text">AUS</span></button>
+            <div id="micro-status" style="font-size: 0.75rem; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; max-width: 100px; overflow: hidden; white-space: nowrap; text-overflow: clip; margin-top: 4px;">idle</div>
+        </div>
+
         <textarea id="text-eingabe" rows="3" placeholder="Nachricht eingeben..."></textarea>
-        <button id="btn-senden">Senden</button>
+        <button id="btn-senden"><i class="bi bi-send-fill" style="font-size: 1.2rem;"></i> Senden</button>
     </div>
 
     <footer>
         Copyright Jo
     </footer>
-
-    <script>
-        const chatVerlauf = document.getElementById('chat-verlauf');
-        const textEingabe = document.getElementById('text-eingabe');
-        const btnSenden = document.getElementById('btn-senden');
-        const btnMicro = document.getElementById('btn-micro');
-
-        // Nachricht zum Chat hinzufügen
-        function addMessage(text, type) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            messageDiv.textContent = text;
-            chatVerlauf.appendChild(messageDiv);
-            setTimeout(() => {
-                chatVerlauf.scrollTop = chatVerlauf.scrollHeight;
-            }, 10);
-        }
-
-        // Nachricht senden
-        async function sendeNachricht() {
-            const text = textEingabe.value.trim();
-            if (!text) return;
-
-            // User-Nachricht anzeigen
-            addMessage(text, 'user');
-            textEingabe.value = '';
-
-            try {
-                const response = await fetch('./api/echo_sim.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ message: text })
-                });
-
-                const data = await response.json();
-
-                if (data.success === true) {
-                    addMessage(data.reply, 'bot');
-                } else {
-                    addMessage('Fehler: ' + (data.error || 'Unbekannter Fehler'), 'bot');
-                }
-            } catch (error) {
-                addMessage('Netzwerkfehler: ' + error.message, 'bot');
-            }
-        }
-
-        // Event Listener
-        btnSenden.addEventListener('click', sendeNachricht);
-        
-        textEingabe.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendeNachricht();
-            }
-        });
-
-        btnMicro.addEventListener('click', () => {
-            alert('Micro-Funktion noch nicht implementiert');
-        });
-    </script>
 </body>
+
 </html>

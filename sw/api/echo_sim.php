@@ -37,7 +37,7 @@ try {
     // Validate API password
     if (($_REQUEST['apipw'] ?? '') !== API_PASSWORD) {
         http_response_code(401);
-        throw new Exception('Not authorized');
+        throw new Exception('Not authorized'.@$_REQUEST['apipw']."*");
     }
 
     // Validate and sanitize user
@@ -80,7 +80,7 @@ try {
         throw new Exception("cURL HTTP $httpCode: $response");
     }
 *****/
-    $response = '{ "text":"Test-Text-Reply"}';
+    $response = '{ "text": "Hello, this is a simulated response from the echo simulator." }';
     $httpCode = 200;
 
     // Log response
@@ -94,7 +94,8 @@ try {
     $data = json_decode($response, true);
 
     http_response_code(201); // Success - Was Neues
-    echo json_encode(['success' => true, 'text' => 'xxx'], JSON_UNESCAPED_SLASHES);
+    $reply = json_decode($response, true);
+    echo json_encode(['success' => true, 'text' => $reply['text'] ?? ''], JSON_UNESCAPED_SLASHES);
 } catch (Exception $e) {
     // Error handling
     if (http_response_code() === 200) {
