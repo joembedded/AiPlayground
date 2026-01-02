@@ -14,7 +14,7 @@
     <button id="laden">Neu Laden & Play</button><br>
     <hr>
     <h3>Verfügbare Audiodateien (speech):</h3>
-    <div id="audioList">Lade Dateiliste...</div>
+    
     <hr>
     <div id="log"></div>
 </body>
@@ -46,64 +46,6 @@
         console.error('Audio-Fehler:', audio.error);
         logDiv.innerHTML += 'Audio-Fehler: ' + (audio.error ? audio.error.message : 'Unbekannter Fehler') + '<br>';
     });
-
-    // Audiodatei-Liste laden - -Auto-Generated-
-    async function loadAudioList() {
-        const audioListDiv = document.getElementById('audioList');
-        try {
-            const url = './api/oai_listaudio.php?dir=audio/speech/narrator_m_vilo&apipw='+API_PASSWORD;
-            console.log('Lade Audio-Liste von:', url);
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP-Fehler: ${response.status} ${response.statusText}`);
-            }
-
-            // Aufm Live-Server liefert PHP sich selbst...
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                throw new Error('Ungültige Antwort: Kein JSON-Format erhalten');
-            }
-            
-            const data = await response.json();
-            
-            if (data.error) {
-                audioListDiv.innerHTML = 'Fehler-AudioList: ' + data.error;
-                return;
-            }
-            
-            // Liste erstellen
-            let html = `<div style="max-height: 400px; overflow-y: auto;">`;
-            html += `<p><strong>${data.count} Dateien gefunden</strong></p>`;
-            html += '<ul style="list-style: none; padding: 0;">';
-            
-            data.files.forEach(file => {
-                const filePath = `audio/speech/narrator_m_vilo/${file.name}`;
-                const sizeKB = Math.round(file.size / 1024);
-                html += `<li style="margin: 2px 0; padding: 2px; background: #f0f0f0; cursor: pointer;" 
-                         onclick="playAudioFile('${filePath}')">
-                    <strong>${file.name}</strong><br>
-                    <small>Größe: ${sizeKB} KB | Geändert: ${file.modified}</small>
-                </li>`;
-            });
-            
-            html += '</ul></div>';
-            audioListDiv.innerHTML = html;
-            
-        } catch (error) {
-            audioListDiv.innerHTML = 'Fehler beim Laden der Liste: ' + error.message;
-            console.error('Fehler:', error);
-        }
-    }
-    
-    // Audiodatei abspielen - Schiwerig, da absoluter Pfad ja nicht bekannt
-    function playAudioFile(filePath) {
-        logDiv.innerHTML += `Spiele: ${filePath}<br>`;
-        audio.src = './../'+ USER_DIR + '/' + filePath;
-        audio.load();
-    }
-    
-    // Liste beim Laden der Seite abrufen
-    loadAudioList();
 
 </script>
 

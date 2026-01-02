@@ -129,7 +129,7 @@ try {
 
     // Debug mode: only save file
     if ($dbgpost > 0) {
-        http_response_code(201);
+        http_response_code(201); // Success - Was Neues
         echo json_encode([
             'success' => true,
             'message' => 'File uploaded for debugging',
@@ -176,8 +176,7 @@ try {
 
     $xlog .= " Text:'$stt'";
 
-    // Success response
-    http_response_code(201);
+    http_response_code(201); // Success - Was Neues
     echo json_encode(['success' => true, 'text' => $stt], JSON_UNESCAPED_SLASHES);
 } catch (Exception $e) {
     // Error handling
