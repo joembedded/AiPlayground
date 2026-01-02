@@ -5,7 +5,7 @@
  * Parameter:
  *   text   - Vorlese-Text - Darf so lang sein wie API kann
  *   voice  - Stimme (Dateiname ohne .json aus /voices)
- *   stream - Optional: aktiviert Streaming (etwas geringere Qualität)
+ *   stream - Optional: aktiviert Streaming 
  *  http://localhost/wrk/ai/playground/sw/api/oai_tts.php?apipw=Leg1310LX&text=Hallo%20Welt&voice=narrator_m_vilo
  */
 
