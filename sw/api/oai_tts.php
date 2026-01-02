@@ -3,7 +3,7 @@
 /**
  * oai_tts.php - Text-to-Speech mit OpenAI API - (C) JoEmbedded - 01.01.2026
  * Parameter:
- *   text   - Vorlese-Text
+ *   text   - Vorlese-Text - Darf so lang sein wie API kann
  *   voice  - Stimme (Dateiname ohne .json aus /voices)
  *   stream - Optional: aktiviert Streaming (etwas geringere Qualität)
  *  http://localhost/wrk/ai/playground/sw/api/oai_tts.php?apipw=Leg1310LX&text=Hallo%20Welt&voice=narrator_m_vilo
@@ -18,6 +18,7 @@ include_once __DIR__ . '/../php_tools/logfile.php';
 
 $cache = true; // Cache fuer audiofiles aktivieren
 $format = 'opus'; // opus oder mp3 / Ogg kennt er nicht
+
 // CORS headers
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');

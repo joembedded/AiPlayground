@@ -1,5 +1,4 @@
-/*** main.js 
-*/
+/*** microfon.js */
 
 // Imports
 
@@ -29,7 +28,6 @@ const maxpauseSlider = document.getElementById('maxpause');
 const maxpauseFeedback = document.getElementById('maxpauseFeedback');
 
 
-
 let isMicroOn = false; // Flag absolut Micro
 
 // Helpers fuer Microfondaten und Analyse
@@ -40,10 +38,12 @@ let audioCtx = null;
 let dataArray = null;
 let frameMoniId = null;
 let mediaRecorder = null;
-// webm fuer stream und ogg fuer File
-const useMimeStream =  'audio/webm; codecs=opus';
-const useMimeBlob =  'audio/ogg; codecs=opus';
 
+// MimeType fuer MediaRecorder ist optional, aber...
+//const useMimeStream =  'audio/webm; codecs=opus' oder 'audio/mp4'; 
+// ...fuer den Audio-BLOB nötig. Dateigroessen sind fast identisch:
+//const useMimeBlob =  'audio/ogg; codecs=opus';
+const useMimeBlob = 'audio/mpeg';
 
 // rms Statistik
 let thresholdRms = 0.1; // 0.1: Laute umgebung - Ext. via Slider
@@ -91,8 +91,13 @@ async function startMicro() {
         delayNode.connect(destination); // Das Ziel ist der verzögerte Stream
         delayedStream = destination.stream;
 
-        if (!MediaRecorder.isTypeSupported(useMimeStream)) throw new Error(`MIME-Type not supported: ${useMimeStream}`);
-        mediaRecorder = new MediaRecorder(delayedStream, { mimeType: useMimeStream });
+        const options = {};
+        if (typeof useMimeStream !== 'undefined') {
+            options.mimeType = useMimeStream;
+            if (useMimeStream && !MediaRecorder.isTypeSupported(useMimeStream)) throw new Error(`MIME-Type not supported: ${useMimeStream}`);
+        }
+        mediaRecorder = new MediaRecorder(delayedStream, options);
+
         mediaRecorder.ondataavailable = (e) => {
             addAudioChunk(e.data);
         };
@@ -190,7 +195,6 @@ function processAudio(e) {
         stdPlayer.src = audioURL;
         stdPlayer.play();
     } else audioChunks = []; // Verwerfen
-
 }
 
 // Sprach-Zustandsmaschine
@@ -198,10 +202,8 @@ function updateSpeechState(frameRms) {
     const dur = performance.now() - speechStateTime0;
     dbgInfo.textContent = `State: ${speechState}  Dur: ${dur.toFixed(0)} msec isPlaying: ${isPlaying}`;
     if (speechState === 0) {    // Zustand 0: MICRO_INIT msec lang AVG anlernen
-        if (dur > MICRO_INIT) {
+        if (dur > MICRO_INIT && !isPlaying) {
             speechState = 1;
-
-
             setStatus('Listening...', 'yellow');
         }
     } else if (speechState === 1) { // ** Zustand 1 **: Warten auf Sprache
@@ -307,8 +309,8 @@ async function postAudio() {
         const apiUrl = './api/oai_stt.php';
         const formData = new FormData();
         formData.append('apipw', API_PASSWORD);
-        if(API_USER !== undefined) formData.append('user', API_USER);
-        if(USER_LANG !== undefined) formData.append('lang', USER_LANG);
+        if (API_USER !== undefined) formData.append('user', API_USER);
+        if (USER_LANG !== undefined) formData.append('lang', USER_LANG);
         formData.append('audio', audioBlob, 'recording.webm');
         if (document.querySelector('.dbgpost').checked) {
             formData.append('dbgpost', '1');
@@ -360,7 +362,7 @@ try {
     }
     function thresholdMove() {
         const h = parseFloat(thresholdSlider.value);
-        thresholdRms = (h * h *h / 300) + 0.025; // Quadratisch
+        thresholdRms = (h * h * h / 300) + 0.025; // Quadratisch
         thresholdFeedback.textContent = thresholdRms.toFixed(3);
     }
     thresholdSlider.addEventListener('input', thresholdMove);

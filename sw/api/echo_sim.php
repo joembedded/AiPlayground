@@ -85,7 +85,7 @@ try {
 
     // Log response
     if ($log > 1) {
-        file_put_contents($userDir . '/stt_' . date('Ymd_His'). '.json', $response);
+        file_put_contents($userDir . '/chat_' . date('Ymd_His'). '.json', $response);
     }
 
     $xlog .= " Response:'$response'";
