@@ -8,15 +8,14 @@
 body {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100dvh;
     font-family: Arial, sans-serif;
-    overflow: hidden;
 }
 
 header {
     background-color: #4CAF50;
     color: white;
-    padding: 15px;
+    padding: 10px;
     text-align: center;
     flex-shrink: 0;
     position: relative;
@@ -50,9 +49,9 @@ header h1 {
 
 #sidebar {
     position: fixed;
-    left: -50%;
+    left: -66%;
     top: 0;
-    width: 50%;
+    width: 66%;
     height: 100vh;
     background-color: #fff;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
@@ -109,7 +108,7 @@ header h1 {
 #chat-verlauf {
     flex: 1;
     overflow-y: auto;
-    padding: 15px;
+    padding: 10px;
     background-color: #f5f5f5;
     scroll-behavior: smooth;
 }
@@ -169,15 +168,20 @@ header h1 {
 }
 
 #eingabe-bereich button {
-    padding: 10px 20px;
+    width: 50px;
+    height: 50px;
+    padding: 10px 10px;
     background-color: #4CAF50;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 1.5rem;
     align-self: flex-start;
     height: fit-content;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #eingabe-bereich button:hover {
@@ -229,6 +233,15 @@ background-color: lightsteelblue
   --spread: 0px;
   --scolor: silver;
   box-shadow: 0 0 var(--spread) var(--spread) var(--scolor);
+}
+.visualizer {
+    width:  100%;
+    height: 20px;
+    background-color: silver;
+}
+
+input[type="range"] {
+    width: 100%;
 }
 
 footer {

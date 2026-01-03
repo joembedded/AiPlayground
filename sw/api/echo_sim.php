@@ -54,6 +54,15 @@ try {
         http_response_code(500);
         throw new Exception('Failed to create user directory');
     }
+
+        // Vorlese-Text (z. B. aus POST/GET)
+    $text = trim(str_replace(["\r\n", "\n", "\r"], ' ', $_REQUEST['text'] ?? ''), " \n\r\t\v\0\"");
+    if (!$text) {
+        http_response_code(400);
+        throw new Exception('ERROR: Kein Text');
+    }
+
+    $xlog .= " Text:'$text'";
   
 /*****
     // Call OpenAI STT API
@@ -80,7 +89,7 @@ try {
         throw new Exception("cURL HTTP $httpCode: $response");
     }
 *****/
-    $response = '{ "text": "Hello, this is a simulated response from the echo simulator." }';
+    $response = '{ "text": "Echo: ' . $text . '" }';
     $httpCode = 200;
 
     // Log response
@@ -105,7 +114,7 @@ try {
         'success' => false,
         'error' => $e->getMessage()
     ], JSON_UNESCAPED_SLASHES);
-
+    $xlog = "ERROR:'" . $e->getMessage()."' " . $xlog;
     $ip=$_SERVER['REMOTE_ADDR'];
     if(isset($ip))  $xlog = "IP:$ip ".$xlog;
 

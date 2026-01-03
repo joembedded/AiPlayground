@@ -2,11 +2,12 @@
 <html lang="de">
 
 <head>
-    <!-- http://localhost/wrk/ai/playground/sw/minichat.html  -->
+    <!-- WICHTIG: http://localhost/wrk/ai/playground/sw/minichat.html  -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    
     <link rel="icon" type="image/x-icon" href="./static/favicon.ico">
+    <!-- WICHTIG: IconListe: https://icons.getbootstrap.com/#icons -->
     <link rel="stylesheet" href="./static/icons/bootstrap-icons.min.css">
 
     <title>Minichat</title>
@@ -20,19 +21,32 @@
     <div id="overlay"></div>
     <div id="sidebar">
         <h2><button id="sidebar-close"
-                style="background: none; border: none; color: #4CAF50; font-size: 1.5rem; cursor: pointer; padding: 0; margin-right: 10px; vertical-align: middle;">
+                style="background: whitesmoke; border: none; color: #4CAF50; font-size: 1.75rem; cursor: pointer; padding: 0; margin-right: 10px; vertical-align: middle;">
                 <i class="bi bi-list"></i></button>Hauptmenü</h2>
-        <ul>
-            <li><a href="#"><i class="bi bi-house-fill"></i> Startseite</a></li>
-            <li><a href="#"><i class="bi bi-gear-fill"></i> Einstellungen</a></li>
-            <li><a href="#"><i class="bi bi-info-circle-fill"></i> Info</a></li>
-            <li><a href="#"><i class="bi bi-box-arrow-right"></i> Abmelden</a></li>
-            <div>
+            <br>
+                <ul>
+            <li><a  href="#"><i class="bi bi-gear-fill"></i> Einstellungen</a></li>
+            <li><a  href="#"><i class="bi bi-info-circle-fill"></i> Info</a></li>
+            <li><a  href="#"><i class="bi bi-box-arrow-right"></i> Abmelden</a></li>
+            <li>
+                <i class="bi bi-mic-fill" ></i>
                 <label for="threshold">Threshold (Noisecancel): <span id="thresholdFeedback">x</span></label><br>
                 <input disabled type="range" id="threshold" min="0" max="5" value="2" step="0.1" /><br>
+                <canvas class="visualizer" width="200" height="20"></canvas><br>
+            </li>
+            <li>                
+<i class="bi bi-activity"></i>
                 <label for="maxpause">Max Pause (msec): <span id="maxpauseFeedback">x</span></label><br>
-                <input disabled type="range" id="maxpause" min="200" max="2200" value="1000" step="50" />
-            </div>
+                <input disabled type="range" id="maxpause" min="200" max="2200" value="1000" step="50" /><br>
+                
+            </li>
+            <li>
+                 Sprache:
+                <br>
+                <label for="autoPostChk"><input id="autoPostChk" type="checkbox"  checked /> Automatisch senden</label><br>
+                <br>
+                <label for="autoPlayChk"><input id="autoPlayChk" type="checkbox"  checked /> Automatisch abspielen</label><br>
+            </li>
         </ul>
     </div>
 
@@ -45,24 +59,27 @@
 
     <div id="chat-verlauf"></div>
 
-    <div _hidden>
+    <div hidden>
         <audio class="stdplayer" controls></audio>
+        <audio id="audioPlayer" controls></audio>
         <pre id="dbginfo"></pre>
+        <span id="audioStatus">???</span>
         <div class="terminal"></div>
     </div>
 
     <div id="eingabe-bereich">
-        <div style="display: inline-block; vertical-align: top;">
-            <button id="btn-micro" class="micro"><i class="bi bi-mic-fill" style="font-size: 1.2rem;"></i> <span id="btn-micro-text">AUS</span></button>
-            <div id="micro-status" style="font-size: 0.75rem; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; max-width: 100px; overflow: hidden; white-space: nowrap; text-overflow: clip; margin-top: 4px;">idle</div>
-        </div>
 
         <textarea id="text-eingabe" rows="3" placeholder="Nachricht eingeben..."></textarea>
-        <button id="btn-senden"><i class="bi bi-send-fill" style="font-size: 1.2rem;"></i> Senden</button>
+        <div style="display: inline-flex; flex-direction: column; vertical-align: top; gap: 5px;">
+            <button id="btn-senden" ><i class="bi bi-send-fill"  ></i></button>
+            <button id="btn-micro" class="micro" ><i id="micro-button-glyph" class="bi bi-mic-mute-fill" ></i></button>
+        </div>
+
     </div>
 
-    <footer>
-        Copyright Jo
+    <footer style="display: flex; justify-content: center; align-items: center; position: relative;">
+        <div id="micro-status" style="color: black; padding: 2px 4px;  border-radius: 3px; max-width: 200px; overflow: hidden; white-space: nowrap; text-overflow: clip; position: absolute; left: 15px;">idle</div>
+        <div>Copyright Jo</div>
     </footer>
 </body>
 

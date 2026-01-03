@@ -54,6 +54,8 @@ try {
         http_response_code(400);
         throw new Exception('Invalid language format (expected: xx or xx-XX)');
     }
+    $xlog .= " Lang:'$lang'";
+
     // Validate prerequisites
     if (!$apiKey) {
         http_response_code(500);
@@ -187,7 +189,7 @@ try {
         'success' => false,
         'error' => $e->getMessage()
     ], JSON_UNESCAPED_SLASHES);
-
+    $xlog = "ERROR:'" . $e->getMessage()."' " . $xlog;
     $ip=$_SERVER['REMOTE_ADDR'];
     if(isset($ip))  $xlog = "IP:$ip ".$xlog;
 

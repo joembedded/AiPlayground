@@ -1,7 +1,7 @@
 /*** minitools.js fuer minichat und minimicro ***/
 
 // =======Terminal-Emulation=======
-const TERMINAL_LINES = 25; // Default
+const TERMINAL_LINES = 10; // 25; // Default
 let terminal_lines = TERMINAL_LINES; // Real
 const terminalContent = [];
 const terminalEl = document.querySelector(".terminal");
