@@ -13,7 +13,7 @@ export function terminalPrint(txt = '\u2424') { // NL-Symbol
     terminalEl.scrollTop = terminalEl.scrollHeight;
 }
 
-// Ping-Helper- Erzeugt Kurze Pings - erforder mind 1 user gesture 
+// Ping-Helper- Erzeugt Kurze Pings
 const acx = new AudioContext();
 export function frq_ping(frq = 440, dura = 0.2, vol = 0.07) { 
     if (!acx) return;
@@ -34,5 +34,5 @@ export async function jsSleepMs(ms = 1) {
     let np = new Promise(resolve => setTimeout(resolve, ms))
     return np
 }
-
+frq_ping(880, 0.1, 0.05);
 console.log('Minitools ok');

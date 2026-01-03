@@ -41,18 +41,20 @@ let frameMoniId = null;
 let mediaRecorder = null;
 
 // MimeType fuer MediaRecorder ist optional, aber...
-const useMimeStream = 'audio/webm; codecs=opus';
-const useMimeBlob = 'audio/ogg; codecs=opus';
-const useExtension = '.webm'; // 
+const USE_MIME_STREAM = 'audio/webm; codecs=opus';
+const USE_MIME_BLOB = 'audio/ogg; codecs=opus';
+const USE_EXTENSION = '.webm'; // 
 
 
 // rms Statistik
 let thresholdRms = 0.1; // 0.1: Laute umgebung - Ext. via Slider
 let maxPauseMs = 1000; // >200 , msec max. Sprachpause - Ext. via Slider
-const maxlenMs = 30000; // msec max. Sprachdauer
 
-const MICRO_INIT = 100; // msec Mikrofon-(Re-)Initialisierung
-const MIN_LEN = (200 + maxPauseMs); // msec min. Sprachdauer
+const MAX_SPEECH_MS = 30000; // msec max. Sprachdauer
+const STREAM_DELAY_SEC = 0.3; // sec Delay, ca. 150 msec Vorlauf mind. 
+const MICRO_INIT_MS = 100; // msec Mikrofon-(Re-)Initialisierung
+const MIN_LEN_SPEECH_MS = 250; // msec min. Sprachdauer
+
 let speechState = 0; // Sprach-Zustandsmaschine
 let speechStateTime0; // Zeitstempel Sprachbeginn
 
@@ -93,7 +95,7 @@ async function startMicro() {
         dataArray = new Uint8Array(analyser.fftSize);
         source.connect(analyser);
 
-        const delaySeconds = 0.2; // sec Delay, ca. 150 msec Vorlauf mind. 
+        const delaySeconds = STREAM_DELAY_SEC
         const delayNode = audioCtx.createDelay(delaySeconds); // Def. ist 1
         delayNode.delayTime.value = delaySeconds; // sec
         const destination = audioCtx.createMediaStreamDestination();
@@ -103,9 +105,9 @@ async function startMicro() {
         delayedStream = destination.stream;
 
         const options = {};
-        if (typeof useMimeStream !== 'undefined') {
-            options.mimeType = useMimeStream;
-            if (useMimeStream && !MediaRecorder.isTypeSupported(useMimeStream)) throw new Error(`MIME-Type not supported: ${useMimeStream}`);
+        if (typeof USE_MIME_STREAM !== 'undefined') {
+            options.mimeType = USE_MIME_STREAM;
+            if (USE_MIME_STREAM && !MediaRecorder.isTypeSupported(USE_MIME_STREAM)) throw new Error(`MIME-Type not supported: ${USE_MIME_STREAM}`);
         }
         mediaRecorder = new MediaRecorder(delayedStream, options);
 
@@ -184,13 +186,13 @@ function computeRMSFromTimeDomain(byteArray) {
 
 // Process Audio - Audio-Chunks zu einem Blob zusammenfassen, wenn nicht zu kurz
 async function processAudio(e) {
-    if (isMicroOn && (speechTotalDur > MIN_LEN)) {
+    if (isMicroOn && (speechTotalDur > (MIN_LEN_SPEECH_MS+maxPauseMs))) {
         hasInput = 1; // Ok
         setStatus('Verstehe...', 'skyblue');
 
-        const blob = new Blob(audioChunks, { type: useMimeBlob });
+        const blob = new Blob(audioChunks, { type: USE_MIME_BLOB });
         audioChunks = [];
-        const info = "Len: " + blob.size + " bytes (" + speechTotalDur + " msec) " + useMimeBlob;
+        const info = "Len: " + blob.size + " bytes (" + speechTotalDur + " msec) " + USE_MIME_BLOB;
         TB.terminalPrint("Audio recorded: " + info);
         const audioURL = window.URL.createObjectURL(blob);
         stdPlayer.src = audioURL;
@@ -206,7 +208,7 @@ function updateSpeechState(frameRms) {
     const dur = performance.now() - speechStateTime0;
     dbgInfo.textContent = `State: ${speechState}  Dur: ${dur.toFixed(0)} msec isPlaying: ${isPlaying}`;
     if (speechState === 0) {    // Zustand 0: MICRO_INIT msec lang AVG anlernen
-        if (dur > MICRO_INIT && !isPlaying && !hasInput) {
+        if (dur > MICRO_INIT_MS && !isPlaying && !hasInput) {
             speechState = 1;
             setStatus('Bereit...', 'yellow');
         }
@@ -226,7 +228,7 @@ function updateSpeechState(frameRms) {
             setStatus('Sprachpause', 'lightgreen');
         } else {
             speechTotalDur = (performance.now() - speechStartTime).toFixed(0);
-            if (speechTotalDur > maxlenMs) { // Max. Dauer erreicht
+            if (speechTotalDur > MAX_SPEACH_MS) { // Max. Dauer erreicht
                 TB.terminalPrint(`Speech Max Length reached (${speechTotalDur} msec), stopping.`);
                 speechStateTime0 = performance.now();
                 speechState = 0;
@@ -240,7 +242,7 @@ function updateSpeechState(frameRms) {
         } else if (dur > maxPauseMs) { // Pause laenger als x sec => Ende
             speechTotalDur = (performance.now() - speechStartTime).toFixed(0);
             mediaRecorder.stop();
-            if (speechTotalDur > MIN_LEN) {
+            if (speechTotalDur > MIN_LEN_SPEECH_MS) {
                 TB.terminalPrint(`Speech End (${speechTotalDur} msec)`);
             } else {
                 TB.terminalPrint(`Speech too short (${speechTotalDur} msec), discarded.`);

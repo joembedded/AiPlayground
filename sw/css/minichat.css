@@ -1,4 +1,10 @@
 /* minichat.css */
+
+/* ==================== */
+/* Globale Styles - 
+/* Wichtig fuer Body:     height: 100dvh; */
+/* ==================== */
+
 * {
     margin: 0;
     padding: 0;
@@ -11,6 +17,10 @@ body {
     height: 100dvh;
     font-family: Arial, sans-serif;
 }
+
+/* ==================== */
+/* Header               */
+/* ==================== */
 
 header {
     background-color: #4CAF50;
@@ -47,6 +57,10 @@ header h1 {
     background-color: #347936;
 }
 
+/* ==================== */
+/* Sidebar & Overlay    */
+/* ==================== */
+
 #sidebar {
     position: fixed;
     left: -66%;
@@ -68,6 +82,17 @@ header h1 {
 #sidebar h2 {
     margin-top: 0;
     color: #4CAF50;
+}
+
+#sidebar-close {
+    background: whitesmoke;
+    border: none;
+    color: #4CAF50;
+    font-size: 1.75rem;
+    cursor: pointer;
+    padding: 0;
+    margin-right: 10px;
+    vertical-align: middle;
 }
 
 #sidebar ul {
@@ -104,6 +129,10 @@ header h1 {
 #overlay.active {
     display: block;
 }
+
+/* ==================== */
+/* Chat Verlauf         */
+/* ==================== */
 
 #chat-verlauf {
     flex: 1;
@@ -158,6 +187,10 @@ header h1 {
     border-left: 8px solid blue;
 }
 
+/* ==================== */
+/* Eingabebereich       */
+/* ==================== */
+
 #eingabe-bereich {
     display: flex;
     gap: 10px;
@@ -165,27 +198,6 @@ header h1 {
     background-color: #fff;
     border-top: 1px solid #ddd;
     flex-shrink: 0;
-}
-
-#eingabe-bereich button {
-    width: 50px;
-    height: 50px;
-    padding: 10px 10px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.5rem;
-    align-self: flex-start;
-    height: fit-content;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#eingabe-bereich button:hover {
-    background-color: #45a049;
 }
 
 #eingabe-bereich textarea {
@@ -197,6 +209,87 @@ header h1 {
     resize: vertical;
     font-family: Arial, sans-serif;
 }
+
+#eingabe-bereich > div {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: top;
+    gap: 5px;
+}
+
+#eingabe-bereich button {
+    width: 50px;
+    height: fit-content;
+    padding: 10px 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.5rem;
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#eingabe-bereich button:hover {
+    background-color: #45a049;
+}
+
+/* ==================== */
+/* Footer               */
+/* ==================== */
+
+footer {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+#micro-status {
+    color: black;
+    padding: 2px 4px;
+    border-radius: 3px;
+    max-width: 200px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+    position: absolute;
+    right: 15px;
+}
+
+/* ==================== */
+/* Mikrofon & Audio     */
+/* ==================== */
+
+/* Umweg ueber CSS-Variable fuer Box-Shadow-Spread */
+.micro {
+    --spread: 0px;
+    --scolor: silver;
+    box-shadow: 0 0 var(--spread) var(--spread) var(--scolor);
+}
+
+.visualizer {
+    width: 100%;
+    height: 20px;
+    background-color: silver;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+/* ==================== */
+/* Animationen          */
+/* ==================== */
 
 .spinner:before {
     content: '\2596';
@@ -210,45 +303,27 @@ header h1 {
     0% {
         content: '\2596';
     }
-
     25% {
         content: '\2598';
     }
-
     50% {
         content: '\259D';
     }
-
     75% {
         content: '\2597';
     }
 }
 
+/* ==================== */
+/* Debugging Bereich    */
+/* ==================== */
+
 .terminal {
-background-color: lightsteelblue
+    background-color: lightsteelblue;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
-/* Umweg ueber CSS-Variable fuer Box-Shadow-Spread */
-.micro {
-  --spread: 0px;
-  --scolor: silver;
-  box-shadow: 0 0 var(--spread) var(--spread) var(--scolor);
-}
-.visualizer {
-    width:  100%;
-    height: 20px;
-    background-color: silver;
-}
-
-input[type="range"] {
-    width: 100%;
-}
-
-footer {
-    background-color: #333;
-    color: white;
-    padding: 10px;
-    text-align: center;
-    flex-shrink: 0;
-    font-size: 0.9rem;
+.dbgInfo {
+    background-color: lightyellow;
 }
