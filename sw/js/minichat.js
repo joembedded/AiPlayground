@@ -58,10 +58,28 @@ export async function jsSleepMs(ms = 1) {
 //=== ENDE MODMinitools ===
 
 // *******todos - START*******
+const helpTxts = [
+    'Hallo. Wie kann ich helfen?',
+    'Kann ich behilflich sein?',
+    'Womit kann ich helfen?',
+    'Hallo! Was kann ich tun?',
+    'Kann ich behilflich sein?',
+    'Fragen? Ich helfe gerne.',
+    'Was kann ich tun?',
+    'Worum geht es?',
+];
+let hlpIdx = 0;
+
 async function sendeNachricht() {
     let text = textEingabe.value.trim();
     if(text.length === 0) {
-        text ='\u2424'; // NL-Symbol
+        //text ='\u2424'; // NL-Symbol
+        const help = helpTxts[hlpIdx];
+        hlpIdx = (hlpIdx + 1) % helpTxts.length;
+        addMessage(help, 'bot info');
+        // say() hier rein *todo*
+        // Keine Eingabe-Keine Zeile
+        return;
     }    
     
     // Erstmal nur doof anzeigen
@@ -103,7 +121,6 @@ function updateMessage(messageDiv, text, type) {
     messageDiv.className = `message ${type}`;
     messageDiv.textContent = text;
 }
-
 
 btnSenden.addEventListener('click', sendeNachricht);
 
