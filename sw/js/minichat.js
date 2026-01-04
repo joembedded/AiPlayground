@@ -1,10 +1,7 @@
 /* minichat.js - Minichat 
-* Aufbau: 
-* Globaler Teil
-* Module MODname mit ihren lokalen Daten
-* Event-Handler
-* Initialisierung
 *
+* Fragment für ein Mini-Chatsystem mit Voice
+* 
 * Zum Debuggen dbgLevel auf 1 od. 2 setzen
 */
 
@@ -98,7 +95,7 @@ async function sendeNachricht() {
     if (text.startsWith('.debug')) {
         const debugValue = text.substring(6).trim();
         if (debugValue.length) dbgLevel = parseInt(debugValue);
-        dbgDiv.hidden = !!dbgLevel;
+        dbgDiv.hidden = !dbgLevel;
         chatStateVar = 5; // Warte auf sendeNachricht
         addMessage('.debug:' + dbgLevel, 'bot info');
         textEingabe.value = '';
@@ -122,6 +119,7 @@ function periodical() {
         case 1: // Audio-Input im stdPlayer vorhanden - Start Transcribe!
             chatStateVar = 2;
             setChatStatus('Ich verstehe...', 'yellow');
+            frq_ping(1760, 0.1, 0.07); // Kurzer HPing
             postAudio();
             break;
         case 2: // idle warten waehrend transcribiert
@@ -190,6 +188,7 @@ audioPlayer.oncanplay = function () {
         setChatStatus('ERROR(audioPlayer): ' + error, 'red');
     });
 }
+
 // Alte URL freigeben wenn Audio beendet ist
 audioPlayer.onended = function () {
     if (playAudioUrl) {
@@ -204,7 +203,7 @@ audioPlayer.onended = function () {
 function checkAndPlayAudio() {
     // canplay feuert ab HAVE_FUTIRE_DATA
     const STATS = ["HAVE_NOTHING", "HAVE_METADATA", "HAVE_CURRENT_DATA", "HAVE_FUTURE_DATA", "HAVE_ENOUGH_DATA"];
-    audioStatus.textContent = `State:${STATS[audioPlayer.readyState]} Paused:${audioPlayer.paused} Ended:${audioPlayer.ended} CacheLen:${audioCache.length}`;
+    dbgAudioStatus.textContent = `State:${STATS[audioPlayer.readyState]} Paused:${audioPlayer.paused} Ended:${audioPlayer.ended} CacheLen:${audioCache.length}`;
 
     if (isLoading) return;
     // Wenn Audio-Element gerade spielt, warten
@@ -275,7 +274,8 @@ function splitIntoSentences(text) {
 }
 
 
-// Audio für einen Satz abrufen
+// Audio für einen Satz abrufen 
+// Fängt ggfs. SOFORT an zu spielen, wenn Player idle ist. Dazu Abküerzung vis <audio>.src verwenden
 async function fetchAudioForSentence(sentence, voice) {
     if (dbgLevel) terminalPrint(`Satz: '${sentence.substring(0, 50)}${sentence.length > 50 ? '...' : ''}'`);
     const methodGET = (audioPlayer.paused == true) && (audioCache.length == 0) && (isLoading == false);
@@ -406,7 +406,6 @@ export async function postAudio() {
             chatStateVar = -999;
             return;
         }
-        if (dbgLevel > 1) frq_ping(880);
 
         //if (DBG) terminalPrint('Fetching audio data from player src...');
         const res = await fetch(audioSrc);
@@ -842,7 +841,7 @@ export function addMessage(text, type) {
     setTimeout(() => {
         chatVerlauf.scrollTop = chatVerlauf.scrollHeight;
     }, 100);
-    frq_ping(1760, 0.1, 0.07); // Kurzer Ping
+    frq_ping(1760, 0.1, 0.07); // Kurzer HPing
     return messageDiv;
 }
 // Fuer nachtraegliche Aenderung
@@ -886,7 +885,7 @@ document.getElementById('sidebar-close').addEventListener('click', () => {
     menuManage(false); // ZU
 });
 if (dbgLevel) {
-    document.querySelector('.dbg').hidden = false;
+    dbgDiv.hidden = false;
     terminalPrint(''); // Initial anzeigen
 }
 
