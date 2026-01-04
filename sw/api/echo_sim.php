@@ -34,6 +34,7 @@ $dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 //$userDir = $dataDir + $user // later..
 
 try {
+    sleep(2);
     // Validate API password
     if (($_REQUEST['apipw'] ?? '') !== API_PASSWORD) {
         http_response_code(401);

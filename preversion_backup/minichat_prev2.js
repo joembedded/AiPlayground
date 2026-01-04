@@ -4,14 +4,12 @@
 * Module MODname mit ihren lokalen Daten
 * Event-Handler
 * Initialisierung
-*
-* Zum Debuggen dbgLevel auf 1 od. 2 setzen
 */
 
 //--------- globals ------ 
 export const VERSION = 'V0.0x / xx.xx.2025';
 export const COPYRIGHT = '(C)JoEmbedded.de';
-export let dbgLevel = 2;
+export let dbgFlag = true;
 
 // *** Muss mit keys.inc.php uebereinstimmen *todo* extern holen ***
 export const API_PASSWORD = 'Leg1310LX'; //  
@@ -39,7 +37,7 @@ export function terminalPrint(txt = '\u2424') { // NL-Symbol
 const dbgInfo = document.getElementById('dbginfo');
 const dbgAudioStatus = document.getElementById('audioStatus');
 
-// Ping-Helper- Erzeugt Kurze Pings 440Hz: Grundton A
+// Ping-Helper- Erzeugt Kurze Pings
 const acx = new AudioContext();
 export function frq_ping(frq = 440, dura = 0.2, vol = 0.07) {
     if (!acx) return;
@@ -77,11 +75,10 @@ let hlpIdx = 0;
 
 let theNewMessage = null;   // Letzee/pending Message
 async function sendeNachricht() {
-    sendenBtnGlyph.classList.add('spinner');
-    if (chatStateVar >= 4) {
-        if (dbgLevel) terminalPrint('sendeNachricht: Abbruch, chatStateVar=' + chatStateVar);
-        chatStateVar = 9; // Alles Abbrechen
-        return; // Bereits senden in Arbeit, abbrechen
+    btnSenden.disabled = true; // Sicher
+     if (chatStateVar >= 4) {
+        if (dbgFlag) terminalPrint('sendeNachricht: Abbruch, chatStateVar=' + chatStateVar);
+        return; // Bereits senden in Arbeit
     }
     let text = textEingabe.value.trim();
     if (text.length === 0) {
@@ -95,12 +92,12 @@ async function sendeNachricht() {
         return;
     }
     // Systemkommandos
-    if (text.startsWith('.debug')) {
-        const debugValue = text.substring(6).trim();
-        if (debugValue.length) dbgLevel = parseInt(debugValue);
-        dbgDiv.hidden = !!dbgLevel;
+    if(text.startsWith('debug')){ 
+        const debugValue = text.substring(5).trim();
+        if(debugValue.length ) dbgFlag = !!parseInt(debugValue); 
+        dbgDiv.hidden = !dbgFlag;
         chatStateVar = 5; // Warte auf sendeNachricht
-        addMessage('.debug:' + dbgLevel, 'bot info');
+        addMessage('debug:'+dbgFlag, 'bot info');
         textEingabe.value = '';
         return;
     }
@@ -108,13 +105,13 @@ async function sendeNachricht() {
     addMessage(text, 'user'); // User-Meldung anzeigen
     theNewMessage = addMessage(' Warte...', 'bot spinner');
     chatStateVar = 4; // Warte auf Server-Antwort
-    talkWithServer(text, theNewMessage); // async
+    talkWithServer(text);
     textEingabe.value = '';
 }
 // Background Monitor - alle ca. 100 msec
 let chatStateVar = 0;     // 0: idle - darf extern mod. werden!
 function periodical() {
-    if (dbgLevel) dbgAudioStatus.textContent = `chatStateVar: ${chatStateVar}`;
+    if (dbgFlag) dbgAudioStatus.textContent = `chatStateVar: ${chatStateVar}`;
 
     switch (chatStateVar) {
         case 0: // idle
@@ -143,24 +140,15 @@ function periodical() {
             checkAndPlayAudio();
             break;
 
-        case 9: // Alles Abbrechen während sendeNachricht
-            setChatStatus('Stop...', 'orange');
-            audioPlayer.pause();
-            audioCache = [];
-            chatStateVar = 10; // Gleich weiter
-            isLoading = false;
-            frq_ping(220, 0.1, 0.1);
-            break;
-
         case 10: // **Erwarte sendeNachricht**
-            setSendButtonGlyph('ready');
+            btnSenden.disabled = false; // Sicher            
             setChatStatus('Hab alles gesagt', 'yellow');
             chatStateVar = 0; // Zuruecksetzen
             microStatus = 1; // Micro wieder bereit
             break;
 
         default:
-            if (dbgLevel) terminalPrint('ERROR: chatStateVar:' + chatStateVar);
+            if (dbgFlag) terminalPrint('ERROR: chatStateVar:' + chatStateVar);
             setChatStatus('ERROR(internal):' + chatStateVar, 'red');
             chatStateVar = 0; // Zuruecksetzen
             microStatus = 1; // Micro wieder ggfs. bereit, falls vorhanden
@@ -175,7 +163,7 @@ function periodical() {
 let audioCache = [];
 let isProcessing = false;
 let isLoading = false;
-let playAudioUrl = null;
+let audioUrl = null;
 
 // für GET <2000 Zeichen safe, <4000: 'okÄ, >4000 evtl. Probleme
 const maxSentenceLength = 4000; // Maximale Satzlänge in Zeichen fuer die API
@@ -186,15 +174,15 @@ const audioPlayer = document.getElementById('audioPlayer');
 // Abspielen sobald möglich
 audioPlayer.oncanplay = function () {
     audioPlayer.play().catch(error => {
-        if (dbgLevel) terminalPrint('ERROR(audioPlayer): ' + error);
+        if (dbgFlag) terminalPrint('ERROR(audioPlayer): ' + error);
         setChatStatus('ERROR(audioPlayer): ' + error, 'red');
     });
 }
 // Alte URL freigeben wenn Audio beendet ist
 audioPlayer.onended = function () {
-    if (playAudioUrl) {
-        URL.revokeObjectURL(playAudioUrl);
-        playAudioUrl = null;
+    if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+        audioUrl = null;
     }
     isLoading = false;
 };
@@ -219,12 +207,12 @@ function checkAndPlayAudio() {
 
     // Nächstes Audio aus Cache holen und abspielen
     const audioBlob = audioCache.shift();
-    playAudioUrl = URL.createObjectURL(audioBlob);
-    audioPlayer.src = playAudioUrl;
+    audioUrl = URL.createObjectURL(audioBlob);
+    audioPlayer.src = audioUrl;
     audioPlayer.play().then(() => {
-        if (dbgLevel) terminalPrint(`Play - verbleibende Dateien: ${audioCache.length}`);
+        if (dbgFlag) terminalPrint(`Play - verbleibende Dateien: ${audioCache.length}`);
     }).catch(err => {
-        if (dbgLevel) terminalPrint('Fehler beim Abspielen: ' + err.message);
+        if (dbgFlag) terminalPrint('Fehler beim Abspielen: ' + err.message);
     });
 };
 
@@ -277,7 +265,7 @@ function splitIntoSentences(text) {
 
 // Audio für einen Satz abrufen
 async function fetchAudioForSentence(sentence, voice) {
-    if (dbgLevel) terminalPrint(`Satz: '${sentence.substring(0, 50)}${sentence.length > 50 ? '...' : ''}'`);
+    if (dbgFlag) terminalPrint(`Satz: '${sentence.substring(0, 50)}${sentence.length > 50 ? '...' : ''}'`);
     const methodGET = (audioPlayer.paused == true) && (audioCache.length == 0) && (isLoading == false);
 
     const formData = new FormData();
@@ -295,11 +283,11 @@ async function fetchAudioForSentence(sentence, voice) {
     }
     try {
         if (methodGET) {
-            if (dbgLevel) terminalPrint(`Lade Audio via GET/src...`);
+            if (dbgFlag) terminalPrint(`Lade Audio via GET/src...`);
             audioPlayer.src = url;
             audioPlayer.load();
         } else {
-            if (dbgLevel) terminalPrint(`Lade Audio via POST/cache...`);
+            if (dbgFlag) terminalPrint(`Lade Audio via POST/cache...`);
             var response = await fetch("./api/oai_tts.php", { method: "POST", body: formData });
             const contentType = response.headers.get('content-type');
 
@@ -307,20 +295,20 @@ async function fetchAudioForSentence(sentence, voice) {
             if (response.ok && contentType && contentType.includes('audio')) {
                 const audioBlob = await response.blob();
                 audioCache.push(audioBlob);
-                if (dbgLevel) terminalPrint(`Audio für Satz geladen: "${sentence.substring(0, 50)}${sentence.length > 50 ? '...' : ''}"`);
+                if (dbgFlag) terminalPrint(`Audio für Satz geladen: "${sentence.substring(0, 50)}${sentence.length > 50 ? '...' : ''}"`);
             } else {
                 // Fehler als Text oder JSON
                 const errorText = await response.text();
                 try {
                     const errorJson = JSON.parse(errorText);
-                    if (dbgLevel) terminalPrint(`ERROR(JSON): ${JSON.stringify(errorJson)}`);
+                    if (dbgFlag) terminalPrint(`ERROR(JSON): ${JSON.stringify(errorJson)}`);
                 } catch {
-                    if (dbgLevel) terminalPrint(`ERROR(TEXT): ${errorText.substring(0, 100)}`);
+                    if (dbgFlag) terminalPrint(`ERROR(TEXT): ${errorText.substring(0, 100)}`);
                 }
             }
         }
     } catch (error) {
-        if (dbgLevel) terminalPrint(`ERROR(Server) Scentence:"${sentence.substring(0, 50)}...": ${error.message}`);
+        if (dbgFlag) terminalPrint(`ERROR(Server) Scentence:"${sentence.substring(0, 50)}...": ${error.message}`);
     }
 }
 
@@ -330,7 +318,7 @@ export async function speakText(inputText) {
         return;
     }
     if (inputText.length === 0) {
-        if (dbgLevel) terminalPrint('Kein Text eingegeben!');
+        if (dbgFlag) terminalPrint('Kein Text eingegeben!');
         return;
     }
     isProcessing = true;
@@ -341,7 +329,7 @@ export async function speakText(inputText) {
     const normalizedText = inputText.replace(/[\n\r\t]+/g, ' ');
     // Text in Sätze zerlegen
     const sentences = splitIntoSentences(normalizedText);
-    if (dbgLevel) terminalPrint(`Text in ${sentences.length} Sätze zerlegt`);
+    if (dbgFlag) terminalPrint(`Text in ${sentences.length} Sätze zerlegt`);
 
     // Jeden Satz verarbeiten
     const selectedVoice = SPEAK_VOICE;  // Damit nicht aenderbar within Funktion
@@ -350,17 +338,17 @@ export async function speakText(inputText) {
     }
 
 
-    if (dbgLevel) terminalPrint('Alle Sätze verarbeitet');
+    if (dbgFlag) terminalPrint('Alle Sätze verarbeitet');
     isProcessing = false;
-
+    btnSenden.disabled = false;
+   
 }
 
 // === MODSay - ENDE===
 
 // ==== MODFetchAPI - START====
-// Mit ChatServer reden - muss async sein, wg, fetch(), kann evtl. mitschreiben oder callback aufrufen oder beides..
-// ***todo: Callback einbauen ***
-export async function talkWithServer(text, concerningMessage = null, callback = null, apiUrl = './api/echo_sim.php') {
+// Mit ChatServer reden
+export async function talkWithServer(text) {
     const payload = {
         apipw: API_PASSWORD,
         user: API_USER,
@@ -368,33 +356,36 @@ export async function talkWithServer(text, concerningMessage = null, callback = 
         text: text
     };
     try {
-        const response = await fetch(apiUrl, {
+        const response = await fetch('./api/echo_sim.php', {
             method: 'POST',
             body: new URLSearchParams(payload)
         });
 
+
         if (!response.ok) {
             const errorText = await response.text();
-            if (dbgLevel) terminalPrint(`POST failed: ${response.status} ${response.statusText}: ${errorText}`);
-            if (concerningMessage) updateMessage(concerningMessage, `ERROR(ServerP3): ${response.status} ${response.statusText}: ${errorText}`, 'bot error');
+            if (dbgFlag) terminalPrint(`POST failed: ${response.status} ${response.statusText}: ${errorText}`);
+            updateMessage(theNewMessage, `ERROR(ServerP3): ${response.status} ${response.statusText}: ${errorText}`, 'bot error');
             chatStateVar = -996;
             return;
         }
         const data = await response.json();
         if (data.success) {
-            const text = data?.text?.length ? data.text : '(nothing)';
-            if (concerningMessage) updateMessage(concerningMessage, text, 'bot ok');
+            const text = data?.text?.length ? data.text : '(leere Antwort)';
+            updateMessage(theNewMessage, text, 'bot ok');
             speakText(text);    // Sprichs aus!
         } else {
-            if (concerningMessage) updateMessage(concerningMessage, 'ERROR: ' + (data.error || 'Unbekannter Fehler'), 'bot error');
+            updateMessage(theNewMessage, 'ERROR: ' + (data.error || 'Unbekannter Fehler'), 'bot error');
         }
-        if (dbgLevel) terminalPrint('POST successful: ' + JSON.stringify(text));
+        if (dbgFlag) terminalPrint('POST successful: ' + JSON.stringify(text));
         chatStateVar = 5; // Fertig, nun audio setzt auch 10
+
     } catch (e) {
-        if (dbgLevel) terminalPrint('POST failed: ' + e.message);
-        if (concerningMessage) updateMessage(concerningMessage, 'ERROR(ServerP4): ' + e.message, 'bot error');
+        if (dbgFlag) terminalPrint('POST failed: ' + e.message);
+        updateMessage(theNewMessage, 'ERROR(ServerP4): ' + e.message, 'bot error');
         chatStateVar = -995;
     }
+
 }
 
 // Ausm STD-Player Audio holen und transkibe
@@ -402,11 +393,11 @@ export async function postAudio() {
     try {
         const audioSrc = stdPlayer?.src;
         if (!audioSrc) {
-            if (dbgLevel) terminalPrint('ERROR: No audio src');
+            if (dbgFlag) terminalPrint('ERROR: No audio src');
             chatStateVar = -999;
             return;
         }
-        if (dbgLevel > 1) frq_ping(880);
+        if (dbgFlag) frq_ping(880);
 
         //if (DBG) terminalPrint('Fetching audio data from player src...');
         const res = await fetch(audioSrc);
@@ -420,12 +411,12 @@ export async function postAudio() {
         formData.append('apipw', API_PASSWORD);
         if (API_USER !== undefined) formData.append('user', API_USER);
         if (USER_LANG !== undefined) formData.append('lang', USER_LANG);
-        formData.append('audio', audioBlob, 'recording' + (audioBlob.type.includes("ogg") ? ".ogg" : ".webm"));
+        formData.append('audio', audioBlob, 'recording' + USE_EXTENSION);
         const postResponse = await fetch(apiUrl, { method: 'POST', body: formData });
 
         if (!postResponse.ok) {
             const errorText = await postResponse.text();
-            if (dbgLevel) terminalPrint(`POST failed: ${postResponse.status} ${postResponse.statusText}: ${errorText}`);
+            if (dbgFlag) terminalPrint(`POST failed: ${postResponse.status} ${postResponse.statusText}: ${errorText}`);
             addMessage(`ERROR(ServerP2): ${postResponse.status} ${postResponse.statusText}: ${errorText}`, 'bot error');
             chatStateVar = -998;
             return;
@@ -438,11 +429,11 @@ export async function postAudio() {
         } else {
             textEingabe.value = spoken;
         }
-        if (dbgLevel) terminalPrint('POST successful: ' + JSON.stringify(text));
+        if (dbgFlag) terminalPrint('POST successful: ' + JSON.stringify(text));
         chatStateVar = 3; // Fertig
 
     } catch (e) {
-        if (dbgLevel) terminalPrint('POST failed: ' + e.message);
+        if (dbgFlag) terminalPrint('POST failed: ' + e.message);
         addMessage('ERROR(ServerP1): ' + e.message, 'bot error');
         chatStateVar = -997;
     }
@@ -477,6 +468,12 @@ let microAudioCtx = null;
 let dataArray = null;
 let frameMoniId = null;
 let mediaRecorder = null;
+
+// MimeType fuer MediaRecorder ist optional, aber...
+const USE_MIME_STREAM = 'audio/webm; codecs=opus';
+const USE_MIME_BLOB = 'audio/ogg; codecs=opus';
+const USE_EXTENSION = '.webm'; // 
+
 
 // rms Statistik
 let thresholdRms = 0.1; // 0.1: Laute umgebung - Ext. via Slider
@@ -514,13 +511,13 @@ stdPlayer.addEventListener('ended', () => {
 
 function addAudioChunk(data) {
     audioChunks.push(data);
-    if (dbgLevel) terminalPrint('Audio chunk: ' + data.size + ' bytes, Total Chunks: ' + audioChunks.length);
+    if (dbgFlag) terminalPrint('Audio chunk: ' + data.size + ' bytes, Total Chunks: ' + audioChunks.length);
 }
 
 
 async function startMicro() {
     try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } }); // mono nicht unb. bindend
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         if (!microAudioCtx) microAudioCtx = new AudioContext();
         if (microAudioCtx.state !== "running") await microAudioCtx.resume();
         const source = microAudioCtx.createMediaStreamSource(stream);
@@ -538,15 +535,11 @@ async function startMicro() {
         delayNode.connect(destination); // Das Ziel ist der verzögerte Stream
         delayedStream = destination.stream;
 
-        const options = {
-            // Je nach Browser ist oft "audio/webm" (Opus) oder "audio/ogg" möglich
-            mimeType:
-                MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" :
-                    MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" :
-                        MediaRecorder.isTypeSupported("audio/ogg;codecs=opus") ? "audio/ogg;codecs=opus" :
-                            undefined,
+        const options = {};
+        if (typeof USE_MIME_STREAM !== 'undefined') {
+            options.mimeType = USE_MIME_STREAM;
+            if (USE_MIME_STREAM && !MediaRecorder.isTypeSupported(USE_MIME_STREAM)) throw new Error(`MIME-Type not supported: ${USE_MIME_STREAM}`);
         }
-
         mediaRecorder = new MediaRecorder(delayedStream, options);
         mediaRecorder.ondataavailable = (e) => {
             addAudioChunk(e.data);
@@ -625,26 +618,26 @@ function computeRMSFromTimeDomain(byteArray) {
 
 // Process Audio - Audio-Chunks zu einem Blob zusammenfassen, wenn nicht zu kurz
 function processAudio(e) {
-    const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/webm" });
-    const info = "Len: " + blob.size + " bytes (" + speechTotalDur + " msec) " + blob.type;
-    if (dbgLevel) terminalPrint("Audio recorded: " + info);
-    const procAudioURL = window.URL.createObjectURL(blob);
+    const blob = new Blob(audioChunks, { type: USE_MIME_BLOB });
+    const info = "Len: " + blob.size + " bytes (" + speechTotalDur + " msec) " + USE_MIME_BLOB;
+    if (dbgFlag) terminalPrint("Audio recorded: " + info);
+    const audioURL = window.URL.createObjectURL(blob);
     audioChunks = [];
     if (microStatus === 5) microStatus = 6; // Verarbeitet!
-    stdPlayer.src = procAudioURL; // Das ist auch der temporaere Zwischenspeicher
+    stdPlayer.src = audioURL; // Das ist auch der temporaere Zwischenspeicher
 }
 
 // Sprach-Zustandsmaschine
 function updateSpeechState(frameRms) {
     const dur = performance.now() - speechStateTime0;
 
-    if (dbgLevel) dbgInfo.textContent = `microStatus: ${microStatus}  Dur: ${dur.toFixed(0)} msec`;
-    if (isMenuVisible) {
-        if (isRecording) {
+    if (dbgFlag) dbgInfo.textContent = `microStatus: ${microStatus}  Dur: ${dur.toFixed(0)} msec`;
+    if(isMenuVisible){
+        if(isRecording) {
             mediaRecorder.stop();
-            isRecording = false;
+            isRecording=false;            
         }
-        microStatus = 1;
+        microStatus=1;
         setChatStatus('Menue...', 'yellow');
         return;
     }
@@ -660,8 +653,8 @@ function updateSpeechState(frameRms) {
         case 2: // Zustand 2: Warten auf Sprache
             if (frameRms > thresholdRms) { // Sprache erkannt
                 if (mediaRecorder.state === "inactive") {
-                    mediaRecorder.start();
-                    isRecording = true;
+                     mediaRecorder.start();
+                     isRecording=true;
                 }
                 microStatus = 3;
                 speechStateTime0 = performance.now();
@@ -679,7 +672,7 @@ function updateSpeechState(frameRms) {
                 speechTotalDur = (performance.now() - speechStartTime).toFixed(0);
                 if (speechTotalDur > MAX_SPEECH_MS) { // Max. Dauer erreicht
                     mediaRecorder.stop();
-                    isRecording = false;
+                    isRecording=false;
                     speechStateTime0 = performance.now();
                     microStatus = 5;
                 }
@@ -693,7 +686,7 @@ function updateSpeechState(frameRms) {
             } else if (dur > maxPauseMs) { // Pause laenger als x sec => Ende
                 speechTotalDur = (performance.now() - speechStartTime).toFixed(0);
                 mediaRecorder.stop();
-                isRecording = false;
+                isRecording=false;
                 speechStateTime0 = performance.now();
                 microStatus = 5;
             }
@@ -706,17 +699,17 @@ function updateSpeechState(frameRms) {
         case 6: // Zustand 6: Warten auf Restart
             if (speechTotalDur > MIN_LEN_SPEECH_MS) {
                 if (speechTotalDur > MAX_SPEECH_MS) { // Max. Dauer erreicht
-                    if (dbgLevel) terminalPrint(`Speech Max Length reached (${speechTotalDur} msec), stopping.`);
+                    if (dbgFlag) terminalPrint(`Speech Max Length reached (${speechTotalDur} msec), stopping.`);
                 } else {
-                    if (dbgLevel) terminalPrint(`Speech End (${speechTotalDur} msec)`);
+                    if (dbgFlag) terminalPrint(`Speech End (${speechTotalDur} msec)`);
                 }
                 setChatStatus('Sprache beendet', 'yellow');
-                if (dbgLevel > 1) { // OPtional immer abspielen zum Testen
+                if (dbgFlag && 0) { // OPtional immer abspielen zum Testen
                     microStatus = 7;
                     stdPlayer.play(); // Zum Testen immer abspielen            
                 } else microStatus = 8; // Direkt fertig
             } else {
-                if (dbgLevel) terminalPrint(`Speech too short (${speechTotalDur} msec), discarded.`);
+                if (dbgFlag) terminalPrint(`Speech too short (${speechTotalDur} msec), discarded.`);
                 microStatus = 0; // Zuruecksetzen
             }
             break;
@@ -785,7 +778,7 @@ maxpauseSlider.addEventListener('input', maxpauseMove);
 maxpauseMove();
 thresholdMove();
 
-navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } })
+navigator.mediaDevices.getUserMedia({ audio: true })
     .then(() => {
         canvas.hidden = true;
         microStatus = 1;
@@ -805,26 +798,12 @@ navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } })
 // ==== MODUserInterface ====
 const chatVerlauf = document.getElementById('chat-verlauf');
 const textEingabe = document.getElementById('text-eingabe');
-const sendenBtn = document.getElementById('btn-senden');
-const sendenBtnGlyph = document.getElementById('senden-button-glyph');
+const btnSenden = document.getElementById('btn-senden');
 const menuToggle = document.getElementById('menu-toggle');
 const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('overlay');
 const statusEl = document.getElementById('chat-status');
 const dbgDiv = document.querySelector('.dbg');
-
-// Erstmal alle entfernen, dann bei Bedarf setzen
-export function setSendButtonGlyph(id) {
-    sendenBtnGlyph.classList.remove('bi', 'bi-box-arrow-right', 'spinner');
-    switch (id) {
-        case 'sending':
-            sendenBtnGlyph.classList.add('bi', 'spinner');
-            break;
-        case 'ready':
-        default:
-            sendenBtnGlyph.classList.add('bi', 'bi-box-arrow-right');
-    }
-}
 
 export function setChatStatus(s, color = 'silver') {
     statusEl.textContent = s;
@@ -851,7 +830,7 @@ function updateMessage(messageDiv, text, type) {
     messageDiv.textContent = text;
 }
 
-sendenBtn.addEventListener('click', sendeNachricht);
+btnSenden.addEventListener('click', sendeNachricht);
 
 textEingabe.addEventListener('keypress', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -872,7 +851,7 @@ function menuManage(flag) {
         sidebar.classList.add('active');
         overlay.classList.add('active');
     }
-    frq_ping(880, 0.1, 0.07); // Kurzer HPing
+    frq_ping(1760, 0.1, 0.07); // Kurzer Ping
     isMenuVisible = flag;
 }
 
@@ -885,7 +864,7 @@ overlay.addEventListener('click', () => {
 document.getElementById('sidebar-close').addEventListener('click', () => {
     menuManage(false); // ZU
 });
-if (dbgLevel) {
+if (dbgFlag) {
     document.querySelector('.dbg').hidden = false;
     terminalPrint(''); // Initial anzeigen
 }

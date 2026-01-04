@@ -113,7 +113,7 @@ try {
     // Save file for logging - Problem: OGG / WEBM / OPUS, immer das selbe...
     if ($log > 0) {
         $extension = match ($file['type']) {
-            'audio/webm' => 'opus',
+            'audio/webm' => 'opus', // Im Prinzip wäre .webm 'korrekter', aber Audacity meckert .webm an
             'audio/ogg' => 'ogg',
             'audio/mpeg' => 'mp3',
             default => 'dat'

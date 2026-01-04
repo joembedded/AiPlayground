@@ -242,49 +242,6 @@ header h1 {
     cursor: not-allowed;
 }
 
-/* Icon pulsiert/Shake - aus BlxDashboard */
-.jo-icon-ani-beat::before {
-    position: relative;
-    animation: joanibeat 1.2s linear infinite;
-}
-
-@keyframes joanibeat {
-
-    0%,
-    90% {
-        scale: 1;
-    }
-
-    45% {
-        scale: 1.3;
-    }
-}
-
-.jo-icon-ani-shake::before {
-    position: relative;
-    animation: joanishake 1.5s linear infinite;
-}
-
-@keyframes joanishake {
-
-    0%,
-    10%,
-    20%,
-    30% {
-        rotate: -25deg;
-    }
-
-    5%,
-    15%,
-    25%,
-    35% {
-        rotate: 25deg;
-    }
-
-    40% {
-        rotate: 0deg;
-    }
-}
 
 /* ==================== */
 /* Footer, klein BS links */
@@ -353,6 +310,7 @@ input[type="range"] {
     animation-name: spinner;
     animation-iteration-count: infinite;
     color: green;
+    background-color: white ;
 }
 
 @keyframes spinner {
@@ -369,6 +327,50 @@ input[type="range"] {
         content: '\2597';
     }
 }
+/* Icon pulsiert/Shake - aus BlxDashboard */
+.jo-icon-ani-beat::before {
+    position: relative;
+    animation: joanibeat 1.2s linear infinite;
+}
+
+@keyframes joanibeat {
+
+    0%,
+    90% {
+        scale: 1;
+    }
+
+    45% {
+        scale: 1.3;
+    }
+}
+
+.jo-icon-ani-shake::before {
+    position: relative;
+    animation: joanishake 1.5s linear infinite;
+}
+
+@keyframes joanishake {
+
+    0%,
+    10%,
+    20%,
+    30% {
+        rotate: -25deg;
+    }
+
+    5%,
+    15%,
+    25%,
+    35% {
+        rotate: 25deg;
+    }
+
+    40% {
+        rotate: 0deg;
+    }
+}
+
 
 /* ==================== */
 /* Debugging Bereich    */
