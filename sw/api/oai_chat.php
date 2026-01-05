@@ -49,7 +49,7 @@ try {
   if (strlen($sessionId) == 32 && file_exists($accessFile)) {
     $access = json_decode(file_get_contents($accessFile), true);
   }
-  if (!isset($access) || (@$access['sessionId'] !== $sessionId)) {
+  if (! !empty($access) || (@$access['sessionId'] !== $sessionId)) {
     http_response_code(401);
     throw new Exception('Access denied'); // Nix preisgeben!
   }
@@ -136,6 +136,6 @@ try {
   ], JSON_UNESCAPED_SLASHES);
   $xlog = "ERROR:'" . $e->getMessage() . "' " . $xlog;
   $ip = $_SERVER['REMOTE_ADDR'];
-  if (isset($ip))  $xlog = "IP:$ip " . $xlog;
+  if ( !empty($ip))  $xlog = "IP:$ip " . $xlog;
 }
 log2file($xlog);

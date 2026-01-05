@@ -8,7 +8,7 @@
 */
 
 //--------- globals ------ 
-export const VERSION = 'V0.0x / xx.xx.2025';
+export const VERSION = 'V0.01 / 07.01.2026';
 export const COPYRIGHT = '(C)JoEmbedded.de';
 export let dbgLevel = 2;
 
@@ -894,11 +894,17 @@ setInterval(periodical, 100); // 100 msec-Timer starten
 // Wenn test=true: Session testen
 const userNameDisplay = document.getElementById('userName');
 const infoDialog = document.getElementById('infoDialog');
+document.getElementById("infoVersion").textContent = VERSION;
 document.getElementById('infoCloseBtn').addEventListener('click', () => {
     infoDialog.close();
 });
-document.getElementById('menuInfo').addEventListener('click', async () => {
+document.getElementById('menuInfo').addEventListener('click', async (e) => {
+    e.preventDefault();
     infoDialog.showModal();
+});
+document.getElementById('loginInfoLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('infoDialog').showModal();
 });
 
 document.getElementById('menuLogout').addEventListener('click', async () => {
