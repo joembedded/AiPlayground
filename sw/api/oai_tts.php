@@ -47,7 +47,7 @@ try {
     $xlog .= " User:'$user'";
 
     $sessionId = $_REQUEST['sessionid'] ?? '';
-    $accessFile = $userDir . '/access.json';
+    $accessFile = $userDir . '/access.json.php';
     if( strlen($sessionId) == 32 && file_exists($accessFile)) {
         $access = json_decode(file_get_contents($accessFile), true);
     }

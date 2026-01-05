@@ -13,8 +13,6 @@ $log = 2; // 0: Silent, 1: Logfile schreiben 2: Log complete Reply
 $xlog = "echo_sim"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
 
-$maxFileSize = 1024 * 1024; // 1 MB
-
 // CORS headers
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
@@ -34,6 +32,7 @@ $dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 //$userDir = $dataDir + $user // later..
 
 try {
+    // Simulate processing time
     sleep(2);
     // Validate and sanitize user
     $user = preg_replace('/[^a-zA-Z0-9_-]/', '_', $_REQUEST['user'] ?? '_unknown');
@@ -45,7 +44,7 @@ try {
     $xlog .= " User:'$user'";
 
     $sessionId = $_REQUEST['sessionid'] ?? '';
-    $accessFile = $userDir . '/access.json';
+    $accessFile = $userDir . '/access.json.php';
     if( strlen($sessionId) == 32 && file_exists($accessFile)) {
         $access = json_decode(file_get_contents($accessFile), true);
     }

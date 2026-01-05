@@ -194,7 +194,7 @@ header h1 {
 #sidebar fieldset {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-sm);
-    padding: 12px;
+    padding: 6px 12px;
     margin: 8px 0;
 }
 
@@ -655,13 +655,11 @@ input[type="range"]::-moz-range-thumb:hover {
     margin: 8px;
 }
 
-.dbgInfo {
-    background-color: #fafad2;
-    padding: 8px;
-    border-radius: var(--border-radius-sm);
-    border-left: 4px solid #f0e68c;
-    margin: 8px 0;
-    display: block;
+.dbgInfoDiv {
+    background-color: #ffffd9;
+    padding: 4px;
+    margin: 4px ;
+    border-radius: var(--border-radius);
 }
 
 .audio-controls {

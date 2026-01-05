@@ -1,22 +1,21 @@
 <?php
 
 /**
- * login.php - (C) JoEmbedded - 05.01.2026
- * 
+ * login.php - (C) JoEmbedded - 04.01.2026
+ * Get sessionID and user settings
+ * Receives data via GET/POST Reply as JSON
  * Login startet ggfs. eine neue session und hinterlegt dafür eine sessionId
  * im Verzeichnis des TESTUSERs (verzeichnis mus credentials müssen vorhanden sein).
- * Die Daten sind als PHP und hashed hinterlegt, damit sicher nicht scanbar.
- * (Hash erstellen mit password_hash('Passwort', PASSWORD_DEFAULT), siehe Code unten).
+ * Die Daten sind als PHP hinterlegt, damit sicher nicht scanbar.
  *
- * Login:    http://localhost/wrk/ai/playground/sw/api/login.php?cmd=login&user=TESTUSER&password=12345678 
- * Re-Login: http://localhost/wrk/ai/playground/sw/api/login.php?cmd=logrem
+ * Login:    http://localhost/wrk/ai/playground/sw/api/login.php?user=TESTUSER&password=12345678 
+ * Re-Login: http://localhost/wrk/ai/playground/sw/api/login.php?cmd=logrem&user=TESTUSER
  * Logout:  http://localhost/wrk/ai/playground/sw/api/login.php?cmd=logout
  */
 
 declare(strict_types=1);
 
 // Configuration
-$log = 2; // 0: Silent, 1: Logfile schreiben 2: Log complete Reply(***DEV***)
 $xlog = "login"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
 
@@ -46,23 +45,31 @@ $dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 try {
     // Session-Sicherheit
     if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+        session_start([
+            'cookie_httponly' => true,
+            'cookie_samesite' => 'Lax',
+            'use_strict_mode' => true
+        ]);
     }
-    $sessionId = $_SESSION['sessionId'] ?? '';
+    
+    $sessionId = $_REQUEST['sessionId'] ?? '';
 
-    if ($log > 1) {
-        $xlog .= " ***DEV*** SessionID:" . $sessionId ?? '';
-        $xlog .= " Cmd:'" . ($_REQUEST['cmd'] ?? '') . "'";
-        $xlog .= " User:'" . ($_REQUEST['user'] ?? '') . "'";
-        $xlog .= " password:'" . ($_REQUEST['password'] ?? '') . "'";
+    // Validate and sanitize user
+    $user = $_REQUEST['user'] ?? '';
+    if (!preg_match('/^[a-zA-Z0-9_-]{' . MIN_USER_LENGTH . ',' . MAX_USER_LENGTH . '}$/', $user)) {
+        http_response_code(400);
+        throw new Exception('Invalid user format');
     }
+    $userDir = $dataDir . '/' . $user;
+    $xlog .= " User:'$user'";
+
+    $credentialsFile = $userDir . '/credentials.json.php';
 
     $cmd = $_REQUEST['cmd'] ?? '';
     if ($cmd === 'logout') { // Zum Abmelden keine weiteren Parm. nötig
         $response = ['success' => true];
-        if (!empty($sessionId) && !empty($_SESSION['user'])) { // Maximal die eigene zersterobar
+        if (!empty($sessionId) && isset($_SESSION['user'])) { // Maximal die eigene zersterobar
             $user = $_SESSION['user'];
-            $userDir = $dataDir . '/' . $user;
             $accessFile = $userDir . '/access.json.php';
             if (file_exists($accessFile)) {
                 unlink($accessFile);
@@ -70,8 +77,37 @@ try {
             $xlog .= " logout";
         }
         $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params['path'], $params['domain'],
+                $params['secure'], $params['httponly']
+            );
+        }
         session_destroy();
     } else {
+
+        // Check user directory (nicht anlegen!) und alle antworten identisch ***
+        if (!is_dir($userDir)) {
+            http_response_code(401);
+            throw new Exception('Access denied'); // Nix preisgeben!
+        }
+        if (!file_exists($credentialsFile)) {
+            http_response_code(401);
+            throw new Exception('Access denied'); // Nix preisgeben!
+        }
+        
+        $credentialsContent = file_get_contents($credentialsFile);
+        if ($credentialsContent === false) {
+            http_response_code(401);
+            throw new Exception('Access denied');
+        }
+        
+        $credentials = json_decode($credentialsContent, true);
+        if (!is_array($credentials) || empty($credentials)) {
+            http_response_code(401);
+            throw new Exception('Access denied'); // Nix preisgeben!
+        }
 
         if ($cmd === 'logrem') {
             $sessionId = $_SESSION['sessionId'] ?? '';
@@ -79,13 +115,7 @@ try {
                 http_response_code(401);
                 throw new Exception('Access denied'); // Nix preisgeben!
             }
-            $user = $_SESSION['user'] ?? '';
-            if (empty($user)) {
-                http_response_code(401);
-                throw new Exception('Access denied'); // Nix preisgeben!
-            }
-            $userDir = $dataDir . '/' . $user;
-
+            
             // Verify session file matches
             $accessFile = $userDir . '/access.json.php';
             if (file_exists($accessFile)) {
@@ -99,61 +129,28 @@ try {
                 throw new Exception('Access denied');
             }
             $xlog .= " login(remembered)";
-        } else if ($cmd === 'login') { // regular login
-            // Validate and sanitize user
-            $user = $_REQUEST['user'] ?? '';
-            if (!preg_match('/^[a-zA-Z0-9_-]{' . MIN_USER_LENGTH . ',' . MAX_USER_LENGTH . '}$/', $user)) {
-                http_response_code(400);
-                throw new Exception('Invalid user format');
-            }
-            $userDir = $dataDir . '/' . $user;
-            $xlog .= " User:'$user'";
-
-            $credentialsFile = $userDir . '/credentials.json.php';
-
-            // Check user directory (nicht anlegen!) und alle antworten identisch ***
-            if (!is_dir($userDir)) {
-                http_response_code(401);
-                throw new Exception('Access denied'); // Nix preisgeben!
-            }
-            if (!file_exists($credentialsFile)) {
-                http_response_code(401);
-                throw new Exception('Access denied'); // Nix preisgeben!
-            }
-
-            $credentialsContent = file_get_contents($credentialsFile);
-            if ($credentialsContent === false) {
-                http_response_code(401);
-                throw new Exception('Access denied');
-            }
-
-            $credentials = json_decode($credentialsContent, true);
-            if (!is_array($credentials) || empty($credentials)) {
-                http_response_code(401);
-                throw new Exception('Access denied'); // Nix preisgeben!
-            }
+        } else { // regular login
 
             // Validate password
-            $userEnteredPassword = $_REQUEST['password'] ?? '';
-            if (strlen($userEnteredPassword) < MIN_PASSWORD_LENGTH || strlen($userEnteredPassword) > MAX_PASSWORD_LENGTH) {
+            $password = $_REQUEST['password'] ?? '';
+            if (strlen($password) < MIN_PASSWORD_LENGTH || strlen($password) > MAX_PASSWORD_LENGTH) {
                 http_response_code(401);
                 throw new Exception('Access denied'); // Nix preisgeben!
             }
 
-            // Verify password with password_verify
-            $storedPasswordHash = $credentials['passwordhash'] ?? '';
-            if (empty($storedPasswordHash)) {
+            // Verify password (use password_verify for hashed passwords in production)
+            $storedPassword = $credentials['password'] ?? '';
+            if (empty($storedPassword)) {
                 http_response_code(401);
                 throw new Exception('Access denied');
             }
-
-            // Verify hashed password
-            // echo password_hash($userEnteredPassword, PASSWORD_DEFAULT); exit; // Gen. TestHash
-            if (!password_verify($userEnteredPassword, $storedPasswordHash)) {
+            
+            // Plain text comparison (consider using password_verify($password, $storedPassword) for hashed passwords)
+            if ($storedPassword !== $password) {
                 http_response_code(401);
                 throw new Exception('Access denied'); // Nix preisgeben!
             }
-
+            
             $sessionId = bin2hex(random_bytes(SESSION_ID_BYTES)); // 32 Zeichen Session-ID
 
             // Save credentials and access time
@@ -162,7 +159,7 @@ try {
                 'sessionId' => $sessionId,
                 'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
             ];
-
+            
             if (file_put_contents(
                 $userDir . '/access.json.php',
                 json_encode($accessData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT)
@@ -177,25 +174,6 @@ try {
             $_SESSION['user'] = $user;
             $_SESSION['sessionId'] = $sessionId;
             $_SESSION['login_time'] = time();
-/*
-            // Explizit Session-Cookie mit Sicherheitsparametern setzen
-            $params = session_get_cookie_params();
-            setcookie(
-                session_name(),
-                session_id(),
-                [
-                    'expires' => time() + 86400 * 3650, // 10 Jahre
-                    'path' => $params['path'],
-                    'domain' => $params['domain'],
-                    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
-                    'httponly' => true,
-                    'samesite' => 'Lax'
-                ]
-            );
-*/
-        } else {
-            http_response_code(400);
-            throw new Exception('Invalid command');
         }
 
         $personaDir = __DIR__ . '/../persona';
@@ -208,15 +186,15 @@ try {
             http_response_code(500);
             throw new Exception("Missing hellos file for language: $userLang");
         }
-
+        
         $hellosContent = file_get_contents($hellosFile);
         if ($hellosContent === false) {
             http_response_code(500);
             throw new Exception("Failed to read hellos file");
         }
-
-        $helloAll = json_decode($hellosContent, true);
-        if (empty($helloAll) || !is_array($helloAll['helpTxts'])) {
+        
+        $hellos = json_decode($hellosContent, true);
+        if (!is_array($hellos) || empty($hellos)) {
             http_response_code(500);
             throw new Exception("Invalid hellos file format");
         }
@@ -227,7 +205,7 @@ try {
             'user' => $user,
             'sessionId' => $sessionId,
             'userLang' => $userLang,
-            'helpTexts' => $helloAll['helpTxts'] ,
+            'helpTexts' => $hellos,
             'speakVoice' => $narrator,
         ];
     }

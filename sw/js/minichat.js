@@ -62,7 +62,7 @@ export async function jsSleepMs(ms = 1) {
 
 // === MODMainChat - START===
 let helpTxts = [
-    '?'
+    '(noHelp)'
 ];
 let hlpIdx = 0;
 
@@ -78,7 +78,7 @@ async function sendeNachricht() {
     if (text.length === 0) {
         //text ='\u2424'; // NL-Symbol
         const help = helpTxts[hlpIdx];
-        hlpIdx = (hlpIdx + 1) % helpTxts.length;
+        if (helpTxts.length) hlpIdx = (hlpIdx + 1) % helpTxts.length;
         addMessage(help, 'bot info');
         chatStateVar = 5; // Warte auf sendeNachricht
         speakText(help);
@@ -781,12 +781,12 @@ maxpauseSlider.addEventListener('input', maxpauseMove);
 maxpauseMove();
 thresholdMove();
 
+microBtn.addEventListener('click', microBtnCLick);
 navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } })
     .then(() => {
         canvas.hidden = true;
         microStatus = 1;
         microBtn.disabled = false;
-        microBtn.addEventListener('click', microBtnCLick);
 
         thresholdSlider.disabled = false;
         maxpauseSlider.disabled = false;
@@ -908,26 +908,27 @@ document.getElementById('loginInfoLink').addEventListener('click', (e) => {
 });
 
 document.getElementById('menuLogout').addEventListener('click', async () => {
-        await login(2); // Logout
-        location.reload(); // Seite neu laden
+    await login('logout'); // Logout
+    location.reload(); // Seite neu laden
 });
 
-export async function login(lcode, user = '', password = '', statusElement = null) {
+export async function login(cmd = '', user = '', password = '', statusElement = null) {
     const payload = {
         user: user,
-        password: password
+        password: password,
+        cmd: cmd
     };
     try {
         // Login, Logtest, Logout
-        const lapi= ['./api/login.php','./api/logrem.php','./api/logout.php'];
-        const response = await fetch(lapi[lcode] , {
+        const response = await fetch('./api/login.php', {
             method: 'POST',
             body: new URLSearchParams(payload)
         });
+
         if (!response.ok) {
             const errorText = await response.text();
             if (dbgLevel) terminalPrint(`POST failed: ${response.status} ${response.statusText}: ${errorText}`);
-            statusElement.textContent = `Login failed: ${response.status} ${response.statusText}: ${errorText}`;
+            if (statusElement) statusElement.textContent = `Login failed: ${response.status} ${response.statusText}: ${errorText}`;
             return false;
         }
         const data = await response.json();
@@ -937,39 +938,45 @@ export async function login(lcode, user = '', password = '', statusElement = nul
             userNameDisplay.textContent = apiUser;
             userLanguage = data.userLang;
             speakVoice = data.speakVoice;
-            helpTxts = data.helpTexts;
+            const nHelpTexts = data.helpTexts;
+            helpTxts = nHelpTexts;
             return true
         }
-        if (dbgLevel) terminalPrint('POST returned: ' + JSON.stringify(text)); // Nur Text reicht
+        if (dbgLevel) terminalPrint('POST returned: ' + JSON.stringify(data));
     } catch (e) {
         if (dbgLevel) terminalPrint('POST failed: ' + e.message);
     }
     return false;
 }
 // Wenn wir schon eingeloggt sind, dann OK
+const credentialsDialog = document.getElementById('credentials');
+document.getElementById('btn-login').addEventListener('click', async () => {
+    const user = document.getElementById('input-user').value.trim();
+    const password = document.getElementById('input-password').value.trim();
+    const loginStatus = document.getElementById('login-error');
+    if (user.length < 6 || password.length < 8) {
+        loginStatus.textContent = 'Benutzername mindestens 6 Zeichen,Passwort mindestens 8 Zeichen!';
+        frq_ping(220, 0.5, 0.2);
+        return;
+    }
+    loginStatus.textContent = 'Anmeldung läuft...';
+    const logres = await login('login', user, password, loginStatus);
+    if (logres === true) { // Full Login
+        loginStatus.textContent = 'Anmeldung OK!';
+        await jsSleepMs(200); 
+        frq_ping(880, 0.1, 0.07); // Kurzer HPing
+        credentialsDialog.close();
+    } else {
+        loginStatus.textContent = 'Anmeldung fehlgeschlagen!';
+        frq_ping(220, 0.5, 0.2);
+    }
+});
+
 export async function mainLoginDialog() {
-    const res = await login(1); // Test-Login
-    if (res == true) {
+    const res = await login('logrem'); // Test-Login
+    if (res === true) {
         return; // Alles ok
     }
-    const credentialsDialog = document.getElementById('credentials');
-    document.getElementById('btn-login').addEventListener('click', async () => {
-        const user = document.getElementById('input-user').value.trim();
-        const password = document.getElementById('input-password').value.trim();
-        const loginStatus = document.getElementById('login-error');
-        if (user.length < 6 || password.length < 8) {
-            loginStatus.text = 'Benutzername mindestens 6 Zeichen,Passwort mindestens 8 Zeichen!';
-            frq_ping(220, 0.2, 0.1);
-            return;
-        }
-        loginStatus.textContent = 'Anmeldung läuft...';
-        if (await login(0 , user, password, loginStatus) == true) { // Full Login
-            credentialsDialog.close();
-        } else {
-            loginStatus.textContent = 'Anmeldung fehlgeschlagen!';
-            frq_ping(220, 0.2, 0.1);
-        }
-    });
     credentialsDialog.showModal();
 }
 mainLoginDialog();

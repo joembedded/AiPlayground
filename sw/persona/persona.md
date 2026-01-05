@@ -1,9 +1,10 @@
 # Persona.md
 
 Dieser Ordner enthält Personalisierungen, z.B. die Assistenten und diverse IDs.
+Und z.B. Begruessungstexte
 
 > [!NOTE]
-> Zur `$promptId` sie ChatGPT
+> Zur `$promptId` siehe ChatGPT
 > Man kann sie sich als eine Art „Vorlage“ oder „vorkonfigurierten Bot“ vorstellen, 
 > der auf den Servern von OpenAI gespeichert ist.
 
