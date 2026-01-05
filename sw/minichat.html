@@ -17,15 +17,38 @@
 </head>
 
 <body>
+    <dialog id="credentials">
+        <h2>Anmeldung</h2>
+        <label for="input-user">Benutzer:</label>
+        <input type="text" id="input-user" placeholder="Benutzername" value="juergen" minlength="6" maxlength="32"
+            required />
+        <label for="input-password"><input type="checkbox" id="show-password"
+                onchange="document.getElementById('input-password').type = this.checked ? 'text' : 'password'" />
+            Passwort:</label>
+        <input type="password" id="input-password" placeholder="Passwort" value="12345678" minlength="8" maxlength="32"
+            required />
+        <div id="login-error"></div>
+        <button id="btn-login">Anmelden</button>
+    </dialog>
+    <dialog id="infoDialog">
+        <h2>Info</h2>
+        <div id="infoContent">
+            MiniChat - Einfacher Chat<br>
+            mit Sprachunterstützung<br><br>
+            (C)JoEmbedded.de 2026<br>
+        </div>
+        <button id="infoCloseBtn">Schließen</button>
+    </dialog>
     <div id="overlay"></div>
     <div id="sidebar">
         <h2><button id="sidebar-close">
                 <i class="bi bi-x-lg"></i></button>Hauptmenü</h2>
         <br>
         <ul>
-            <li><a href="#" onclick="alert('Setup *tbd*'); return false;"><i class="bi bi-gear-fill"></i> Einstellungen</a></li>
-            <li><a href="#" onclick="alert('Info *tbd*'); return false;"><i class="bi bi-info-circle-fill"></i> Info</a></li>
-            <li><a href="#" onclick="alert('Exit *tbd*'); return false;"><i class="bi bi-box-arrow-right"></i> Abmelden</a></li>
+            <li><a href="#" id="menuInfo"><i class="bi bi-info-circle-fill"></i> Info</a>
+            </li>
+            <li><a href="#" id="menuLogout"><i class="bi bi-box-arrow-right"></i>
+                    User '<b id="userName">USER</b>' abmelden</a></li>
             <li>
                 <i class="bi bi-mic-fill"></i>
                 <label for="threshold">Threshold (Noisecancel): <span id="thresholdFeedback">x</span></label><br>
@@ -45,7 +68,7 @@
                     senden</label><br>
                 <br>
                 <label for="autoPlayChk"><input id="autoPlayChk" type="checkbox" _checked /> Micro AN lassen
-                   </label><br>
+                </label><br>
             </li>
         </ul>
     </div>
@@ -59,7 +82,7 @@
 
     <div id="chat-verlauf"></div>
     <!-- WICHTIG: Debuggig Bereich, optional anzeigen -->
-    <div class = "dbg" hidden style="border: 2px solid blue;">
+    <div class="dbg" hidden style="border: 2px solid blue;">
         <span class="dbgInfo" id="dbginfo">???</span> -
         <span class="dbgInfo" id="audioStatus">???</span><br>
         <audio class="stdplayer" controls></audio>

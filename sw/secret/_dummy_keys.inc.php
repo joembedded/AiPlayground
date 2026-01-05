@@ -3,5 +3,4 @@
 // secret/keys.inc.php - Keep all private keys/data here (this is only a dummy file)
 define('OPENAI_API_KEY', 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');  
 define('USERDIR', 'privatex42xdirectory'); // Use a secure user directory name
-define('API_PASSWORD', 'SeCrEtX123!'); // Use a strong password
 //*** 

@@ -1,7 +1,6 @@
 <?php
-
 /**
- * oai_tts.php - Text-to-Speech mit OpenAI API - (C) JoEmbedded - 01.01.2026
+ * oai_tts.php - Text-to-Speech mit OpenAI API - (C) JoEmbedded - 04.01.2026
  * Parameter:
  *   text   - Vorlese-Text - Darf so lang sein wie API kann
  *   voice  - Stimme (Dateiname ohne .json aus /voices)
@@ -34,14 +33,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 include_once __DIR__ . '/../secret/keys.inc.php';
 $apiKey = OPENAI_API_KEY;
 $speechDir = __DIR__ . '/../../' . USERDIR . '/audio/speech';
+$dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 $voicesDir = __DIR__ . '/../voices';
 
 try {
-    // Validate API password
-    if (($_REQUEST['apipw'] ?? '') !== API_PASSWORD) {
+    // Validate and sanitize user
+    $user = preg_replace('/[^a-zA-Z0-9_-]/', '_', $_REQUEST['user'] ?? '_unknown');
+    if (strlen($user) < 6 || strlen($user) > 32) {
         http_response_code(401);
-        throw new Exception('Not authorized');
+        throw new Exception('Access denied'); // Nix preisgeben!
     }
+    $userDir = $dataDir . '/' . $user;
+    $xlog .= " User:'$user'";
+
+    $sessionId = $_REQUEST['sessionid'] ?? '';
+    $accessFile = $userDir . '/access.json';
+    if( strlen($sessionId) == 32 && file_exists($accessFile)) {
+        $access = json_decode(file_get_contents($accessFile), true);
+    }
+    if (!isset($access) || (@$access['sessionId'] !== $sessionId) ) {
+        http_response_code(401);
+        throw new Exception('Access denied'); // Nix preisgeben!
+    }
+    // $xlog .= " SessionID:'$sessionId'";
 
     if (!$apiKey) {
         http_response_code(500);

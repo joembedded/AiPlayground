@@ -16,5 +16,7 @@ Bsp. 'vilo':
 }
 ```
 
-- `narrator_m_vilo.json`: Sehr ruhiger, männlicher Erzähler
+- `narrator_m_vilo.json`: Sehr ruhiger, männlicher Erzähler 
+- `narrator_f_jane.json`: Freundliche Frau
+- `narrator_m_jack.json`: Männlich, altes `tts-1` Modell ohne Extras
 

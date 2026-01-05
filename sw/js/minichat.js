@@ -1,8 +1,10 @@
 /* minichat.js - Minichat 
 *
-* Fragment für ein Mini-Chatsystem mit Voice
+* Ziemlich vollständiges Fragment für ein Mini-Chatsystem mit Voice STT/TTS
+* Hinweis: Die beiden Zustandsmaschinen sind numerisch codiert. 
+* Das ist nicht unbedingt üblich, Aber für kleine Systeme ok.
 * 
-* Zum Debuggen dbgLevel auf 1 od. 2 setzen
+* Zum Debuggen dbgLevel auf 1 od. 2 setzen oder via '.debug N' Befehl
 */
 
 //--------- globals ------ 
@@ -10,12 +12,11 @@ export const VERSION = 'V0.0x / xx.xx.2025';
 export const COPYRIGHT = '(C)JoEmbedded.de';
 export let dbgLevel = 2;
 
-// *** Muss mit keys.inc.php uebereinstimmen *todo* extern holen ***
-export const API_PASSWORD = 'Leg1310LX'; //  
-export const API_USER = 'Juergen'; // Test special chars
-export const USER_LANG = 'de-DE';
-export const SPEAK_VOICE = 'narrator_f_jane'; // Standard Stimme
-// *** Muss mit keys.inc.php uebereinstimmen *todo* extern holen ***
+// Session Credentials
+export let sessionId = null; // 32 Zeichen SessionID
+export let apiUser = null; // z.B. 'testuser'
+export let userLanguage = null; // de-DE
+export let speakVoice = null; // z.B 'narrator_f_jane'; 
 
 // -------- ENDE globals ------
 
@@ -60,15 +61,8 @@ export async function jsSleepMs(ms = 1) {
 //=== ENDE MODMinitools ===
 
 // === MODMainChat - START===
-const helpTxts = [
-    'Hallo. Wie kann ich helfen?',
-    'Kann ich behilflich sein?',
-    'Womit kann ich helfen?',
-    'Hallo! Was kann ich tun?',
-    'Kann ich behilflich sein?',
-    'Fragen? Ich helfe gerne.',
-    'Was kann ich tun?',
-    'Worum geht es?',
+let helpTxts = [
+    '?'
 ];
 let hlpIdx = 0;
 
@@ -179,13 +173,13 @@ let playAudioUrl = null;
 const maxSentenceLength = 4000; // Maximale Satzlänge in Zeichen fuer die API
 const splitShortSentencesFlag = false; // true
 
-
 const audioPlayer = document.getElementById('audioPlayer');
 // Abspielen sobald möglich
 audioPlayer.oncanplay = function () {
     audioPlayer.play().catch(error => {
-        if (dbgLevel) terminalPrint('ERROR(audioPlayer): ' + error);
-        setChatStatus('ERROR(audioPlayer): ' + error, 'red');
+        if (dbgLevel) terminalPrint('ERROR(audioPlayerA): ' + error);
+        setChatStatus('ERROR(audioPlayerA): ' + error, 'red');
+        isLoading = false;
     });
 }
 
@@ -197,7 +191,11 @@ audioPlayer.onended = function () {
     }
     isLoading = false;
 };
-
+audioPlayer.onerror = function (error) {
+    if (dbgLevel) terminalPrint('ERROR(audioPlayerB): ' + error);
+    setChatStatus('ERROR(audioPlayerB): ' + error, 'red');
+    isLoading = false;
+}
 
 // Prüfen und Audio abspielen
 function checkAndPlayAudio() {
@@ -226,7 +224,6 @@ function checkAndPlayAudio() {
         if (dbgLevel) terminalPrint('Fehler beim Abspielen: ' + err.message);
     });
 };
-
 
 // Text in Sätze zerlegen
 function splitIntoSentences(text) {
@@ -273,7 +270,6 @@ function splitIntoSentences(text) {
     return sentences;
 }
 
-
 // Audio für einen Satz abrufen 
 // Fängt ggfs. SOFORT an zu spielen, wenn Player idle ist. Dazu Abküerzung vis <audio>.src verwenden
 async function fetchAudioForSentence(sentence, voice) {
@@ -284,13 +280,15 @@ async function fetchAudioForSentence(sentence, voice) {
     if (!methodGET) {
         formData.append('text', sentence);
         formData.append("voice", voice);
-        formData.append('apipw', API_PASSWORD);
-        if (API_USER !== undefined) formData.append('user', API_USER);
+        formData.append('sessionid', sessionId);
+        formData.append('user', apiUser);
         formData.append('stream', '1');
     } else {
-        var url = `./api/oai_tts.php?text=${encodeURIComponent(sentence)}&voice=${encodeURIComponent(voice)}&apipw=${encodeURIComponent(API_PASSWORD)}&stream=1`;
-        if (API_USER !== undefined) url += `&user=${encodeURIComponent(API_USER)}`;
-
+        var url = `./api/oai_tts.php?`;
+        url += `text=${encodeURIComponent(sentence)}`;
+        url += `&voice=${encodeURIComponent(voice)}`;
+        url += `&sessionid=${encodeURIComponent(sessionId)}&stream=1`;
+        url += `&user=${encodeURIComponent(apiUser)}`;
         isLoading = true;
     }
     try {
@@ -344,7 +342,7 @@ export async function speakText(inputText) {
     if (dbgLevel) terminalPrint(`Text in ${sentences.length} Sätze zerlegt`);
 
     // Jeden Satz verarbeiten
-    const selectedVoice = SPEAK_VOICE;  // Damit nicht aenderbar within Funktion
+    const selectedVoice = speakVoice;  // Damit nicht aenderbar within Funktion
     for (let i = 0; i < sentences.length; i++) {
         await fetchAudioForSentence(sentences[i], selectedVoice);
     }
@@ -358,17 +356,17 @@ export async function speakText(inputText) {
 // === MODSay - ENDE===
 
 // ==== MODFetchAPI - START====
-// Mit ChatServer reden - muss async sein, wg, fetch(), kann evtl. mitschreiben oder callback aufrufen oder beides..
-// ***todo: Callback einbauen ***
-export async function talkWithServer(text, concerningMessage = null, callback = null, apiUrl = './api/echo_sim.php') {
+// Mit ChatServer reden/login - muss async sein, wg, fetch(), kann evtl. mitschreiben oder callback aufrufen oder beides..
+// reguleren Chat mit Server
+export async function talkWithServer(text, concerningMessage = null) {
     const payload = {
-        apipw: API_PASSWORD,
-        user: API_USER,
-        lang: USER_LANG,
+        sessionid: sessionId,
+        user: apiUser,
+        lang: userLanguage,
         text: text
     };
     try {
-        const response = await fetch(apiUrl, {
+        const response = await fetch('./api/echo_sim.php', {
             method: 'POST',
             body: new URLSearchParams(payload)
         });
@@ -382,14 +380,15 @@ export async function talkWithServer(text, concerningMessage = null, callback = 
         }
         const data = await response.json();
         if (data.success) {
-            const text = data?.text?.length ? data.text : '(nothing)';
+            const text = data?.text?.length ? data.text : '(nothing)'; // Text ist immer enthalten
             if (concerningMessage) updateMessage(concerningMessage, text, 'bot ok');
             speakText(text);    // Sprichs aus!
+            chatStateVar = 5; // Fertig, nun audio setzt auch 10
         } else {
             if (concerningMessage) updateMessage(concerningMessage, 'ERROR: ' + (data.error || 'Unbekannter Fehler'), 'bot error');
+            chatStateVar = -994;
         }
-        if (dbgLevel) terminalPrint('POST successful: ' + JSON.stringify(text));
-        chatStateVar = 5; // Fertig, nun audio setzt auch 10
+        if (dbgLevel) terminalPrint('POST returned: ' + JSON.stringify(text)); // Nur Text reicht
     } catch (e) {
         if (dbgLevel) terminalPrint('POST failed: ' + e.message);
         if (concerningMessage) updateMessage(concerningMessage, 'ERROR(ServerP4): ' + e.message, 'bot error');
@@ -416,9 +415,9 @@ export async function postAudio() {
 
         const apiUrl = './api/oai_stt.php';
         const formData = new FormData();
-        formData.append('apipw', API_PASSWORD);
-        if (API_USER !== undefined) formData.append('user', API_USER);
-        if (USER_LANG !== undefined) formData.append('lang', USER_LANG);
+        formData.append('sessionid', sessionId);
+        formData.append('user', apiUser);
+        if (userLanguage !== undefined) formData.append('lang', userLanguage);
         formData.append('audio', audioBlob, 'recording' + (audioBlob.type.includes("ogg") ? ".ogg" : ".webm"));
         const postResponse = await fetch(apiUrl, { method: 'POST', body: formData });
 
@@ -447,7 +446,6 @@ export async function postAudio() {
     }
 }
 // ==== ENDE MODFetchAPI ====
-
 
 // ==== MODMicofone - START====
 
@@ -515,7 +513,6 @@ function addAudioChunk(data) {
     audioChunks.push(data);
     if (dbgLevel) terminalPrint('Audio chunk: ' + data.size + ' bytes, Total Chunks: ' + audioChunks.length);
 }
-
 
 async function startMicro() {
     try {
@@ -889,9 +886,87 @@ if (dbgLevel) {
     terminalPrint(''); // Initial anzeigen
 }
 
-
 setInterval(periodical, 100); // 100 msec-Timer starten
 
 // === ENDE MODUserInterface ===
+
+// === MODLogin Start ===
+// Wenn test=true: Session testen
+const userNameDisplay = document.getElementById('userName');
+const infoDialog = document.getElementById('infoDialog');
+document.getElementById('infoCloseBtn').addEventListener('click', () => {
+    infoDialog.close();
+});
+document.getElementById('menuInfo').addEventListener('click', async () => {
+    infoDialog.showModal();
+});
+
+document.getElementById('menuLogout').addEventListener('click', async () => {
+        await login(2); // Logout
+        location.reload(); // Seite neu laden
+});
+
+export async function login(lcode, user = '', password = '', statusElement = null) {
+    const payload = {
+        user: user,
+        password: password
+    };
+    try {
+        // Login, Logtest, Logout
+        const lapi= ['./api/login.php','./api/logrem.php','./api/logout.php'];
+        const response = await fetch(lapi[lcode] , {
+            method: 'POST',
+            body: new URLSearchParams(payload)
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            if (dbgLevel) terminalPrint(`POST failed: ${response.status} ${response.statusText}: ${errorText}`);
+            statusElement.textContent = `Login failed: ${response.status} ${response.statusText}: ${errorText}`;
+            return false;
+        }
+        const data = await response.json();
+        if (data.success) {
+            sessionId = data.sessionId;
+            apiUser = data.user;
+            userNameDisplay.textContent = apiUser;
+            userLanguage = data.userLang;
+            speakVoice = data.speakVoice;
+            helpTxts = data.helpTexts;
+            return true
+        }
+        if (dbgLevel) terminalPrint('POST returned: ' + JSON.stringify(text)); // Nur Text reicht
+    } catch (e) {
+        if (dbgLevel) terminalPrint('POST failed: ' + e.message);
+    }
+    return false;
+}
+// Wenn wir schon eingeloggt sind, dann OK
+export async function mainLoginDialog() {
+    const res = await login(1); // Test-Login
+    if (res == true) {
+        return; // Alles ok
+    }
+    const credentialsDialog = document.getElementById('credentials');
+    document.getElementById('btn-login').addEventListener('click', async () => {
+        const user = document.getElementById('input-user').value.trim();
+        const password = document.getElementById('input-password').value.trim();
+        const loginStatus = document.getElementById('login-error');
+        if (user.length < 6 || password.length < 8) {
+            loginStatus.text = 'Benutzername mindestens 6 Zeichen,Passwort mindestens 8 Zeichen!';
+            frq_ping(220, 0.2, 0.1);
+            return;
+        }
+        loginStatus.textContent = 'Anmeldung läuft...';
+        if (await login(0 , user, password, loginStatus) == true) { // Full Login
+            credentialsDialog.close();
+        } else {
+            loginStatus.textContent = 'Anmeldung fehlgeschlagen!';
+            frq_ping(220, 0.2, 0.1);
+        }
+    });
+    credentialsDialog.showModal();
+}
+mainLoginDialog();
+// === ENDE MODLogin ===
 
 console.log('Minichat:', VERSION);

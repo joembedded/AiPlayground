@@ -1,0 +1,11 @@
+{
+    "model": "gpt-4.1-nano",
+    "input": [
+        {
+            "role": "user",
+            "content": "USERTEXT"
+        }
+    ],
+
+    "store": true
+}

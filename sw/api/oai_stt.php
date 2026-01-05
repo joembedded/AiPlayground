@@ -31,22 +31,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 include_once __DIR__ . '/../secret/keys.inc.php';
 $apiKey = OPENAI_API_KEY;
 $uploadDir = __DIR__ . '/../../' . USERDIR . '/audio/uploads';
+$dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 
 try {
-    // Validate API password
-    if (($_REQUEST['apipw'] ?? '') !== API_PASSWORD) {
-        http_response_code(401);
-        throw new Exception('Not authorized');
-    }
-
     // Validate and sanitize user
     $user = preg_replace('/[^a-zA-Z0-9_-]/', '_', $_REQUEST['user'] ?? '_unknown');
-    if (strlen($user) < 1 || strlen($user) > 32) {
-        http_response_code(400);
-        throw new Exception('User must be 1-32 characters');
+    if (strlen($user) < 6 || strlen($user) > 32) {
+        http_response_code(401);
+        throw new Exception('Access denied'); // Nix preisgeben!
     }
-    $uploadDir .= '/' . $user;
+    $userDir = $dataDir . '/' . $user;
     $xlog .= " User:'$user'";
+
+    $sessionId = $_REQUEST['sessionid'] ?? '';
+    $accessFile = $userDir . '/access.json';
+    if (strlen($sessionId) == 32 && file_exists($accessFile)) {
+        $access = json_decode(file_get_contents($accessFile), true);
+    }
+    if (!isset($access) || (@$access['sessionId'] !== $sessionId)) {
+        http_response_code(401);
+        throw new Exception('Access denied'); // Nix preisgeben!
+    }
+    // $xlog .= " SessionID:'$sessionId'";
 
     // Validate language
     $lang = $_REQUEST['lang'] ?? 'de-DE';
@@ -66,11 +72,6 @@ try {
         throw new Exception('Method not allowed');
     }
 
-    // Create upload directory
-    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
-        http_response_code(500);
-        throw new Exception('Failed to create upload directory');
-    }
 
     // Validate file upload
     if (!isset($_FILES['audio'])) {
@@ -123,6 +124,12 @@ try {
         if ($dbgpost > 0) $filename = 'dbg_' . $filename;
         $filepath = $uploadDir . '/' . $filename;
 
+        // Create upload directory
+        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+            http_response_code(500);
+            throw new Exception('Failed to create upload directory');
+        }
+
         if (!copy($file['tmp_name'], $filepath)) {
             http_response_code(500);
             throw new Exception('Failed to save file');
@@ -137,7 +144,7 @@ try {
             'message' => 'File uploaded for debugging',
             'filename' => $filename ?? '(null)'
         ], JSON_UNESCAPED_SLASHES);
-        $xlog.= " DbgPost:'$filename'";
+        $xlog .= " DbgPost:'$filename'";
         log2file($xlog);
         exit;
     }
@@ -189,9 +196,8 @@ try {
         'success' => false,
         'error' => $e->getMessage()
     ], JSON_UNESCAPED_SLASHES);
-    $xlog = "ERROR:'" . $e->getMessage()."' " . $xlog;
-    $ip=$_SERVER['REMOTE_ADDR'];
-    if(isset($ip))  $xlog = "IP:$ip ".$xlog;
-
+    $xlog = "ERROR:'" . $e->getMessage() . "' " . $xlog;
+    $ip = $_SERVER['REMOTE_ADDR'];
+    if (isset($ip))  $xlog = "IP:$ip " . $xlog;
 }
 log2file($xlog);

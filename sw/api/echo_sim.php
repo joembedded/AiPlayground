@@ -3,8 +3,8 @@
  * echo_sim.php - (C) JoEmbedded - 01.01.2026
  * Simple Echo-Simulater with states
  * Receives chat via POST Reply as JSON
- * http://localhost/wrk/ai/playground/sw/api/echo_sim.php?apipw=Leg1310LX&user=testuser 
-*/
+ * http://localhost/wrk/ai/playground/sw/api/echo_sim.php?sessionid=dea1de3b866853f2238abc9fbbc5766a&user=testuser 
+ */
 
 declare(strict_types=1);
 
@@ -35,28 +35,27 @@ $dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 
 try {
     sleep(2);
-    // Validate API password
-    if (($_REQUEST['apipw'] ?? '') !== API_PASSWORD) {
-        http_response_code(401);
-        throw new Exception('Not authorized'.@$_REQUEST['apipw']."*");
-    }
-
     // Validate and sanitize user
     $user = preg_replace('/[^a-zA-Z0-9_-]/', '_', $_REQUEST['user'] ?? '_unknown');
-    if (strlen($user) < 1 || strlen($user) > 32) {
-        http_response_code(400);
-        throw new Exception('User must be 1-32 characters');
+    if (strlen($user) < 6 || strlen($user) > 32) {
+        http_response_code(401);
+        throw new Exception('Access denied'); // Nix preisgeben!
     }
     $userDir = $dataDir . '/' . $user;
     $xlog .= " User:'$user'";
 
-    // Create upload directory
-    if (!is_dir($userDir) && !mkdir($userDir, 0755, true)) {
-        http_response_code(500);
-        throw new Exception('Failed to create user directory');
+    $sessionId = $_REQUEST['sessionid'] ?? '';
+    $accessFile = $userDir . '/access.json';
+    if( strlen($sessionId) == 32 && file_exists($accessFile)) {
+        $access = json_decode(file_get_contents($accessFile), true);
     }
+    if (!isset($access) || (@$access['sessionId'] !== $sessionId) ) {
+        http_response_code(401);
+        throw new Exception('Access denied'); // Nix preisgeben!
+    }
+    // $xlog .= " SessionID:'$sessionId'";
 
-        // Vorlese-Text (z. B. aus POST/GET)
+    // Vorlese-Text (z. B. aus POST/GET)
     $text = trim(str_replace(["\r\n", "\n", "\r"], ' ', $_REQUEST['text'] ?? ''), " \n\r\t\v\0\"");
     if (!$text) {
         http_response_code(400);
@@ -64,8 +63,8 @@ try {
     }
 
     $xlog .= " Text:'$text'";
-  
-/*****
+
+    /*****
     // Call OpenAI STT API
     $ch = curl_init('https://api.openai.com/v1/audio/transcriptions');
     curl_setopt_array($ch, [
@@ -89,13 +88,18 @@ try {
     if ($httpCode < 200 || $httpCode >= 300) {
         throw new Exception("cURL HTTP $httpCode: $response");
     }
-*****/
+     *****/
     $response = '{ "text": "Echo: ' . $text . '" }';
     $httpCode = 200;
 
-    // Log response
+    // Log response - Chats liegen in Subdir
     if ($log > 1) {
-        file_put_contents($userDir . '/chat_' . date('Ymd_His'). '.json', $response);
+        $chatDir = $userDir . '/chat';
+        if (!is_dir($chatDir) && !mkdir($chatDir, 0755, true)) {
+            http_response_code(500);
+            throw new Exception('Failed to create user/chat directory');
+        }
+        file_put_contents($chatDir . '/chat_' . date('Ymd_His') . '.json', $response);
     }
 
     $xlog .= " Response:'$response'";
@@ -115,9 +119,8 @@ try {
         'success' => false,
         'error' => $e->getMessage()
     ], JSON_UNESCAPED_SLASHES);
-    $xlog = "ERROR:'" . $e->getMessage()."' " . $xlog;
-    $ip=$_SERVER['REMOTE_ADDR'];
-    if(isset($ip))  $xlog = "IP:$ip ".$xlog;
-
+    $xlog = "ERROR:'" . $e->getMessage() . "' " . $xlog;
+    $ip = $_SERVER['REMOTE_ADDR'];
+    if (isset($ip))  $xlog = "IP:$ip " . $xlog;
 }
 log2file($xlog);
