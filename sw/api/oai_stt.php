@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Load API keys
 include_once __DIR__ . '/../secret/keys.inc.php';
 $apiKey = OPENAI_API_KEY;
-$uploadDir = __DIR__ . '/../../' . USERDIR . '/audio/uploads';
+$uploadDir = __DIR__ . '/../../' . USERDIR . '/audio/uploads'; 
 $dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 
 try {

@@ -17,6 +17,7 @@ export let sessionId = null; // 32 Zeichen SessionID
 export let apiUser = null; // z.B. 'testuser'
 export let userLanguage = null; // de-DE
 export let speakVoice = null; // z.B 'narrator_f_jane'; 
+export let isLoggedIn = false; // true wenn eingeloggt
 
 // -------- ENDE globals ------
 
@@ -292,6 +293,7 @@ async function fetchAudioForSentence(sentence, voice) {
         isLoading = true;
     }
     try {
+        if(!isLoggedIn) throw new Error("Not logged in!");
         if (methodGET) {
             if (dbgLevel) terminalPrint(`Lade Audio via GET/src...`);
             audioPlayer.src = url;
@@ -347,7 +349,6 @@ export async function speakText(inputText) {
         await fetchAudioForSentence(sentences[i], selectedVoice);
     }
 
-
     if (dbgLevel) terminalPrint('Alle Sätze verarbeitet');
     isProcessing = false;
 
@@ -366,7 +367,8 @@ export async function talkWithServer(text, concerningMessage = null) {
         text: text
     };
     try {
-        const response = await fetch('./api/echo_sim.php', {
+        if(!isLoggedIn) throw new Error("Not logged in!");
+        const response = await fetch('./api/oai_chat.php', {  // './api/echo_sim.php'
             method: 'POST',
             body: new URLSearchParams(payload)
         });
@@ -380,7 +382,10 @@ export async function talkWithServer(text, concerningMessage = null) {
         }
         const data = await response.json();
         if (data.success) {
-            const text = data?.text?.length ? data.text : '(nothing)'; // Text ist immer enthalten
+
+console.log(data);
+//const text = data?.text?.length ? data.text : '(nothing)'; // Text ist immer enthalten
+const text = data.result.answer;
             if (concerningMessage) updateMessage(concerningMessage, text, 'bot ok');
             speakText(text);    // Sprichs aus!
             chatStateVar = 5; // Fertig, nun audio setzt auch 10
@@ -407,6 +412,7 @@ export async function postAudio() {
         }
 
         //if (DBG) terminalPrint('Fetching audio data from player src...');
+        if(!isLoggedIn) throw new Error("Not logged in!");
         const res = await fetch(audioSrc);
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
 
@@ -457,9 +463,11 @@ const stdPlayer = document.querySelector(".stdplayer");
 
 const thresholdSlider = document.getElementById('threshold');
 const thresholdFeedback = document.getElementById('thresholdFeedback');
+const autoThreshChk = document.getElementById('autoThreshChk');
 const maxpauseSlider = document.getElementById('maxpause');
 const maxpauseFeedback = document.getElementById('maxpauseFeedback');
 
+const microOnOff = document.getElementById('microOnOff');
 const canvas = document.querySelector(".visualizer");
 const canvasCtx = canvas.getContext("2d");
 
@@ -477,7 +485,9 @@ let mediaRecorder = null;
 
 // rms Statistik
 let thresholdRms = 0.1; // 0.1: Laute umgebung - Ext. via Slider
-let maxPauseMs = 1000; // >200 , msec max. Sprachpause - Ext. via Slider
+let sliderThreshold = 0.1; // Was am Slider vorgegeben
+let autoThreshEnable = false;
+let maxPauseMs = 800; // >200 , msec max. Sprachpause - Ext. via Slider
 
 const MAX_SPEECH_MS = 30000; // msec max. Sprachdauer
 const STREAM_DELAY_SEC = 0.3; // sec Delay, ca. 150 msec Vorlauf mind. 
@@ -588,6 +598,7 @@ function microBtnCLick() {
         frq_ping();
         startMicro();
         canvas.hidden = false;
+        microOnOff.hidden = true;
         isMicroOn = true;
         isRecording = false
         microButtonGlyph.classList.remove('bi-mic-mute-fill');
@@ -595,6 +606,7 @@ function microBtnCLick() {
         microButtonGlyph.classList.add('jo-icon-ani-beat');
         setChatStatus('Mikro AN...', 'yellow');
     } else {
+        microOnOff.hidden = false;
         isMicroOn = false;
         canvas.hidden = true;
 
@@ -744,13 +756,17 @@ function bloomMicroButton(bloomTh) {
 
 // Animation-Frame, monitored Micro-Daten
 let maxRms = 0;
+let minRms = thresholdRms;
 function frameMonitor() {
     if (!isMicroOn) return;
     frameMoniId = requestAnimationFrame(frameMonitor);
     analyser.getByteTimeDomainData(dataArray);
     const frameRms = computeRMSFromTimeDomain(dataArray);
-    maxRms *= 0.95;
+    maxRms *= 0.9;
     if (frameRms > maxRms) maxRms = frameRms;
+    minRms = 0.998 * minRms + 0.002 * sliderThreshold;
+    if (frameRms < minRms) minRms = frameRms;
+    if(autoThreshEnable) thresholdRms = minRms * 5;
     updateSpeechState(maxRms);
     bloomMicroButton(((maxRms / thresholdRms) - 0.5) * 3);
     if (isMenuVisible) {
@@ -773,9 +789,16 @@ function maxpauseMove() {
 }
 function thresholdMove() {
     const h = parseFloat(thresholdSlider.value);
-    thresholdRms = (h * h * h / 300) + 0.025; // Quadratisch
-    thresholdFeedback.textContent = thresholdRms.toFixed(3);
+    sliderThreshold = (h * h * h / 300) + 0.025; // Quadratisch
+    minRms = sliderThreshold;
+    thresholdRms = sliderThreshold;
+    thresholdFeedback.textContent = sliderThreshold.toFixed(3);
 }
+function autoThreshChkChange(){
+    autoThreshEnable = autoThreshChk.checked;
+    thresholdMove();
+}
+autoThreshChk.addEventListener('change', autoThreshChkChange);
 thresholdSlider.addEventListener('input', thresholdMove);
 maxpauseSlider.addEventListener('input', maxpauseMove);
 maxpauseMove();
@@ -790,6 +813,7 @@ navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } })
 
         thresholdSlider.disabled = false;
         maxpauseSlider.disabled = false;
+        autoThreshChk.disabled = false;
         setChatStatus('Mikro bereit', 'lime');
     })
     .catch(() => {
@@ -845,6 +869,10 @@ export function addMessage(text, type) {
 function updateMessage(messageDiv, text, type) {
     messageDiv.className = `message ${type}`;
     messageDiv.textContent = text;
+    setTimeout(() => {
+        chatVerlauf.scrollTop = chatVerlauf.scrollHeight;
+    }, 100);
+
 }
 
 sendenBtn.addEventListener('click', sendeNachricht);
@@ -948,7 +976,7 @@ export async function login(cmd = '', user = '', password = '', statusElement = 
     }
     return false;
 }
-// Wenn wir schon eingeloggt sind, dann OK
+
 const credentialsDialog = document.getElementById('credentials');
 document.getElementById('btn-login').addEventListener('click', async () => {
     const user = document.getElementById('input-user').value.trim();
@@ -963,8 +991,9 @@ document.getElementById('btn-login').addEventListener('click', async () => {
     const logres = await login('login', user, password, loginStatus);
     if (logres === true) { // Full Login
         loginStatus.textContent = 'Anmeldung OK!';
-        await jsSleepMs(200); 
+        isLoggedIn = true;
         frq_ping(880, 0.1, 0.07); // Kurzer HPing
+        await jsSleepMs(300); 
         credentialsDialog.close();
     } else {
         loginStatus.textContent = 'Anmeldung fehlgeschlagen!';
@@ -975,11 +1004,13 @@ document.getElementById('btn-login').addEventListener('click', async () => {
 export async function mainLoginDialog() {
     const res = await login('logrem'); // Test-Login
     if (res === true) {
+        isLoggedIn = true;
         return; // Alles ok
     }
+
     credentialsDialog.showModal();
 }
-mainLoginDialog();
+//mainLoginDialog();
 // === ENDE MODLogin ===
 
 console.log('Minichat:', VERSION);

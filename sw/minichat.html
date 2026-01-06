@@ -59,7 +59,7 @@
                 mit darunterligendem PHP-Engine (für OpenAI, et. al.).
             </p>
             <ul>
-                <li>Sicheres Login (PHP Sessions)</li>
+                <li>Sicheres Login</li>
                 <li>DSGVO konform (PII nur auf Server)</li>
                 <li>Leicht als komfortabler Bot einsetzbar</li>
             </ul>
@@ -103,11 +103,18 @@
                         <i class="bi bi-mic-fill" aria-hidden="true"></i>
                         Rauschunterdrückung
                     </legend>
+                    <i id="microOnOff">Mikro ist AUS</i>
                     <label for="threshold">
                         Threshold: <span id="thresholdFeedback" aria-live="polite">2.0</span>
                     </label>
                     <input disabled type="range" id="threshold" min="0" max="5" value="2" step="0.1" aria-valuemin="0"
                         aria-valuemax="5" aria-valuenow="2" />
+
+                    <label for="autoThreshChk">
+                        <input id="autoThreshChk" type="checkbox" role="switch" aria-checked="false" />
+                        Auto Threshold
+                    </label>
+
                     <canvas class="visualizer" width="200" height="20" aria-label="Audio Visualizer"></canvas>
                 </fieldset>
             </li>
@@ -178,11 +185,11 @@
         </span>
 
         <div class="button-group">
-            <button id="btn-senden" type="button" aria-label="Nachricht senden" title="Nachricht senden (Enter)">
+            <button id="btn-senden" type="button" aria-label="Nachricht senden" title="Nachricht senden (Enter)" disabled="disabled">
                 <i id="senden-button-glyph" class="bi bi-send-fill" aria-hidden="true"></i>
             </button>
             <button id="btn-micro" type="button" class="micro" aria-label="Mikrofon einschalten" aria-pressed="false"
-                title="Mikrofon ein/aus">
+                title="Mikrofon ein/aus" disabled="disabled">
                 <i id="micro-button-glyph" class="bi bi-mic-mute-fill" aria-hidden="true"></i>
             </button>
         </div>

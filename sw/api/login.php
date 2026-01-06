@@ -3,8 +3,8 @@
 /**
  * login.php - (C) JoEmbedded - 05.01.2026
  * 
- * Login startet ggfs. eine neue session und hinterlegt dafür eine sessionId
- * im Verzeichnis des TESTUSERs (verzeichnis mus credentials müssen vorhanden sein).
+ * Login startet ggfs. eine neue Session und hinterlegt dafür eine sessionId
+ * im Verzeichnis des Users (Verzeichnis muss credentials enthalten).
  * Die Daten sind als PHP und hashed hinterlegt, damit sicher nicht scanbar.
  * (Hash erstellen mit password_hash('Passwort', PASSWORD_DEFAULT), siehe Code unten).
  *
@@ -16,7 +16,7 @@
 declare(strict_types=1);
 
 // Configuration
-$log = 2; // 0: Silent, 1: Logfile schreiben 2: Log complete Reply(***DEV***)
+$log = 1; // 0: Silent, 1: Logfile schreiben 2: Log complete Reply(***DEV***)
 $xlog = "login"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
 
@@ -50,10 +50,10 @@ try {
     }
     $sessionId = $_SESSION['sessionId'] ?? '';
 
-    if ($log > 1) {
-        $xlog .= " ***DEV*** SessionID:" . $sessionId ?? '';
-        $xlog .= " Cmd:'" . ($_REQUEST['cmd'] ?? '') . "'";
-        $xlog .= " User:'" . ($_REQUEST['user'] ?? '') . "'";
+    if ($log > 1) { // ***DEV***
+        $xlog .= " ***DEV*** sessionID:" . $sessionId ?? '';
+        $xlog .= " cmd:'" . ($_REQUEST['cmd'] ?? '') . "'";
+        $xlog .= " user:'" . ($_REQUEST['user'] ?? '') . "'";
         $xlog .= " password:'" . ($_REQUEST['password'] ?? '') . "'";
     }
 
@@ -72,7 +72,6 @@ try {
         $_SESSION = [];
         session_destroy();
     } else {
-
         if ($cmd === 'logrem') {
             $sessionId = $_SESSION['sessionId'] ?? '';
             if (empty($sessionId)) {
@@ -148,7 +147,7 @@ try {
             }
 
             // Verify hashed password
-            // echo password_hash($userEnteredPassword, PASSWORD_DEFAULT); exit; // Gen. TestHash
+            //echo password_hash($userEnteredPassword, PASSWORD_DEFAULT); exit; // Gen. TestHash
             if (!password_verify($userEnteredPassword, $storedPasswordHash)) {
                 http_response_code(401);
                 throw new Exception('Access denied'); // Nix preisgeben!
@@ -165,7 +164,8 @@ try {
 
             if (file_put_contents(
                 $userDir . '/access.json.php',
-                json_encode($accessData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT)
+                json_encode($accessData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT),
+                LOCK_EX
             ) === false) {
                 http_response_code(500);
                 throw new Exception('Failed to save session');
@@ -177,22 +177,6 @@ try {
             $_SESSION['user'] = $user;
             $_SESSION['sessionId'] = $sessionId;
             $_SESSION['login_time'] = time();
-/*
-            // Explizit Session-Cookie mit Sicherheitsparametern setzen
-            $params = session_get_cookie_params();
-            setcookie(
-                session_name(),
-                session_id(),
-                [
-                    'expires' => time() + 86400 * 3650, // 10 Jahre
-                    'path' => $params['path'],
-                    'domain' => $params['domain'],
-                    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
-                    'httponly' => true,
-                    'samesite' => 'Lax'
-                ]
-            );
-*/
         } else {
             http_response_code(400);
             throw new Exception('Invalid command');
@@ -216,7 +200,7 @@ try {
         }
 
         $helloAll = json_decode($hellosContent, true);
-        if (empty($helloAll) || !is_array($helloAll['helpTxts'])) {
+        if (empty($helloAll) || !is_array(@$helloAll['helpTxts'])) {
             http_response_code(500);
             throw new Exception("Invalid hellos file format");
         }

@@ -34,10 +34,11 @@
     box-sizing: border-box;
 }
 
+/* Height vorher height: 100dvh; */
 body {
     display: flex;
     flex-direction: column;
-    height: 100dvh;
+    height: 100svh;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     color: var(--text-color);
     line-height: 1.5;

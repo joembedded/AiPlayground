@@ -1,4 +1,5 @@
 <?php
+
 /**
  * oai_tts.php - Text-to-Speech mit OpenAI API - (C) JoEmbedded - 04.01.2026
  * Parameter:
@@ -48,10 +49,10 @@ try {
 
     $sessionId = $_REQUEST['sessionid'] ?? '';
     $accessFile = $userDir . '/access.json.php';
-    if( strlen($sessionId) == 32 && file_exists($accessFile)) {
+    if (strlen($sessionId) == 32 && file_exists($accessFile)) {
         $access = json_decode(file_get_contents($accessFile), true);
     }
-    if (! !empty($access) || (@$access['sessionId'] !== $sessionId) ) {
+    if (! !empty($access) || (@$access['sessionId'] !== $sessionId)) {
         http_response_code(401);
         throw new Exception('Access denied'); // Nix preisgeben!
     }
@@ -172,7 +173,6 @@ try {
     // Aufschreiben, entweder gestreamt oder normal
     if ($cache)      file_put_contents($diskPath, $stream ? $audioStreamed : $audioBytes);
     $xlog .= " File[" . strlen($stream ? $audioStreamed : $audioBytes) . "]:$diskFname " . ($stream ? "(Stream-CREATED)" : "(CREATED)");
-
 } catch (Exception $e) {
     header('Content-Type: application/json; charset=UTF-8');
     if (http_response_code() === 200) {
@@ -182,8 +182,8 @@ try {
         'success' => false,
         'error' => $e->getMessage()
     ], JSON_UNESCAPED_SLASHES);
-    $xlog = "ERROR:'" . $e->getMessage()."' " . $xlog;
-    $ip=$_SERVER['REMOTE_ADDR'];
-    if( !empty($ip))  $xlog = "IP:$ip ".$xlog;     
+    $xlog = "ERROR:'" . $e->getMessage() . "' " . $xlog;
+    $ip = $_SERVER['REMOTE_ADDR'];
+    if (!empty($ip))  $xlog = "IP:$ip " . $xlog;
 }
 log2file($xlog);

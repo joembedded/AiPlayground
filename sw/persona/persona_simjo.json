@@ -6,6 +6,5 @@
             "content": "USERTEXT"
         }
     ],
-
-    "store": true
+    "store": false
 }
