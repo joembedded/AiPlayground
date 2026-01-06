@@ -382,10 +382,13 @@ export async function talkWithServer(text, concerningMessage = null) {
         }
         const data = await response.json();
         if (data.success) {
+            let text = '(Keine Antwort)';
+            // console.log('data:',data); - Die Antwort der KI kann alles mögliche enthalten...
+            try{
+                text = data.result.answer;  
+                text = data?.text?.length ? data.text : text; 
+            }catch(e){}
 
-console.log(data);
-//const text = data?.text?.length ? data.text : '(nothing)'; // Text ist immer enthalten
-const text = data.result.answer;
             if (concerningMessage) updateMessage(concerningMessage, text, 'bot ok');
             speakText(text);    // Sprichs aus!
             chatStateVar = 5; // Fertig, nun audio setzt auch 10
