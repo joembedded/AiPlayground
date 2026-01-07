@@ -115,7 +115,7 @@ function periodical() {
         case 1: // Audio-Input im stdPlayer vorhanden - Start Transcribe!
             chatStateVar = 2;
             setChatStatus('Ich verstehe...', 'yellow');
-            frq_ping(1760, 0.1, 0.07); // Kurzer HPing
+            //frq_ping(1760, 0.1, 0.07); // Kurzer HPing
             postAudio();
             break;
         case 2: // idle warten waehrend transcribiert
@@ -384,13 +384,15 @@ export async function talkWithServer(text, concerningMessage = null) {
         const data = await response.json();
         if (data.success) {
             let text = '?';
-            // console.log('data:',data); - Die Antwort der KI kann alles mögliche enthalten...
+
+            console.log('data:',data); // - Die Antwort der KI kann alles mögliche enthalten...
             try {
-                text = data?.text?.length ? data.text : (data?.result?.answer ?? '(Keine Antwort)');
+                text = (data?.result?.answer?.text ?? '(Keine Antwort)');
                 if (data.result?.meta?.notes) {
                     // text += '\n(Auswertung: ' + data.result.meta.notes + ')';
                 }
             } catch (e) { }
+            console.log('Extracted text:',text);
 
             if (concerningMessage) updateMessage(concerningMessage, text, 'bot ok');
             speakText(text);    // Sprichs aus!
@@ -772,7 +774,7 @@ function frameMonitor() {
     if (frameRms > maxRms) maxRms = frameRms;
     minRms = 0.998 * minRms + 0.002 * sliderThreshold;
     if (frameRms < minRms) minRms = frameRms;
-    if (autoThreshEnable) thresholdRms = minRms * 5;
+    if (autoThreshEnable) thresholdRms = minRms * 5 + 0.05; // Etwas Puffer
     updateSpeechState(maxRms);
     bloomMicroButton(((maxRms / thresholdRms) - 0.5) * 3);
     if (isMenuVisible) {
