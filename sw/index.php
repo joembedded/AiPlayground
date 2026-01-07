@@ -81,7 +81,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🤖 AI Playground</h1>
+        <h1>🤖 JoEmbedded - AI Playground</h1>
         <p class="subtitle">Wähle eine Datei zum Öffnen</p>
         
         <ul class="file-list">

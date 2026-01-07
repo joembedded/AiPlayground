@@ -1,0 +1,9 @@
+{
+  "hello": {
+    "helpTxts": [
+      "Hallo. Ich bin Vilo!",
+      "Womit kann Vilo dir helfen?",
+      "Worum geht es?"
+    ]
+  }
+}

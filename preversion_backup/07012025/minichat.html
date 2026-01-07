@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <!-- WICHTIG: http://localhost/wrk/ai/playground/sw/minichat.html  -->
+    <!-- WICHTIG: IconListe: https://icons.getbootstrap.com/#icons -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MiniChat - Moderner Chat mit KI und Sprachunterstützung">
+    <meta name="author" content="JoEmbedded.de">
+    <meta name="theme-color" content="#4CAF50">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="./static/favicon.ico">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="./static/icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="./css/minichat.css">
+
+    <title>MiniChat - Intelligenter Chat mit Sprachsteuerung</title>
+
+    <!-- Scripts -->
+    <script src="./js/minichat.js" type="module" defer></script>
+</head>
+
+<body>
+    <!-- Login Dialog -->
+    <dialog id="credentials" aria-labelledby="credentials-title">
+        <h2 id="credentials-title">Anmeldung</h2>
+        <form id="login-form" novalidate>
+            <label for="input-user">Benutzer:</label>
+            <input type="text" id="input-user" name="username" placeholder="Benutzername"  minlength="6"
+                maxlength="32" autocomplete="username" required aria-required="true" />
+
+            <label for="input-password">
+                <input type="checkbox" id="show-password" aria-label="Passwort anzeigen"
+                    onchange="document.getElementById('input-password').type = this.checked ? 'text' : 'password'" />
+                Passwort:
+            </label>
+            <input type="password" id="input-password" name="password" placeholder="Passwort" 
+                minlength="8" maxlength="32" autocomplete="current-password" required aria-required="true" />
+
+            <div id="login-error" role="alert" aria-live="polite"></div>
+            <button type="submit" id="btn-login">
+                <i class="bi bi-box-arrow-in-right"></i> Anmelden
+            </button>
+            <a href="#" id="loginInfoLink" class="dialog-info-link" role="button">
+                <i class="bi bi-info-circle-fill"></i> Über MiniChat
+            </a>
+        </form>
+    </dialog>
+    <!-- Info Dialog -->
+    <dialog id="infoDialog" aria-labelledby="info-title">
+        <h2 id="info-title">Info</h2>
+        <div id="infoContent">
+            <p>
+                <strong>MiniChat</strong> - 
+                Chat-Client-Framework für KI mit Audio-Voice-Unterstützung in HTML/JS
+                mit darunterligendem PHP-Engine (für OpenAI, et. al.).
+            </p>
+            <ul>
+                <li>Sicheres Login</li>
+                <li>DSGVO konform (PII nur auf Server)</li>
+                <li>Leicht als komfortabler Bot einsetzbar</li>
+            </ul>
+            <p>Version: <span id="infoVersion">V0.0x / xx.xx.2026</span></p>
+            <p><small>&copy; JoEmbedded.de</small></p>
+        </div>
+        <button id="infoCloseBtn">
+            <i class="bi bi-x-circle"></i> Schließen
+        </button>
+    </dialog>
+    <!-- Overlay für Sidebar -->
+    <div id="overlay" aria-hidden="true"></div>
+
+    <!-- Navigation Sidebar -->
+    <nav id="sidebar" role="navigation" aria-label="Hauptmenü">
+        <header>
+            <h2>
+                <button id="sidebar-close" aria-label="Menü schließen" title="Menü schließen">
+                    <i class="bi bi-x-circle" aria-hidden="true"></i>
+                </button>
+                Hauptmenü
+            </h2>
+        </header>
+
+        <ul>
+            <li>
+                <a href="#" id="menuInfo" role="button">
+                    <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+                    <span>Info</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" id="menuLogout" role="button">
+                    <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                    <span>User '<strong id="userName">USER</strong>' abmelden</span>
+                </a>
+            </li>
+            <li>
+                <fieldset>
+                    <legend>
+                        <i class="bi bi-mic-fill" aria-hidden="true"></i>
+                        Rauschunterdrückung
+                    </legend>
+                    <i id="microOnOff">Mikro ist AUS</i>
+                    <label for="threshold">
+                        Threshold: <span id="thresholdFeedback" aria-live="polite">2.0</span>
+                    </label>
+                    <input disabled type="range" id="threshold" min="0" max="5" value="2" step="0.1" aria-valuemin="0"
+                        aria-valuemax="5" aria-valuenow="2" />
+
+                    <label for="autoThreshChk">
+                        <input id="autoThreshChk" type="checkbox" role="switch" aria-checked="true" checked />
+                        Auto Threshold
+                    </label>
+
+                    <canvas class="visualizer" width="200" height="20" aria-label="Audio Visualizer"></canvas>
+                </fieldset>
+            </li>
+            <li>
+                <fieldset>
+                    <legend>
+                        <i class="bi bi-activity" aria-hidden="true"></i>
+                        Pausenerkennung
+                    </legend>
+                    <label for="maxpause">
+                        Max Pause (ms): <span id="maxpauseFeedback" aria-live="polite">1000</span>
+                    </label>
+                    <input disabled type="range" id="maxpause" min="200" max="2200" value="1000" step="50"
+                        aria-valuemin="200" aria-valuemax="2200" aria-valuenow="1000" />
+                </fieldset>
+            </li>
+            <li>
+                <fieldset>
+                    <legend>
+                        <i class="bi bi-soundwave" aria-hidden="true"></i>
+                        Audio-Optionen
+                    </legend>
+                    <label for="autoPostChk">
+                        <input id="autoPostChk" type="checkbox" role="switch" aria-checked="true" checked/>
+                        Automatisch senden
+                    </label>
+                    <label for="autoPlayChk">
+                        <input id="autoPlayChk" type="checkbox" role="switch" aria-checked="true" checked />
+                        Mikrofon AN lassen
+                    </label>
+                </fieldset>
+            </li>
+            <!-- Weitere <li></li>... -->
+        </ul>
+    </nav>
+
+    <!-- App Header -->
+    <header role="banner">
+        <button id="menu-toggle" aria-label="Menü öffnen" aria-expanded="false" aria-controls="sidebar"
+            title="Menü öffnen">
+            <i class="bi bi-list" aria-hidden="true"></i>
+        </button>
+        <h1>MiniChat</h1>
+    </header>
+
+    <!-- Chat Verlauf -->
+    <main id="chat-verlauf" role="main" aria-live="polite" aria-label="Chat-Verlauf"></main>
+
+    <!-- Debug Bereich (optional) -->
+    <aside class="dbg" hidden aria-label="Debug-Informationen">
+        <div class="dbgInfoDiv">
+            <span id="dbginfo">Idle</span> -
+            <span id="audioStatus">Ready</span>
+        </div>
+        <div class="audio-controls">
+            <audio class="stdplayer" controls aria-label="Standard Audio Player"></audio>
+            <audio id="audioPlayer" controls aria-label="TTS Audio Player"></audio>
+        </div>
+        <div class="terminal" id="dbgTerminal" role="log" aria-label="Debug Terminal"></div>
+    </aside>
+
+    <!-- Eingabebereich -->
+    <section id="eingabe-bereich" role="region" aria-label="Nachrichteneingabe">
+        <label for="text-eingabe" class="visually-hidden">Ihre Nachricht</label>
+        <textarea id="text-eingabe" rows="3" placeholder="Nachricht eingeben..." aria-label="Nachricht eingeben"
+            aria-describedby="eingabe-hinweis"></textarea>
+        <span id="eingabe-hinweis" class="visually-hidden">
+            Drücken Sie Enter zum Senden oder nutzen Sie den Senden-Button
+        </span>
+
+        <div class="button-group">
+            <button id="btn-senden" type="button" aria-label="Nachricht senden" title="Nachricht senden (Enter)" disabled="disabled">
+                <i id="senden-button-glyph" class="bi bi-send-fill" aria-hidden="true"></i>
+            </button>
+            <button id="btn-micro" type="button" class="micro" aria-label="Mikrofon einschalten" aria-pressed="false"
+                title="Mikrofon ein/aus" disabled="disabled">
+                <i id="micro-button-glyph" class="bi bi-mic-mute-fill" aria-hidden="true"></i>
+            </button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer role="contentinfo">
+        <span id="chat-status" role="status" aria-live="polite" aria-atomic="true">Bereit</span>
+        <small>&copy; JoEmbedded.de</small>
+    </footer>
+</body>
+
+</html>

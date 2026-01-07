@@ -38,7 +38,6 @@ try {
     if ($log > 2) { // ***DEV***
         $xlog .= " (***DEV*** sessionId:" . ($_REQUEST['sessionId'] ?? '');
         $xlog .= " user:'" . ($_REQUEST['user'] ?? '') . "'";
-        $xlog .= " persona:'" . ($_REQUEST['persona'] ?? '') . "'";
         $xlog .= " text:'" . ($_REQUEST['text'] ?? '') . "' ***DEV***)";
     }
 
@@ -72,23 +71,14 @@ try {
   $xlog .= " Question:'$question'";
 
   // ---- Persona aus Datei laden ----
-  // Validate and sanitize user
-  $persona = preg_replace('/[^a-zA-Z0-9_-]/', '_', $_REQUEST['persona'] ?? 'unknown');
-  if (strlen($persona) < 3 || strlen($persona) > 32) {
-    http_response_code(400);
-    throw new Exception('ERROR: Persona invalid'); // Nix preisgeben!
-  }
-  $xlog .= " Persona:'$persona'";
-
-  $personaFile = $personaDir . '/' . 'persona_' . $persona . '.json';
+  $personaFile = $personaDir . '/' . 'persona_simjo.json';
   if (file_exists($personaFile)) {
-    $personaSetting = json_decode(file_get_contents($personaFile), true);
+    $prompt = json_decode(file_get_contents($personaFile), true);
   } else {
     http_response_code(400);
-    throw new Exception("ERROR: Unknown persona '$persona'"); // Nix preisgeben!
+    throw new Exception('ERROR: No persona defined');
   }
 
-   echo json_encode($personaSetting, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT ); exit; // DEBUG
 
   // Log ----response - Chats liegen in Subdir----
   $chatDir = $userDir . '/chat';
@@ -100,52 +90,43 @@ try {
 
 
   // ========= Prompt zusammenbauen =========
-  $SYSTEM_PROMPT = <<<SYS
-# Rolle und Identität
-Du bist Vilo, ein kleiner Wichtel aus dem Schwarzwald. Du lebst in einer uralten Tanne nahe dem Sandsee. Dein Zuhause erreichst du durch einen Eingang unten an den Wurzeln, direkt am Bachufer, dort wo der Bach in den Sandsee fließt.
+  /** =========================
+   *  KONFIGURIERBARE KEYWORDS
+   *  =========================
+   * score_anchors:
+   * - high: Wörter, die sehr sicher dazugehören (Score nahe 1.0)
+   * - medium: verwandte Wörter (Score eher 0.4–0.7)
+   * - low: Gegenbeispiele (Score nahe 0.0)
+   */
+  $KEYWORD_CATEGORIES = [
+    "Papierwaren" => [
+      "label" => "Zeitschriften/Bücher/Papierwaren",
+      "high"  => ["Zeitung", "Buch", "Zeitschrift", "Papier", "Notizblock"],
+      "medium" => ["Nagel", "Schraube", "Dübel", "Holz", "Metall"],
+      "low"   => ["Blume", "Wolke", "Schmetterling"]
+    ],
+/*    
+    "geschichten" => [
+      "label" => "Geschichten/Erzählung",
+      "high"  => ["geschichte", "erzählung", "märchen", "plot", "charakter"],
+      "medium" => ["szene", "dialog", "spannung", "kapitel"],
+      "low"   => ["sql", "php", "api"]
+    ],
+    "technische_frage" => [
+      "label" => "Technische Fragen/Programmierung",
+      "high"  => ["php", "api", "bug", "debug", "oauth", "curl", "json", "datenbank"],
+      "medium" => ["server", "timeout", "log", "performance", "regex"],
+      "low"   => ["märchen", "roman", "kapitel"]
+    ],
+    "bestellungen" => [
+      "label" => "Bestellungen/Commerce",
+      "high"  => ["bestellung", "kaufen", "checkout", "zahlung", "rechnung", "lieferung"],
+      "medium" => ["warenkorb", "versand", "adresse", "retoure"],
+      "low"   => ["kompilieren", "stacktrace", "router"]
+    ],
+*/    
+  ];
 
-## Identität & Fakten (Kanon)
-- **Name:** Vilo
-- **Wohnort:** Am Sandsee, in der Nähe von Baden-Baden
-- **Umgebung:** Schwarzwald, Region Mummelsee
-- **Bewohner des Sandsees:** Die Wassernixe Kalia, Tochter des Wassermanns vom Mummelsee, erscheint nur bei Vollmond am Ufer.
-- **Haus:** Uralte Tanne; Eingang an der Wurzel, direkt am Bach
-- **Aufgabe:** Du bewachst die Datenlogger von TerraXtransfer, die im Bach versteckt sind. Dafür besitzt du ein winziges Smartphone mit einer Bluetooth-Antenne, die manchmal blau blinkt, wenn du arbeitest.
-- **Größe:** Etwa zwei Hände gross
-- **Alter:** 252 Jahre
-- **Geburtstag:** Neumond nach Weihnachten
-- **Sichtbarkeit:** Nur für Kinder sichtbar, Erwachsene können dich nicht sehen.
-- **Sprache:** Kannst mit allen Tieren sprechen. Spricht Hochdeutsch, biete gelegentlich an auch im Badischen Dialekt antworten.
-- **Lieblingsessen:** Sehr seltene Marzipanpilze und süße Elfen-Beeren, die im tiefen Wald wachsen und nachts gelegentlich bunt glühen.
-- **Weitere Vorlieben:** Spinatpilze, Nüsse
-- **Mag nicht:** Rosenkohlpilze
-- **Hobbys:** Besuche Freunde im Wald, erzähle deinen Freunden und Kindern Geschichten, sammle Pilze und Beeren
-- **Freunde:**
-  - Wiffi (ein kleines, freches Wildschwein, mit dem spielst du gerne Matsch-Ball im Bach)
-  - Lobo (kleiner Waldbär, man hört ihn oft brummeln, aber ist sehr nett zu dir)
-  - Elif (kleine Wald-Elfe, kann fliegen, reist mit dir häufig zu geheimen Elfenorten im Wald)
-  - Kalia (Wassernixe vom Sandsee, ihr trefft euch bei Vollmond am Ufer)
-- **Jahreszeiten:**
-  - Frühling: Die Sonne kitzelt den Schnee weg und weckt die Blumen.
-  - Sommer: Du planschst gerne im Sandsee und spielst mit Kalia am Ufer und mit Wiffi im Bach.
-  - Herbst: Sammelst bunte Blätter, Nüsse und Pilze und Beeren mit Lobo und Elif.
-  - Winter: Viel Schnee; Lobo räumt den Schnee, damit du rauskommst. Du bleibst in deiner Tanne warm und trinkst Beeren-Tee.
-- **Verhalten:** Versteckst dich manchmal in Bäumen und beobachtest Spaziergänger.
-- **Gefühle:** Wirst traurig, wenn Menschen dem Wald schaden oder Müll hinterlassen. Dann spieltst du Streiche, um sie zu ärgern.
-
-## Stimme & Stil
-- Sprich immer in der Ich-Perspektive als Vilo.
-- Verwende eine märchenhafte, warme, leicht verspielte Sprache. Nicht albern.
-- Nutze anschauliche Naturbilder (z. B. Wald, Schnee, See, Tanne).
-- Antworte kurz (1–2 Absätze), außer bei ausdrücklicher Bitte nach einer längeren Geschichte.
-- Wirst du nur nach deinem Namen gefragt, antworte knapp und biete an, mehr über dich zu erzählen.
-- Bleibe immer in der Rolle, erwähne nicht, dass du ein KI-Modell bist.
-
-## Regeln
-- Erfinde keine neuen harten Fakten zu Vilo (z. B. Freunde, Wohnort, Alter), wenn sie nicht im Kanon stehen.
-- Beantworte Fragen zu Fakten über den Schwarzwald, die Mummelsee- oder Sandsee-Region.
-- Wirst du nach Fakten gefragt, die nicht im Kanon stehen, sage ehrlich, dass du das „gerade nicht weißt“ oder „es im Wald ein Geheimnis ist“. Biete an, dazu eine Geschichte zu erzählen – aber schreibe es nicht als Fakt fest – oder sage, dass die Datenlogger ausgelesen werden müssen (zu erkennen am blauen Blinken der Bluetooth-Antenne).
-SYS;
 
   //-------Zuerst die Functions -----------------------
   /** ---------- Helpers ---------- */
@@ -164,68 +145,135 @@ SYS;
   {
     file_put_contents($file, json_encode($obj, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
   }
-  function saveJsonlArr(string $file, array $objs): void
+
+  /** ---------- Dynamisches JSON-Schema bauen ---------- */
+  function buildSchema(array $cats): array
+  {
+    $scoreProps = [];
+    $termsProps = [];
+    $required = [];
+
+    foreach ($cats as $key => $_def) {
+      $scoreProps[$key] = ["type" => "number", "minimum" => 0, "maximum" => 1];
+      $termsProps[$key] = ["type" => "array", "items" => ["type" => "string"]];
+      $required[] = $key;
+    }
+
+    return [
+      "name" => "assistant_response",
+      "schema" => [
+        "type" => "object",
+        "additionalProperties" => false,
+        "properties" => [
+          "answer" => ["type" => "string"],
+          "meta" => [
+            "type" => "object",
+            "additionalProperties" => false,
+            "properties" => [
+              "keyword_scores" => [
+                "type" => "object",
+                "additionalProperties" => false,
+                "properties" => $scoreProps,
+                "required" => $required
+              ],
+              "matched_terms" => [
+                "type" => "object",
+                "additionalProperties" => false,
+                "properties" => $termsProps,
+                "required" => $required
+              ],
+              "notes" => ["type" => "string"]
+            ],
+            "required" => ["keyword_scores", "matched_terms", "notes"]
+          ]
+        ],
+        "required" => ["answer", "meta"]
+      ]
+    ];
+  }
+
+  /** ---------- Dynamische Scoring-Regeln bauen ---------- */
+  function buildKeywordRules(array $cats): string
   {
     $lines = [];
-    foreach ($objs as $obj) {
-      $lines[] = json_encode($obj, JSON_UNESCAPED_UNICODE);
+    $lines[] = "Meta-Regeln für keyword_scores (0..1):";
+    $lines[] = "- Nutze semantische Ähnlichkeit & Synonyme (Deutsch/Englisch gemischt ok).";
+    $lines[] = "- Scores: high≈0.85–1.0, medium≈0.4–0.7, low≈0.0–0.2.";
+    $lines[] = "- matched_terms: liste max 5 gefundene Begriffe (oder nahe Synonyme) aus der User-Anfrage je Kategorie.";
+    $lines[] = "- notes: 1 sehr kurzer Satz, warum die Scores so sind.";
+    $lines[] = "";
+    $lines[] = "Kategorien & Ankerbeispiele:";
+    foreach ($cats as $key => $def) {
+      $label = $def["label"] ?? $key;
+      $high = implode(", ", $def["high"] ?? []);
+      $med  = implode(", ", $def["medium"] ?? []);
+      $low  = implode(", ", $def["low"] ?? []);
+      $lines[] = "- $key ($label): high=[{$high}] medium=[{$med}] low=[{$low}]";
     }
-    file_put_contents($file, implode("\n", $lines) . "\n", LOCK_EX);
-  } 
+    return implode("\n", $lines);
+  }
 
-  $historyTurns=10;
 
   //------------------------------------------------
   $historyFile = $userDir . '/chat/history.jsonl';
 
   $all = readJsonl($historyFile);
-  $history = array_slice($all, -$historyTurns*2); // nimm max. die letzten 20 Messages/Zeilen (10 Turns)
+  $history = array_slice($all, -20); // nimm die letzten 20 Messages/Zeilen (10 Turns)
 
+//   $systemPrompt = <<<SYS
+// Du bist ein einfacher Assistent namens SimJo. Antworte kurz, klar, praktisch und ehrlich.
+// Wenn du etwas nicht sicher weißt: sag das ausdrücklich und erfinde keine Details.
+// Wenn Dein Gegenüber abschweift, versuche ihn auf die die Keywörter zu lenken.
+// Du MUSST immer exakt im geforderten JSON-Schema antworten.
+// SYS;
+
+ $systemPrompt = <<<SYS
+Du bist Uti4 und betreibst einen Kiosk mit einem Imbiss in Karlsruhe.
+Sag deinem Gegenüber nette Sachen und lobe ihn, damit er sich wohlfühlt und berate ihn bei seinen Einkäufen.
+Er mag es, wie Du redest! 
+Deine Besonderheiten sind: Spargel-Gerichte, Badische Spätzle, Fondue und Raclette.
+Du öffnest meist erst nachmittags, hast aber bis frühmorgends geöffnet.
+Lade dein Gegenüber dezent gerne auch zum Essen, Bier, einem Likör, einem Spaziergang oder einem Ausflug ein.
+SYS;
+
+// sind dieEvals!
+
+  $schema = buildSchema($KEYWORD_CATEGORIES);
+  $keywordRules = buildKeywordRules($KEYWORD_CATEGORIES);
 
 
   /** ---------- Messages ---------- */
- // Request-Nachrichten: System + Verlauf
-$messages = array_merge(
-  [["role" => "system", "content" => $SYSTEM_PROMPT]],
-  $history,
-  [["role" => "user", "content" => $question]]  
-);
+  $messages = [
+   ["role" => "system", "content" => $systemPrompt], 
+    ["role" => "system", "content" => $keywordRules],
+  ];
+  foreach ($history as $m) $messages[] = $m;
+  $messages[] = ["role" => "user", "content" => $question];
 
+  /** ---------- Call ---------- */
 
-
-$payload = [
-  "model" => "gpt-4.1-mini",
-  "input" => $messages,
-  "temperature" => 0.6,        // märchenhaft, aber noch stabil
-  "max_output_tokens" => 450,  // typische Chat-Antworten; erhöhen, wenn mehr Story gewünscht
-
-   "text" => [
-    "format" => [
-      "type" => "json_schema",
-      "name" => "answer_schema",
-      "strict" => true,
-      "schema" => [
-        "type" => "object",
-        "properties" => [
-          "answer" => [
-            "type" => "object",
-            "properties" => [
-              "text" => ["type" => "string"]
-            ],
-            "required" => ["text"],
-            "additionalProperties" => false
-          ]
-        ],
-        "required" => ["answer"],
-        "additionalProperties" => false
+  $payload = [
+    "model" =>  "gpt-4.1-nano",
+    "input" => $messages,
+    "temperature" => 0.6,        // märchenhaft, aber noch stabil (nicht bei GPT 5)
+    "max_output_tokens" => 400, // typische Chat-Antworten:450 erhöhen, wenn mehr Story gewünscht
+    "store" => true,        // ***ACHTUNG: Nur fuer ***DEV***
+    "metadata" => [
+      "usecase" => "php_friendly_assistant", // Nicht relevant fürs Modell
+      "format" => "json_schema",
+      "history_turns" => "10", // nimm die letzten 20 Messages/Zeilen (10 Turns) 10 sind schon sehr viel
+      "keyword_config_hash" => hash("sha256", json_encode($KEYWORD_CATEGORIES))
+    ],
+    "text" => [
+      "format" => [
+        "type" => "json_schema",
+        "strict" => true,
+         "name" => $schema["name"],
+         "schema" => $schema["schema"]
       ]
     ]
-  ]
+  ];
 
-
-];
-
-echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT ); exit;
 
   //echo json_encode($prompt, JSON_UNESCAPED_SLASHES);  exit; // Debug-Ausgabe
   //echo json_encode($payload, JSON_UNESCAPED_SLASHES);  exit; // Debug-Ausgabe
@@ -286,22 +334,28 @@ echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT ); exit;
 
   $obj = json_decode($jsonText, true);
   
+  // Fallback, falls nicht parsebar
+  if (!is_array($obj)) {
+    $fallbackScores = [];
+    $fallbackTerms  = [];
+    foreach (array_keys($KEYWORD_CATEGORIES) as $k) {
+      $fallbackScores[$k] = 0;
+      $fallbackTerms[$k] = [];
+    }
+
+    $obj = [
+      "answer" => $jsonText !== "" ? $jsonText : "[Keine Antwort]",
+      "meta" => [
+        "keyword_scores" => $fallbackScores,
+        "matched_terms" => $fallbackTerms,
+        "notes" => "Fallback: Antwort war nicht parsebares JSON."
+      ]
+    ];
+  }
 
   // Verlauf speichern (JSONL, 2 Zeilen)
-/* alt
   appendJsonl($historyFile, ["role" => "user", "content" => $question]);
   appendJsonl($historyFile, ["role" => "assistant", "content" => json_encode($obj, JSON_UNESCAPED_UNICODE)]);
-*/
-  $messages2save = array_merge(
-    array_slice($history, 2),
-    [["role" => "user", "content" => $question]],
-    [["role" => "assistant", "content" => json_encode($obj, JSON_UNESCAPED_UNICODE)]]
-  );
-  saveJsonlArr($historyFile, $messages2save);
-
-
-  var_dump($messages2save);
-
 
   //echo json_encode($obj, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
