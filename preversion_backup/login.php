@@ -50,10 +50,10 @@ $dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 try {
 
     if ($log > 1) { // ***DEV***
-        $xlog .= " (***DEV*** sessionid:" . ($_REQUEST['sessionId'] ?? '');
-        $xlog .= " command:'" . ($_REQUEST['cmd'] ?? '') . "'";
-        $xlog .= " username:'" . ($_REQUEST['user'] ?? '') . "'";
-        $xlog .= " password:'" . ($_REQUEST['password'] ?? '') . "' ***DEV***)";
+        $xlog .= " ***DEV*** sessionId:" . ($_REQUEST['sessionId'] ?? '');
+        $xlog .= " cmd:'" . ($_REQUEST['cmd'] ?? '') . "'";
+        $xlog .= " user:'" . ($_REQUEST['user'] ?? '') . "'";
+        $xlog .= " password:'" . ($_REQUEST['password'] ?? '') . "'";
     }
 
     // CMD immer
@@ -76,10 +76,6 @@ try {
         http_response_code(401);
         throw new Exception('Access denied'); // Nix preisgeben!
     }
-
-    // Initialize variables
-    $credentials = [];
-    $sessionId = '';
 
     // AB jetzt die eigentlichen Kommandos
     if ($cmd === 'login') { // regular login
@@ -146,30 +142,15 @@ try {
         // Fuer logrem und logout wird die SessionId gebraucht
         $sessionId = $_REQUEST['sessionId'] ?? '';
 
-        $access = null;
-        if (strlen($sessionId) === 32 && file_exists($accessFile)) {
-            $accessContent = file_get_contents($accessFile);
-            if ($accessContent !== false) {
-                $access = json_decode($accessContent, true);
-            }
+        if (strlen($sessionId) == 32 && file_exists($accessFile)) {
+            $access = json_decode(file_get_contents($accessFile), true);
         }
-
-        if (empty($access) || !isset($access['sessionId']) || $access['sessionId'] !== $sessionId) {
+        if (! !empty($access) || (@$access['sessionId'] !== $sessionId)) {
             http_response_code(401);
             throw new Exception('Access denied'); // Nix preisgeben!
         }
 
-        if ($cmd === 'logrem') {            // Load credentials for user preferences
-            $credentialsFile = $userDir . '/credentials.json.php';
-            if (file_exists($credentialsFile)) {
-                $credentialsContent = file_get_contents($credentialsFile);
-                if ($credentialsContent !== false) {
-                    $credentials = json_decode($credentialsContent, true);
-                }
-            }
-            if (empty($credentials)) {
-                $credentials = [];
-            }
+        if ($cmd === 'logrem') {
             $xlog .= " login(remembered)";
         } else if ($cmd === 'logout') {
             // Delete session file
@@ -190,18 +171,14 @@ try {
     }
 
     $personaDir = __DIR__ . '/../persona';
-    $userLang = $credentials['userLang'] ?? 'de_DE';
-    // Sanitize language code (e.g., de-DE -> de_DE, en-US -> en_US)
-    $userLangPrefix = preg_replace('/[^a-zA-Z0-9]/', '_', $userLang);
+    $userLang = $credentials['userLang'] ?? 'de-DE';
+    // Sanitize language code (e.g., de-DE, en-US)
+    $userLangPrefix = preg_replace('/[^a-zA-Z_]/', '_', $userLang);
     $hellosFile = $personaDir . '/' . $userLangPrefix . '_hello.json';
 
     if (!file_exists($hellosFile)) {
-        // Fallback to de_DE
-        $hellosFile = $personaDir . '/de_DE_hello.json';
-        if (!file_exists($hellosFile)) {
-            http_response_code(500);
-            throw new Exception("Missing hellos file for language: $userLang");
-        }
+        http_response_code(500);
+        throw new Exception("Missing hellos file for language: $userLang");
     }
 
     $hellosContent = file_get_contents($hellosFile);
@@ -211,7 +188,7 @@ try {
     }
 
     $helloAll = json_decode($hellosContent, true);
-    if (!is_array($helloAll) || !isset($helloAll['helpTxts']) || !is_array($helloAll['helpTxts'])) {
+    if (empty($helloAll) || !is_array(@$helloAll['helpTxts'])) {
         http_response_code(500);
         throw new Exception("Invalid hellos file format");
     }

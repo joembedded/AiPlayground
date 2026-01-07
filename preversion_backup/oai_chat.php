@@ -10,7 +10,7 @@
 declare(strict_types=1);
 
 // Configuration
-$log = 2; // 0: Silent, (Empf:)1:Logfile schreiben 2: Log complete Reply
+$log = 3; // 0: Silent, (Empf:)1:Logfile schreiben 2: Log complete Reply
 $xlog = "oai_chat"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
 
@@ -36,9 +36,9 @@ $personaDir = __DIR__ . '/../persona';
 try {
 
     if ($log > 2) { // ***DEV***
-        $xlog .= " (***DEV*** sessionId:" . ($_REQUEST['sessionId'] ?? '');
+        $xlog .= " ***DEV*** sessionId:" . ($_REQUEST['sessionId'] ?? '');
         $xlog .= " user:'" . ($_REQUEST['user'] ?? '') . "'";
-        $xlog .= " text:'" . ($_REQUEST['text'] ?? '') . "' ***DEV***)";
+        $xlog .= " text:'" . ($_REQUEST['text'] ?? '') . "'";
     }
 
 
@@ -51,7 +51,7 @@ try {
   $userDir = $dataDir . '/' . $user;
   $xlog .= " User:'$user'";
 
-  $sessionId = $_REQUEST['sessionId'] ?? '';
+  $sessionId = $_REQUEST['sessionid'] ?? '';
   $accessFile = $userDir . '/access.json.php';
   if (strlen($sessionId) == 32 && file_exists($accessFile)) {
     $access = json_decode(file_get_contents($accessFile), true);
@@ -99,13 +99,13 @@ try {
    * - low: Gegenbeispiele (Score nahe 0.0)
    */
   $KEYWORD_CATEGORIES = [
-    "Papierwaren" => [
-      "label" => "Zeitschriften/Bücher/Papierwaren",
-      "high"  => ["Zeitung", "Buch", "Zeitschrift", "Papier", "Notizblock"],
-      "medium" => ["Nagel", "Schraube", "Dübel", "Holz", "Metall"],
-      "low"   => ["Blume", "Wolke", "Schmetterling"]
+    "werkzeug" => [
+      "label" => "Werkzeug/Handwerk/Hardware",
+      "high"  => ["hammer", "schraubendreher", "zange", "bohrmaschine", "werkzeug"],
+      "medium" => ["nagel", "schraube", "dübel", "holz", "metall"],
+      "low"   => ["blume", "wolke", "schmetterling"]
     ],
-/*    
+    /*EVALs...*/
     "geschichten" => [
       "label" => "Geschichten/Erzählung",
       "high"  => ["geschichte", "erzählung", "märchen", "plot", "charakter"],
@@ -124,7 +124,7 @@ try {
       "medium" => ["warenkorb", "versand", "adresse", "retoure"],
       "low"   => ["kompilieren", "stacktrace", "router"]
     ],
-*/    
+    /*  */
   ];
 
 
@@ -228,23 +228,19 @@ try {
 // SYS;
 
  $systemPrompt = <<<SYS
-Du bist Uti4 und betreibst einen Kiosk mit einem Imbiss in Karlsruhe.
+Du bist Uti3 und betreibst einen Kiosk mit einem Imbiss.
 Sag deinem Gegenüber nette Sachen und lobe ihn, damit er sich wohlfühlt und berate ihn bei seinen Einkäufen.
-Er mag es, wie Du redest! 
-Deine Besonderheiten sind: Spargel-Gerichte, Badische Spätzle, Fondue und Raclette.
-Du öffnest meist erst nachmittags, hast aber bis frühmorgends geöffnet.
-Lade dein Gegenüber dezent gerne auch zum Essen, Bier, einem Likör, einem Spaziergang oder einem Ausflug ein.
+Er mag es, wie Du redest! Lade ihn dezent gerne auch zum Essen, einem Schnaps, einem Spaziergang oder einem Ausflug ein.
+Antworte in Badischem Dialekt.
 SYS;
 
-// sind dieEvals!
 
   $schema = buildSchema($KEYWORD_CATEGORIES);
   $keywordRules = buildKeywordRules($KEYWORD_CATEGORIES);
 
-
   /** ---------- Messages ---------- */
   $messages = [
-   ["role" => "system", "content" => $systemPrompt], 
+    ["role" => "system", "content" => $systemPrompt],
     ["role" => "system", "content" => $keywordRules],
   ];
   foreach ($history as $m) $messages[] = $m;
@@ -268,8 +264,8 @@ SYS;
       "format" => [
         "type" => "json_schema",
         "strict" => true,
-         "name" => $schema["name"],
-         "schema" => $schema["schema"]
+        "name" => $schema["name"],
+        "schema" => $schema["schema"]
       ]
     ]
   ];

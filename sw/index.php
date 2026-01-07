@@ -86,11 +86,25 @@
         
         <ul class="file-list">
             <?php
+            // Scan current directory
             $files = array_diff(scandir(__DIR__), ['.', '..']);
             $filteredFiles = array_filter($files, function($file) {
                 $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
                 return ($ext === 'php' || $ext === 'html') && $file !== 'index.php';
             });
+            
+            // Scan /tools directory if it exists
+            $toolsDir = __DIR__ . '/tools';
+            if (is_dir($toolsDir)) {
+                $toolsFiles = array_diff(scandir($toolsDir), ['.', '..']);
+                $filteredToolsFiles = array_filter($toolsFiles, function($file) use ($toolsDir) {
+                    $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                    return ($ext === 'php' || $ext === 'html') && is_file($toolsDir . '/' . $file);
+                });
+                foreach ($filteredToolsFiles as $file) {
+                    $filteredFiles[] = 'tools/' . $file;
+                }
+            }
             
             usort($filteredFiles, function($a, $b) {
                 return strcasecmp($a, $b);

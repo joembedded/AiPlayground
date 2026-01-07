@@ -10,11 +10,12 @@
 //--------- globals ------ 
 export const VERSION = 'V0.01 / 07.01.2026';
 export const COPYRIGHT = '(C)JoEmbedded.de';
-export let dbgLevel = 2;
+export let dbgLevel = 0;
 
 // Session Credentials
-export let sessionId = null; // 32 Zeichen SessionID
+export let apiSessionId = null; // 32 Zeichen SessionID
 export let apiUser = null; // z.B. 'testuser'
+
 export let userLanguage = null; // de-DE
 export let speakVoice = null; // z.B 'narrator_f_jane'; 
 export let isLoggedIn = false; // true wenn eingeloggt
@@ -106,7 +107,7 @@ async function sendeNachricht() {
 // Background Monitor - alle ca. 100 msec
 let chatStateVar = 0;     // 0: idle - darf extern mod. werden!
 function periodical() {
-    if (dbgLevel) dbgAudioStatus.textContent = `chatStateVar: ${chatStateVar}`;
+    if (dbgLevel) dbgAudioStatus.textContent = `chatStateVar: ${chatStateVar} ${isLoggedIn ? '(logged in)' : '(not logged in)'}`;
 
     switch (chatStateVar) {
         case 0: // idle
@@ -281,19 +282,19 @@ async function fetchAudioForSentence(sentence, voice) {
     if (!methodGET) {
         formData.append('text', sentence);
         formData.append("voice", voice);
-        formData.append('sessionid', sessionId);
+        formData.append('sessionid', apiSessionId);
         formData.append('user', apiUser);
         formData.append('stream', '1');
     } else {
         var url = `./api/oai_tts.php?`;
         url += `text=${encodeURIComponent(sentence)}`;
         url += `&voice=${encodeURIComponent(voice)}`;
-        url += `&sessionid=${encodeURIComponent(sessionId)}&stream=1`;
+        url += `&sessionid=${encodeURIComponent(apiSessionId)}&stream=1`;
         url += `&user=${encodeURIComponent(apiUser)}`;
         isLoading = true;
     }
     try {
-        if(!isLoggedIn) throw new Error("Not logged in!");
+        if (!isLoggedIn) throw new Error("Not logged in!");
         if (methodGET) {
             if (dbgLevel) terminalPrint(`Lade Audio via GET/src...`);
             audioPlayer.src = url;
@@ -361,13 +362,13 @@ export async function speakText(inputText) {
 // reguleren Chat mit Server
 export async function talkWithServer(text, concerningMessage = null) {
     const payload = {
-        sessionid: sessionId,
+        sessionId: apiSessionId,
         user: apiUser,
         lang: userLanguage,
         text: text
     };
     try {
-        if(!isLoggedIn) throw new Error("Not logged in!");
+        if (!isLoggedIn) throw new Error("Not logged in!");
         const response = await fetch('./api/oai_chat.php', {  // './api/echo_sim.php'
             method: 'POST',
             body: new URLSearchParams(payload)
@@ -382,12 +383,14 @@ export async function talkWithServer(text, concerningMessage = null) {
         }
         const data = await response.json();
         if (data.success) {
-            let text = '(Keine Antwort)';
+            let text = '?';
             // console.log('data:',data); - Die Antwort der KI kann alles mögliche enthalten...
-            try{
-                text = data.result.answer;  
-                text = data?.text?.length ? data.text : text; 
-            }catch(e){}
+            try {
+                text = data?.text?.length ? data.text : (data?.result?.answer ?? '(Keine Antwort)');
+                if (data.result?.meta?.notes) {
+                    // text += '\n(Auswertung: ' + data.result.meta.notes + ')';
+                }
+            } catch (e) { }
 
             if (concerningMessage) updateMessage(concerningMessage, text, 'bot ok');
             speakText(text);    // Sprichs aus!
@@ -415,7 +418,7 @@ export async function postAudio() {
         }
 
         //if (DBG) terminalPrint('Fetching audio data from player src...');
-        if(!isLoggedIn) throw new Error("Not logged in!");
+        if (!isLoggedIn) throw new Error("Not logged in!");
         const res = await fetch(audioSrc);
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
 
@@ -424,7 +427,7 @@ export async function postAudio() {
 
         const apiUrl = './api/oai_stt.php';
         const formData = new FormData();
-        formData.append('sessionid', sessionId);
+        formData.append('sessionId', apiSessionId);
         formData.append('user', apiUser);
         if (userLanguage !== undefined) formData.append('lang', userLanguage);
         formData.append('audio', audioBlob, 'recording' + (audioBlob.type.includes("ogg") ? ".ogg" : ".webm"));
@@ -769,7 +772,7 @@ function frameMonitor() {
     if (frameRms > maxRms) maxRms = frameRms;
     minRms = 0.998 * minRms + 0.002 * sliderThreshold;
     if (frameRms < minRms) minRms = frameRms;
-    if(autoThreshEnable) thresholdRms = minRms * 5;
+    if (autoThreshEnable) thresholdRms = minRms * 5;
     updateSpeechState(maxRms);
     bloomMicroButton(((maxRms / thresholdRms) - 0.5) * 3);
     if (isMenuVisible) {
@@ -797,7 +800,7 @@ function thresholdMove() {
     thresholdRms = sliderThreshold;
     thresholdFeedback.textContent = sliderThreshold.toFixed(3);
 }
-function autoThreshChkChange(){
+function autoThreshChkChange() {
     autoThreshEnable = autoThreshChk.checked;
     thresholdMove();
 }
@@ -806,6 +809,7 @@ thresholdSlider.addEventListener('input', thresholdMove);
 maxpauseSlider.addEventListener('input', maxpauseMove);
 maxpauseMove();
 thresholdMove();
+autoThreshEnable = autoThreshChk.checked;
 
 microBtn.addEventListener('click', microBtnCLick);
 navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } })
@@ -939,14 +943,15 @@ document.getElementById('loginInfoLink').addEventListener('click', (e) => {
 });
 
 document.getElementById('menuLogout').addEventListener('click', async () => {
-    await login('logout'); // Logout
+    await login('logout', apiUser, '', apiSessionId); // Logout
     location.reload(); // Seite neu laden
 });
 
-export async function login(cmd = '', user = '', password = '', statusElement = null) {
+export async function login(cmd = '', luser = '', lpassword = '', lsessionId = '', statusElement = null) {
     const payload = {
-        user: user,
-        password: password,
+        user: luser,
+        password: lpassword,
+        sessionId: lsessionId,
         cmd: cmd
     };
     try {
@@ -963,15 +968,19 @@ export async function login(cmd = '', user = '', password = '', statusElement = 
             return false;
         }
         const data = await response.json();
-        if (data.success) {
-            sessionId = data.sessionId;
+        if (data.success && luser === data.user) {
+            apiSessionId = data.sessionId;
             apiUser = data.user;
             userNameDisplay.textContent = apiUser;
             userLanguage = data.userLang;
             speakVoice = data.speakVoice;
             const nHelpTexts = data.helpTexts;
             helpTxts = nHelpTexts;
-            return true
+            // OK
+            isLoggedIn = true;
+            sendenBtn.disabled = false;
+
+            return true;
         }
         if (dbgLevel) terminalPrint('POST returned: ' + JSON.stringify(data));
     } catch (e) {
@@ -981,7 +990,8 @@ export async function login(cmd = '', user = '', password = '', statusElement = 
 }
 
 const credentialsDialog = document.getElementById('credentials');
-document.getElementById('btn-login').addEventListener('click', async () => {
+document.getElementById('btn-login').addEventListener('click', async (e) => {
+    e.preventDefault();
     const user = document.getElementById('input-user').value.trim();
     const password = document.getElementById('input-password').value.trim();
     const loginStatus = document.getElementById('login-error');
@@ -991,29 +1001,48 @@ document.getElementById('btn-login').addEventListener('click', async () => {
         return;
     }
     loginStatus.textContent = 'Anmeldung läuft...';
-    const logres = await login('login', user, password, loginStatus);
+    const logres = await login('login', user, password, '', loginStatus);
     if (logres === true) { // Full Login
         loginStatus.textContent = 'Anmeldung OK!';
-        isLoggedIn = true;
+        saveCredentialsToLocalStorage(user, apiSessionId);
         frq_ping(880, 0.1, 0.07); // Kurzer HPing
-        await jsSleepMs(300); 
+        await jsSleepMs(300);
         credentialsDialog.close();
     } else {
         loginStatus.textContent = 'Anmeldung fehlgeschlagen!';
         frq_ping(220, 0.5, 0.2);
     }
 });
+// Never Password
+export function deleteCredentialsFromLocalStorage() {
+    localStorage.removeItem('loginmonitor-username');
+    localStorage.removeItem('loginmonitor-sessionid');
+}
+export function saveCredentialsToLocalStorage(username = '', sessionId = '') {
+    if (username.length) localStorage.setItem('loginmonitor-username', username);
+    if (sessionId.length) localStorage.setItem('loginmonitor-sessionid', sessionId);
+}
+export function getCredentialsFromLocalStorage() {
+    const username = localStorage.getItem('loginmonitor-username') || '';
+    const sessionId = localStorage.getItem('loginmonitor-sessionid') || '';
+    return { username, sessionId };
+}
 
-export async function mainLoginDialog() {
-    const res = await login('logrem'); // Test-Login
-    if (res === true) {
-        isLoggedIn = true;
-        return; // Alles ok
+export async function mainLogin(cred) {
+    if (cred.username.length > 0 && cred.sessionId.length > 0) {
+        const res = await login('logrem', cred.username, '', cred.sessionId, null); // Test-Login
+        if (res === true) {
+            return; // Alles ok
+        }
     }
-
     credentialsDialog.showModal();
 }
-//mainLoginDialog();
+
+const cred = getCredentialsFromLocalStorage();
+document.getElementById('input-user').value = cred.username;
+
+
+mainLogin(cred);
 // === ENDE MODLogin ===
 
 console.log('Minichat:', VERSION);
