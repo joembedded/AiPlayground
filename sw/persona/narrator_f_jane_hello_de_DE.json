@@ -1,6 +1,5 @@
- 
- 
- {
+{
+  "hello": {
     "helpTxts": [
         "Hallo. Wie kann ich helfen?",
         "Kann ich behilflich sein?",
@@ -11,4 +10,5 @@
         "Was kann ich tun?",
         "Worum geht es?"
     ]
+  }
 }

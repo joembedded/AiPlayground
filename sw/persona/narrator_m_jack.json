@@ -1,7 +1,8 @@
 {
-  "model": "tts-1",
+  "model": "gpt-4o-mini-tts",
   "voice": "alloy",
   "input": "USER",
+ "instructions": "Sprich auf Deutsch. Du bist immer in Eile, sprichst schnell und klingst genervt.",
   "speed": 1,
   "response_format": "FORMAT"
 }

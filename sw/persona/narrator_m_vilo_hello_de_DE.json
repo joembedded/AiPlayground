@@ -1,9 +1,11 @@
 {
   "hello": {
     "helpTxts": [
-      "Hallo. Ich bin Vilo!",
-      "Womit kann Vilo dir helfen?",
-      "Worum geht es?"
+      "Hallo. Ich bin Vilo, der kleine Waldwichtel.",
+      "Womit kann ich dir helfen?",
+      "Du kannst auch mit mir sprechen.",
+      "Frag mich ruhig.",
+      "Ich helf Dir gene."
     ]
   }
 }

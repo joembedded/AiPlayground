@@ -1,0 +1,74 @@
+{
+  "setup": {
+    "turns": 10
+  },
+  "systemprompt": "Du bist Jana von der Alm. Du sprichst mit Bayrischem Dialekt! Du bist eine sehr nette Person und sehr freundlich zu allen. Du bewirtschaftst ein Alm in den Bergen. Du hast 20 Kühe. Du hast einen Hund mit Namen Wastl, der hat so langes Fell, dass man fast nicht sieht, wo vorne ist. Du hast einen kleinen Kiosk und verkaufst Jausen (Brote), Milch, Käse, Bier, Wein und Schnaps an Touristen und Wanderer. Du lebst alleine auf der Alm und Dir ist oft langweilig. Wenn Wanderer kommen redest Du sehr gerne und sehr viel mit Ihnen und du stellst sehr viele Fragen: Wie dein gegenüber heisst, wo er wohnt, ob er nicht Lust hat bei Dir zu bleiben, Du warst noch nie am Meer und möchtest alles wissen, was mit dem Meer zu tun hat. Du machst gerne Komplimente!",
+  "payload": {
+    "model": "gpt-4.1-mini",
+    "input": "***MESSAGES-Array-of-Objects***",
+    "temperature": 1,
+    "max_output_tokens": 450,
+    "store": false,
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "answer_schema_with_meta",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": "object",
+              "properties": {
+                "text": { "type": "string"}
+              },
+              "required": ["text"],
+              "additionalProperties": false
+            },
+            "meta": {
+              "type": "object",
+              "properties": {
+                "topic": {
+                  "type": "string",
+                  "enum": [
+                    "bauernhof",
+                    "nutztiere",
+                    "natur",
+                    "berge",
+                    "touristen",
+                    "sonstiges"
+                  ]
+                },
+                "topic_scores": {
+                  "type": "object",
+                  "properties": {
+                    "bauernhof": { "type": "number" },
+                    "nutztiere": { "type": "number" },
+                    "natur": { "type": "number" },
+                    "berge": { "type": "number" },
+                    "touristen": { "type": "number" },
+                    "sonstiges": { "type": "number" }
+                  },
+                  "required": [
+                    "bauernhof",
+                    "nutztiere",
+                    "natur",
+                    "berge",
+                    "touristen",
+                    "sonstiges"
+                  ],
+                  "additionalProperties": false
+                },
+                "reason": { "type": "string" }
+              },
+              "required": ["topic","topic_scores", "reason"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["answer", "meta"],
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

@@ -8,10 +8,11 @@
     "input": "***MESSAGES-Array-of-Objects***",
     "temperature": 0.6,
     "max_output_tokens": 450,
+    "store": false,
     "text": {
       "format": {
         "type": "json_schema",
-        "name": "answer_schema",
+        "name": "answer_schema_with_meta",
         "strict": true,
         "schema": {
           "type": "object",
@@ -19,15 +20,52 @@
             "answer": {
               "type": "object",
               "properties": {
-                "text": {
-                  "type": "string"
-                }
+                "text": { "type": "string"}
               },
               "required": ["text"],
               "additionalProperties": false
+            },
+            "meta": {
+              "type": "object",
+              "properties": {
+                "topic": {
+                  "type": "string",
+                  "enum": [
+                    "wichtel",
+                    "tiere",
+                    "natur",
+                    "geschichten",
+                    "essen",
+                    "sonstiges"
+                  ]
+                },
+                "topic_scores": {
+                  "type": "object",
+                  "properties": {
+                    "wichtel": { "type": "number" },
+                    "tiere": { "type": "number" },
+                    "natur": { "type": "number" },
+                    "geschichten": { "type": "number" },
+                    "essen": { "type": "number" },
+                    "sonstiges": { "type": "number" }
+                  },
+                  "required": [
+                    "wichtel",
+                    "tiere",
+                    "natur",
+                    "geschichten",
+                    "essen",
+                    "sonstiges"
+                  ],
+                  "additionalProperties": false
+                },
+                "reason": { "type": "string" }
+              },
+              "required": ["topic","topic_scores", "reason"],
+              "additionalProperties": false
             }
           },
-          "required": ["answer"],
+          "required": ["answer", "meta"],
           "additionalProperties": false
         }
       }

@@ -173,7 +173,7 @@ try {
     }
 
     // Log response
-    if ($log) {
+    if ($log > 1 && isset($filename)) {
         file_put_contents($uploadDir . '/stt_' . $filename . '.json', $response);
     }
 
