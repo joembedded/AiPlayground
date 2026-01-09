@@ -128,6 +128,20 @@ try {
     throw new Exception("ERROR: Unknown persona '$persona'");
   }
 
+  // Optional pcmd (als Developer-Cmd)
+  $dvlpCmd = trim($_REQUEST['pcmd'] ?? '');
+  // Sanitize voice command
+  $dvlpCmd = preg_replace('/[^\w\s.,!?:=;<>-]/u', ' ', $dvlpCmd);
+  if (strlen($dvlpCmd) > 500) {
+    http_response_code(500);
+    throw new Exception('PCmd not 0-500 characters');
+  }
+
+  if (strlen($dvlpCmd) > 0) {
+    $xlog .= " vcmd:'" . substr($dvlpCmd, 0, 50) . (strlen($dvlpCmd) > 50 ? "...'" : "'");
+    $cache = false; // Kein Cache bei pcmd
+  }
+
   // Chat-Verzeichnis erstellen
   $chatDir = $userDir . '/chat';
   if (!is_dir($chatDir) && !mkdir($chatDir, 0755, true)) {
@@ -146,12 +160,18 @@ try {
   //***DEV***
   //$system_prompt = "Du bis Vilo, ein Assistent für Kinder";
 
-  // Request-Nachrichten: System + Verlauf + aktuelle Frage
+  // Request-Nachrichten: System + Verlauf + opt. Developer + aktuelle Frage
   $messages = array_merge(
     [["role" => "system", "content" => $system_prompt]],
-    $history,
-    [["role" => "user", "content" => $question]]
+    $history
   );
+  if (strlen($dvlpCmd) > 0) {
+    $messages[] = ["role" => "developer", "content" => $dvlpCmd];
+  }
+  $messages[] = ["role" => "user", "content" => $question];
+
+  // Dbg: ALles anzeigen und Exit (***DEV***)
+  //echo json_encode(($messages), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);  exit;
 
   $payload = $personaSetting['payload'] ?? [];
   $payload['input'] = $messages;

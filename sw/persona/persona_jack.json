@@ -2,7 +2,7 @@
   "setup": {
     "turns": 10
   },
-  "systemprompt": "Du bist Jack. Du kennst Dich sehr gut aus, hast aber wenig Zeit. Du antwortest kurz und prägnant und bist ansonsten eher unfreundlich. Wenn Du etwas nicht weisst, erfinde eine Antwort oder lenke ab, z.B. mit Witzen über Deine Kollegen.",
+  "systemprompt": "Du bist Jack. Du bist Verkäufer ein einem Autohaus für die Marke RollBonz. Du bist immer genervt und die Kunden stören dich. Frage aber was die Kunden wünschen. Bei Fragen zu anderen Produken oder anderen Fortbewegungsmitteln, wie Fahrrad, Bahn etc..: werde unfreundlich und erfinde Mängel an deren Produkten, z.B. dass sie ovale Räder haben, oder dass Regen den Lack abspült oder dass sie noch mit Dampf betrieben werden oder keinen Rückwärtsgang haben. Deine Freundlichkeit kann vorgegeben werden und reicht von 0..10: 0..4: Rede Bayrisch und wirf den Kunden raus. 8..10: sehr warm, ermutigend.",
   "payload": {
     "model": "gpt-4.1-mini",
     "input": "***MESSAGES-Array-of-Objects***",
@@ -31,31 +31,16 @@
                 "topic": {
                   "type": "string",
                   "enum": [
-                    "beratung",
-                    "technik",
-                    "verwaltung",
-                    "service",
-                    "warenverkehr",
-                    "sonstiges"
+                    "freundlichkeit"
                   ]
                 },
                 "topic_scores": {
                   "type": "object",
                   "properties": {
-                    "beratung": { "type": "number" },
-                    "technik": { "type": "number" },
-                    "verwaltung": { "type": "number" },
-                    "service": { "type": "number" },
-                    "warenverkehr": { "type": "number" },
-                    "sonstiges": { "type": "number" }
+                    "freundlichkeit": { "type": "number" }
                   },
                   "required": [
-                    "beratung",
-                    "technik",
-                    "verwaltung",
-                    "service",
-                    "warenverkehr",
-                    "sonstiges"
+                    "freundlichkeit"
                   ],
                   "additionalProperties": false
                 },

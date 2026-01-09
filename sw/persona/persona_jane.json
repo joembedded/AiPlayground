@@ -12,7 +12,7 @@
     "text": {
       "format": {
         "type": "json_schema",
-        "name": "answer_schema_with_meta",
+        "name": "answer_schema_with",
         "strict": true,
         "schema": {
           "type": "object",
@@ -20,52 +20,13 @@
             "answer": {
               "type": "object",
               "properties": {
-                "text": { "type": "string"}
+                "text": { "type": "string" }
               },
               "required": ["text"],
               "additionalProperties": false
-            },
-            "meta": {
-              "type": "object",
-              "properties": {
-                "topic": {
-                  "type": "string",
-                  "enum": [
-                    "bauernhof",
-                    "nutztiere",
-                    "natur",
-                    "berge",
-                    "touristen",
-                    "sonstiges"
-                  ]
-                },
-                "topic_scores": {
-                  "type": "object",
-                  "properties": {
-                    "bauernhof": { "type": "number" },
-                    "nutztiere": { "type": "number" },
-                    "natur": { "type": "number" },
-                    "berge": { "type": "number" },
-                    "touristen": { "type": "number" },
-                    "sonstiges": { "type": "number" }
-                  },
-                  "required": [
-                    "bauernhof",
-                    "nutztiere",
-                    "natur",
-                    "berge",
-                    "touristen",
-                    "sonstiges"
-                  ],
-                  "additionalProperties": false
-                },
-                "reason": { "type": "string" }
-              },
-              "required": ["topic","topic_scores", "reason"],
-              "additionalProperties": false
             }
           },
-          "required": ["answer", "meta"],
+          "required": ["answer"],
           "additionalProperties": false
         }
       }

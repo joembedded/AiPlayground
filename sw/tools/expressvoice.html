@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="de">
-<!-- http://localhost/wrk/ai/playground/sw/tools/expresschat.html -->
+<!-- http://localhost/wrk/ai/playground/sw/tools/expressvoice.html -->
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExpressChat</title>
+    <title>ExpressVoice</title>
     <style>
         * {
             box-sizing: border-box;
@@ -217,7 +218,7 @@
 <body>
     <div class="container">
         <header>
-            <h3>💬 ExpressChat (JSON)</h3>
+            <h3>💬 ExpressVoice (JSON)</h3>
         </header>
 
         <div class="form-section">
@@ -229,22 +230,24 @@
                 <label for="user-sessionid">🎫 Session ID</label>
                 <input type="text" id="user-sessionid" name="sessionId" readonly placeholder="Session ID">
             </div>
-
             <div class="form-group">
-                <label for="voice-pcmd">➕ Zusatz-Kommandos ('pcmd') </label>
-                <input type="text" id="voice-pcmd" name="pcmd" placeholder="z.B.: Freundlichkeit:0">
-            </div>
-
-            <div class="form-group">
-                <label for="persona-name">🎭 Personalität ('persona')</label>
-                <input type="text" id="persona-name" name="persona"  placeholder="z. B. persona_jane">
+                <label for="voice-name">🎭 Voice ('narrator')</label>
+                <input type="text" id="voice-name" name="voice" placeholder="z.B. narrator_f_jane">
             </div>
             <div class="form-group">
-                <label for="text-input">✉️ Nachricht</label>
-                <input type="text" id="text-input" name="text" required placeholder="Nachricht eingeben..." autofocus>
+                <label for="voice-vcmd">➕ Zusatz-Kommandos ('vcmd') </label>
+                <input type="text" id="voice-vcmd" name="vcmd" placeholder="z.B.: flüstern">
+            </div>
+            <div class="form-group">
+                <label for="text-input">✉️ Text zum Sprechen</label>
+                <input type="text" id="text-input" name="text" required placeholder="Text eingeben..." autofocus>
             </div>
             <div class="form-group">
                 <button type="submit" id="send-btn">📤 Senden</button>
+            </div>
+            <div class="form-group">
+                <audio id="audio-playback" style="width: 100%; border: 1px solid #ced4da; border-radius: 4px;" controls
+                    autoplay src="../static/soundfx/bell3.opus"></audio>
             </div>
         </div>
 
@@ -259,17 +262,20 @@
     const sendMessage = async () => {
         const textInput = document.getElementById('text-input').value.trim();
         const responseOutput = document.getElementById('response-output');
-        const personaInput = document.getElementById('persona-name').value.trim();
-        const pcmd = document.getElementById('voice-pcmd').value.trim();  
-        localStorage.setItem('expressvoice-persona', personaInput);
-        localStorage.setItem('expressvoice-pcmd', pcmd);    
+        const voiceInput = document.getElementById('voice-name').value.trim();
+        const voiceVcmd = document.getElementById('voice-vcmd').value.trim();
+
+        localStorage.setItem('expressvoice-voice', voiceInput);
+        localStorage.setItem('expressvoice-vcmd', voiceVcmd);
+
+        const audioPlayer = document.getElementById('audio-playback');
 
         if (!textInput) {
-            alert('Bitte geben Sie eine Nachricht ein');
+            alert('Bitte geben Sie einen Text ein');
             return;
         }
-        if (!personaInput) {
-            alert('Bitte geben Sie eine Personalität ein');
+        if (!voiceInput) {
+            alert('Bitte geben Sie eine Stimme ein');
             return;
         }
 
@@ -278,11 +284,13 @@
                 user: document.getElementById('user-name').value,
                 sessionId: document.getElementById('user-sessionid').value,
                 text: textInput,
-                persona: personaInput,
+                voice: voiceInput,
             };
-            if(pcmd.length>0)   payload.pcmd = pcmd;    
+            if (voiceVcmd.length) {
+                payload.vcmd = voiceVcmd;
+            }
 
-            const api = '../api/oai_chat.php';
+            const api = '../api/oai_tts.php';
             responseOutput.value = `'${api}':\n` + JSON.stringify(payload, null, 2) + '\n\nAntwort:\n';
 
             const response = await fetch(api, {
@@ -294,21 +302,37 @@
             });
 
             const status = response.status;
-            let dataString = await response.text();
-            
-            try {
-                const dataObj = JSON.parse(dataString);
-                dataString = JSON.stringify(dataObj, null, 2);
-            } catch (e) {
-                // Nicht JSON
-            }
+            const contentType = response.headers.get('content-type');
 
-            responseOutput.value += `HTTP-Status: ${status}\n\n` + dataString;
-            
-            // Clear input on success
-            if (response.ok) {
-                document.getElementById('text-input').value = '';
+            if (response.ok && contentType && contentType.includes('audio')) {
+                // Audio-Blob abrufen und abspielen
+                const audioBlob = await response.blob();
+                // console.log(audioBlob);
+                const playAudioUrl = URL.createObjectURL(audioBlob);
+
+                // Problematik: Wenn das Audio defekt ist, gibt es keine Möglichkeit sauber zu verlassen.
+                audioPlayer.onerror = (e) => {
+                    console.error('FATAL: Audio-Playback-Fehler:', e.currentTarget?.error?.message ?? 'Unknown');
+                };
+                audioPlayer.src = playAudioUrl;
+
+
+                responseOutput.value += `HTTP-Status: ${status}\n\nAudio erfolgreich geladen und wird abgespielt.`;
                 document.getElementById('text-input').focus();
+
+            } else {
+
+                let dataString = await response.text();
+
+                try {
+                    const dataObj = JSON.parse(dataString);
+                    dataString = JSON.stringify(dataObj, null, 2);
+                } catch (e) {
+                    // Nicht JSON
+                    dataString = e.message;
+                }
+
+                responseOutput.value += `HTTP-Status: ${status}\n\n` + dataString;
             }
         } catch (error) {
             responseOutput.value += `Fehler: ${error.message}`;
@@ -327,20 +351,20 @@
     // Load user data from localStorage
     const storedUsername = localStorage.getItem('loginmonitor-username');
     const storedSessionId = localStorage.getItem('loginmonitor-sessionid');
-    const storedPersona = localStorage.getItem('expressvoice-persona');
-    const storedPCmd = localStorage.getItem('expressvoice-pcmd');
-    
+    const storedVoice = localStorage.getItem('expressvoice-voice');
+    const storedVCmd = localStorage.getItem('expressvoice-vcmd');
+
     if (storedUsername) {
         document.getElementById('user-name').value = storedUsername;
     }
     if (storedSessionId) {
         document.getElementById('user-sessionid').value = storedSessionId;
     }
-    if (storedPersona) {
-        document.getElementById('persona-name').value = storedPersona;
+    if (storedVoice) {
+        document.getElementById('voice-name').value = storedVoice;
     }
-    if (storedPCmd) {
-        document.getElementById('persona-pcmd').value = storedPCmd;
+    if (storedVCmd) {
+        document.getElementById('voice-vcmd').value = storedVCmd;
     }
 
 </script>

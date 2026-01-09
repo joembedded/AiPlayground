@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="de">
-<!-- http://localhost/wrk/ai/playground/sw/tools/expresschat.html -->
+<!-- http://localhost/wrk/ai/playground/sw/tools/loginmonitor.html -->
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExpressChat</title>
+    <title>Login Monitor</title>
     <style>
         * {
             box-sizing: border-box;
@@ -88,9 +89,11 @@
             box-shadow: 0 0 0 3px rgba(107, 123, 234, 0.1);
         }
 
-        input:read-only {
-            background: #e9ecef;
-            color: #6c757d;
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
         }
 
         button {
@@ -105,7 +108,6 @@
             font-weight: 500;
             transition: all 0.2s ease;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
         }
 
         button:hover {
@@ -119,12 +121,20 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
-        #send-btn {
+        #login-btn {
             background: #20b89e;
         }
 
-        #send-btn:hover {
+        #login-btn:hover {
             background: #1aa58d;
+        }
+
+        #logout-btn {
+            background: #f63a3a;
+        }
+
+        #logout-btn:hover {
+            background: #e02828;
         }
 
         .response-section {
@@ -147,8 +157,8 @@
             flex: 1;
             width: 100%;
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.6;
+            font-size: 16px;
+            line-height: 1.5;
             padding: 15px;
             background-color: #1e1e1e;
             color: #d4d4d4;
@@ -207,8 +217,14 @@
                 max-height: 40vh;
             }
 
+            .button-group {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
             button {
-                margin-top: 15px;
+                flex: 1;
+                min-width: 120px;
             }
         }
     </style>
@@ -217,132 +233,114 @@
 <body>
     <div class="container">
         <header>
-            <h3>💬 ExpressChat (JSON)</h3>
+            <h3>🔐 MiniChat - Login Monitor</h3>
         </header>
 
         <div class="form-section">
             <div class="form-group">
-                <label for="user-name">👤 Benutzername ('user')</label>
-                <input type="text" id="user-name" name="user" readonly placeholder="Benutzername">
+                <label for="user-name">👤 Benutzername</label>
+                <input type="text" id="user-name" name="user-name" required placeholder="Benutzername">
             </div>
             <div class="form-group">
-                <label for="user-sessionid">🎫 Session ID</label>
-                <input type="text" id="user-sessionid" name="sessionId" readonly placeholder="Session ID">
-            </div>
-
-            <div class="form-group">
-                <label for="voice-pcmd">➕ Zusatz-Kommandos ('pcmd') </label>
-                <input type="text" id="voice-pcmd" name="pcmd" placeholder="z.B.: Freundlichkeit:0">
-            </div>
-
-            <div class="form-group">
-                <label for="persona-name">🎭 Personalität ('persona')</label>
-                <input type="text" id="persona-name" name="persona"  placeholder="z. B. persona_jane">
+                <label for="user-password">🔑 Passwort</label>
+                <input type="text" id="user-password" name="user-password" placeholder="Passwort">
             </div>
             <div class="form-group">
-                <label for="text-input">✉️ Nachricht</label>
-                <input type="text" id="text-input" name="text" required placeholder="Nachricht eingeben..." autofocus>
+                <label for="user-sessionid">🎫 SessionId</label>
+                <input type="text" id="user-sessionid" name="user-sessionid" placeholder="SessionId">
             </div>
             <div class="form-group">
-                <button type="submit" id="send-btn">📤 Senden</button>
+                <div class="button-group">
+                    <button type="submit" id="login-btn">✓ Login</button>
+                    <button type="submit" id="logrem-btn">🔍 Test Login</button>
+                    <button type="submit" id="logout-btn">✗ Logout</button>
+                </div>
+            </div>
+            <div>
+                <small>
+                    Dieses kleine Tool ermöglicht das Testen der Login-, Re-Login- und Logout-Funktionen
+                    der MiniChat <strong>login.php</strong> API.<br>
+                    Hinweis: Speichert die Eingaben im `localStorage` des Browsers.
+                </small>
             </div>
         </div>
 
         <div class="response-section">
-            <div class="response-header">📡 API-Antwort (JSON)</div>
+            <div class="response-header">📡 API-Antwort</div>
             <textarea id="response-output" readonly></textarea>
         </div>
     </div>
 
 </body>
 <script>
-    const sendMessage = async () => {
-        const textInput = document.getElementById('text-input').value.trim();
+    async function login(cmd) {
+        const username = document.getElementById('user-name').value;
+        const password = document.getElementById('user-password').value;
+        const sessionId = document.getElementById('user-sessionid').value;
+
+        if (username.length) localStorage.setItem('loginmonitor-username', username);
+        if (password.length) localStorage.setItem('loginmonitor-password', password);
+        if (sessionId.length) localStorage.setItem('loginmonitor-sessionid', sessionId);
+
         const responseOutput = document.getElementById('response-output');
-        const personaInput = document.getElementById('persona-name').value.trim();
-        const pcmd = document.getElementById('voice-pcmd').value.trim();  
-        localStorage.setItem('expressvoice-persona', personaInput);
-        localStorage.setItem('expressvoice-pcmd', pcmd);    
-
-        if (!textInput) {
-            alert('Bitte geben Sie eine Nachricht ein');
-            return;
+        const postdata = {
+            cmd: cmd,
+        };
+        if (cmd === 'login') {
+            postdata.user = username;
+            postdata.password = password;
+        } else if (cmd === 'logrem') {
+            postdata.user = username;
+            postdata.sessionId = sessionId;
+        } else if (cmd === 'logout') {
+            postdata.user = username;
+            postdata.sessionId = sessionId;
         }
-        if (!personaInput) {
-            alert('Bitte geben Sie eine Personalität ein');
-            return;
-        }
-
+        const api = '../api/login.php';
+        responseOutput.value = `'${api}':\n` + JSON.stringify(postdata, null, 2) + '\n\nAntwort:\n';
         try {
-            const payload = {
-                user: document.getElementById('user-name').value,
-                sessionId: document.getElementById('user-sessionid').value,
-                text: textInput,
-                persona: personaInput,
-            };
-            if(pcmd.length>0)   payload.pcmd = pcmd;    
-
-            const api = '../api/oai_chat.php';
-            responseOutput.value = `'${api}':\n` + JSON.stringify(payload, null, 2) + '\n\nAntwort:\n';
-
             const response = await fetch(api, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: new URLSearchParams(payload)
+                body: new URLSearchParams(postdata)
             });
-
-            const status = response.status;
             let dataString = await response.text();
-            
             try {
                 const dataObj = JSON.parse(dataString);
                 dataString = JSON.stringify(dataObj, null, 2);
+
+                const sessionIdFromResponse = dataObj?.sessionId;
+                if (sessionIdFromResponse && sessionIdFromResponse.length === 32) {
+                    localStorage.setItem('loginmonitor-sessionid', sessionIdFromResponse);
+                    document.getElementById('user-sessionid').value = sessionIdFromResponse;
+                }
+                if (cmd === 'logout') {
+                    localStorage.removeItem('loginmonitor-sessionid');
+                    document.getElementById('user-sessionid').value = '';
+                }
             } catch (e) {
                 // Nicht JSON
             }
-
-            responseOutput.value += `HTTP-Status: ${status}\n\n` + dataString;
-            
-            // Clear input on success
-            if (response.ok) {
-                document.getElementById('text-input').value = '';
-                document.getElementById('text-input').focus();
-            }
+            responseOutput.value += `HTTP-Status: ${response.status} - ${response.statusText}\n\n` + dataString;
         } catch (error) {
-            responseOutput.value += `Fehler: ${error.message}`;
+            responseOutput.value += `Fehler: ${error}`;
         }
-    };
+    }
 
-    document.getElementById('send-btn').addEventListener('click', sendMessage);
-
-    document.getElementById('text-input').addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            sendMessage();
-        }
+    document.getElementById('login-btn').addEventListener('click', () => {
+        login('login');
     });
-
-    // Load user data from localStorage
-    const storedUsername = localStorage.getItem('loginmonitor-username');
-    const storedSessionId = localStorage.getItem('loginmonitor-sessionid');
-    const storedPersona = localStorage.getItem('expressvoice-persona');
-    const storedPCmd = localStorage.getItem('expressvoice-pcmd');
-    
-    if (storedUsername) {
-        document.getElementById('user-name').value = storedUsername;
-    }
-    if (storedSessionId) {
-        document.getElementById('user-sessionid').value = storedSessionId;
-    }
-    if (storedPersona) {
-        document.getElementById('persona-name').value = storedPersona;
-    }
-    if (storedPCmd) {
-        document.getElementById('persona-pcmd').value = storedPCmd;
-    }
-
+    document.getElementById('logrem-btn').addEventListener('click', () => {
+        login('logrem');
+    });
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        login('logout');
+    });
+    localStorage.getItem('loginmonitor-username') && (document.getElementById('user-name').value = localStorage.getItem('loginmonitor-username'));
+    localStorage.getItem('loginmonitor-password') && (document.getElementById('user-password').value = localStorage.getItem('loginmonitor-password'));
+    localStorage.getItem('loginmonitor-sessionid') && (document.getElementById('user-sessionid').value = localStorage.getItem('loginmonitor-sessionid'));
 </script>
 
 </html>

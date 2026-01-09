@@ -5,15 +5,17 @@
  * Parameter:
  *   text   - Vorlese-Text - Darf so lang sein wie API kann
  *   voice  - Stimme (Dateiname ohne .json aus /voices)
- *   stream - Optional: aktiviert Streaming 
- *   cache - Optional: aktiviert Caching der Audiofiles
- *  http://localhost/wrk/ai/playground/sw/api/oai_tts.php?apipw=Leg1310LX&text=Hallo%20Welt&voice=narrator_m_vilo
+ *   stream - Optional: aktiviert Streaming
+ *   vcmd   - Optional: Voice Command zur Steuerung der Stimme, wenn 1. Zeichen '!' dann ersetzt es die Anweisungen, sonst wird es angehängt
+ *   cache - Optional: aktiviert Caching der Audiofiles (nur wenn keine VCmd)
+ * Bsp.: 
+ * http://localhost/wrk/ai/playground/sw/api/oai_tts.php?text=Hallo&voice=narrator_f_jane&user=janalm&sessionId=30a48b614c0fbe23676a316796efd7b6
  */
 
 declare(strict_types=1);
 
 // Configuration - Loglevel
-$log = 1; // 0: Silent, 1: Logfile schreiben 2:Alles cachen
+$log = 3; // 0: Silent, 1: Logfile schreiben 2:Alles cachen 3: Mit Instructions
 $xlog = "oai_tts"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
 
@@ -48,11 +50,12 @@ try {
     $userDir = $dataDir . '/' . $user;
     $xlog .= " User:'$user'";
 
-    $sessionId = $_REQUEST['sessionid'] ?? '';
+    $sessionId = $_REQUEST['sessionId'] ?? '';
     $accessFile = $userDir . '/access.json.php';
     if (strlen($sessionId) == 32 && file_exists($accessFile)) {
         $access = json_decode(file_get_contents($accessFile), true);
     }
+
     if (! !empty($access) || (@$access['sessionId'] !== $sessionId)) {
         http_response_code(401);
         throw new Exception('Access denied'); // Nix preisgeben!
@@ -72,11 +75,12 @@ try {
     }
 
     $stream =  !empty($_REQUEST['stream']) ?? false;
-    
+
     // Loggen wenn explizit gesetzt oder bei Bedarf
-    $cache = !empty($_REQUEST['cache']) ?? ($log >= 2); 
-    if( $cache ) $xlog .= " Cache"; 
-    
+    $cache = !empty($_REQUEST['cache']);
+    if(($log >= 2)) $cache = true; // Dann in jedem Fall cachen
+    if ($cache) $xlog .= " Cache";
+
     $audioContent = match ($format) {
         'mp3' => 'audio/mpeg',
         'opus' => 'audio/webm; codecs=opus',
@@ -109,16 +113,30 @@ try {
     $slen = strlen($text);
     $xlog .= " Voice:$voice Text[$slen]:'" . (substr($text, 0, 120)) . ($slen > 120 ? "...'" : "'");
 
-    // Wenn schon da, aus CACHE nehmen
-    if (file_exists($diskPath)) {
-        $cachedAudio = file_get_contents($diskPath);
-        @touch($diskPath);
-        header("Content-Type: $audioContent");
-        header("Content-Length: " . strlen($cachedAudio));
-        echo $cachedAudio;
-        $xlog .= " File[" . strlen($cachedAudio) . "]:$diskFname (Cached)";
-        log2file($xlog);
-        exit;
+
+    $voiceCommand = trim($_REQUEST['vcmd'] ?? '');
+    // Sanitize voice command
+    $voiceCommand =  preg_replace('/[^\w\s.,!?:=;<>-]/u', ' ',   $voiceCommand);
+    if (strlen($voiceCommand) > 200) {
+        http_response_code(500);
+        throw new Exception('Voice not 0-200 characters');
+    }
+
+    if (strlen($voiceCommand) > 0) {
+        $xlog .= " VCmd:'" . substr($voiceCommand, 0, 50) . (strlen($voiceCommand) > 50 ? "...'" : "'");
+        $cache = false; // Kein Cache bei VCmd
+    } else {
+        // Wenn schon da, aus CACHE nehmen
+        if (file_exists($diskPath)) {
+            $cachedAudio = file_get_contents($diskPath);
+            @touch($diskPath);
+            header("Content-Type: $audioContent");
+            header("Content-Length: " . strlen($cachedAudio));
+            echo $cachedAudio;
+            $xlog .= " File[" . strlen($cachedAudio) . "]:$diskFname (Cached)";
+            log2file($xlog);
+            exit;
+        }
     }
 
     $payload = @json_decode($voiceRaw, true);
@@ -130,7 +148,16 @@ try {
     $payload['input'] = $text;
     $payload['response_format'] = $format;
 
+    // Voice Command: Wenn mit ! beginnt, ersetzt es die Anweisungen
+    if (strlen($voiceCommand) > 0) {
+        if($voiceCommand[0] === '!') {
+            $payload['instructions'] = substr($voiceCommand, 1);
+        } else {
+            $payload['instructions'] .= '\n'.$voiceCommand;
+        }
+    }
 
+    if($log >2) $xlog.= " Ins.:'" . str_replace("\n", '\n', $payload['instructions']) . "'";
 
     $ch = curl_init("https://api.openai.com/v1/audio/speech");
     curl_setopt_array($ch, [
@@ -177,8 +204,13 @@ try {
     }
 
     // Aufschreiben, entweder gestreamt oder normal
-    if ($cache)      file_put_contents($diskPath, $stream ? $audioStreamed : $audioBytes);
-    $xlog .= " File[" . strlen($stream ? $audioStreamed : $audioBytes) . "]:$diskFname " . ($stream ? "(Stream-CREATED)" : "(CREATED)");
+    if ($cache){
+        file_put_contents($diskPath, $stream ? $audioStreamed : $audioBytes);
+        $xlog .= " File[" . strlen($stream ? $audioStreamed : $audioBytes) . "]:$diskFname " . ($stream ? "(Stream-CREATED)" : "(CREATED)");
+    }else{
+        $xlog .= " Blob[" . strlen($stream ? $audioStreamed : $audioBytes) . "] " . ($stream ? "(Stream)" : "");
+    }
+
 } catch (Exception $e) {
     header('Content-Type: application/json; charset=UTF-8');
     if (http_response_code() === 200) {

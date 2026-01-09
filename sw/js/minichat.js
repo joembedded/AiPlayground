@@ -28,6 +28,10 @@ let userLanguage = null; // de-DE
 let speakVoice = null; // z.B 'narrator_f_jane'; 
 let persona = null; // Persona-Name für KI z.B. vilo
 
+let personaCommand = ''; // Zusätzliche Persona-Kommandos
+let voiceCommand = ''; // Zusätzliche Voice-Kommandos
+
+
 let isLoggedIn = false; // true wenn eingeloggt
 
 
@@ -96,6 +100,22 @@ async function sendeNachricht() {
         dbgDiv.hidden = (dbgLevel>1);
         chatStateVar = 5; // Warte auf sendeNachricht
         addMessage('.debug:' + dbgLevel, 'bot info');
+        textEingabe.value = '';
+        return;
+    }
+    if (text.startsWith('.vcmd')) { // '.' only removes
+        const vcmdValue = text.substring(5).trim();
+        if (vcmdValue.length) voiceCommand = (vcmdValue=='.')?'':vcmdValue;
+        chatStateVar = 5; // Warte auf sendeNachricht
+        addMessage('.vcmd: ' + voiceCommand, 'bot info');
+        textEingabe.value = '';
+        return;
+    }
+    if (text.startsWith('.pcmd')) { // '.' only removes
+        const pcmdValue = text.substring(5).trim();
+        if (pcmdValue.length) personaCommand = (pcmdValue=='.')?'':pcmdValue;
+        chatStateVar = 5; // Warte auf sendeNachricht
+        addMessage('.pcmd: ' + personaCommand, 'bot info');
         textEingabe.value = '';
         return;
     }
@@ -189,7 +209,7 @@ audioPlayer.oncanplay = function () {
     });
 }
 
-// Alte URL freigeben wenn Audio beendet ist
+// Alte URL freigeben wenn Audio beendet ist. Problem z.B. Failure bie falschem Audio-Format
 audioPlayer.onended = function () {
     if (playAudioUrl) {
         URL.revokeObjectURL(playAudioUrl);
@@ -198,8 +218,9 @@ audioPlayer.onended = function () {
     isLoading = false;
 };
 audioPlayer.onerror = function (error) {
-    if (dbgLevel>1) terminalPrint('ERROR(audioPlayerB): ' + error);
-    setChatStatus('ERROR(audioPlayerB): ' + error, 'red');
+    const errorMsg = error?.currentTarget?.error?.message ?? 'Unknown';
+    if (dbgLevel>1) terminalPrint('ERROR(audioPlayerB): ' + errorMsg);
+    setChatStatus('ERROR(audioPlayerB): ' + errorMsg, 'red');
     isLoading = false;
 }
 
@@ -286,16 +307,18 @@ async function fetchAudioForSentence(sentence, voice, cache = false) {
     if (!methodGET) {
         formData.append('text', sentence);
         formData.append("voice", voice);
-        formData.append('sessionid', apiSessionId);
+        formData.append('sessionId', apiSessionId);
         formData.append('user', apiUser);
         formData.append('stream', '1');
         if(cache) formData.append('cache', '1');
+        if(voiceCommand.length) formData.append('vcmd', voiceCommand);
     } else {
         var url = `./api/oai_tts.php?`;
         url += `text=${encodeURIComponent(sentence)}`;
         url += `&voice=${encodeURIComponent(voice)}`;
-        url += `&sessionid=${encodeURIComponent(apiSessionId)}&stream=1`;
+        url += `&sessionId=${encodeURIComponent(apiSessionId)}&stream=1`;
         url += `&user=${encodeURIComponent(apiUser)}`;
+        if(voiceCommand.length) url += `&vcmd=${encodeURIComponent(voiceCommand)}`;
         if(cache) url += `&cache=1`;
         isLoading = true;
     }
@@ -378,6 +401,7 @@ async function talkWithServer(text, persona, concerningMessage = null) {
         text: text,
         persona: persona
     };
+    if(personaCommand.length) payload.pcmd = personaCommand; // Ggfs. Persona Command
     try {
         if (!isLoggedIn) throw new Error("Not logged in!");
         const response = await fetch('./api/oai_chat.php', {  // './api/echo_sim.php'
@@ -862,6 +886,15 @@ const dbgDiv = document.querySelector('.dbg');
 const audioFxClick = new Audio('./static/soundfx/click.opus');
 const audioFxPlop = new Audio('./static/soundfx/msg_pop.opus');
 
+// Wake Lock: Keep screen ON - request fails usually system-related, such as low battery.
+async function requestWakeLock() {
+    try {
+      /*const wakeLock =*/ await navigator.wakeLock.request("screen");
+    } catch (err) {
+        console.warn(`ERROR(requestWakeLock): ${err}`)
+    }
+}
+
 // Erstmal alle entfernen, dann bei Bedarf setzen
 function setSendButtonGlyph(id) {
     sendenBtnGlyph.classList.remove('bi', 'bi-box-arrow-right', 'spinner');
@@ -1052,13 +1085,12 @@ function getCredentialsFromLocalStorage() {
 }
 
 async function mainLogin(cred) {
+    let res = false;
     if (cred.username.length > 0 && cred.sessionId.length > 0) {
-        const res = await login('logrem', cred.username, '', cred.sessionId, null); // Test-Login
-        if (res === true) {
-            return; // Alles ok
-        }
+        res = await login('logrem', cred.username, '', cred.sessionId, null); // Test-Login: true: ALles OK
     }
-    credentialsDialog.showModal();
+    if(res !== true) credentialsDialog.showModal();
+    requestWakeLock(); // Screen ON
 }
 
 const cred = getCredentialsFromLocalStorage();
