@@ -8,7 +8,7 @@
 declare(strict_types=1);
 
 // Configuration
-$log = 1; // 0: Silent, 1: Logfile schreiben 2:Upload speichern
+$log = 2; // 0: Silent, 1: Logfile schreiben 2:Upload speichern
 $xlog = "oas_stt"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
 

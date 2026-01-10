@@ -16,7 +16,7 @@
 */
 
 //--------- globals ------ 
-export const VERSION = 'V0.01 / 07.01.2026';
+export const VERSION = 'V0.01 / 10.01.2026';
 export const COPYRIGHT = '(C)JoEmbedded.de';
 let dbgLevel = 1;
 
@@ -27,6 +27,7 @@ let apiUser = null; // z.B. 'testuser'
 let userLanguage = null; // de-DE
 let speakVoice = null; // z.B 'narrator_f_jane'; 
 let persona = null; // Persona-Name für KI z.B. vilo
+let introText = null; // Intro-Text der Persona
 
 let personaCommand = ''; // Zusätzliche Persona-Kommandos
 let voiceCommand = ''; // Zusätzliche Voice-Kommandos
@@ -171,6 +172,7 @@ function periodical() {
             break;
 
         case 10: // **Erwarte sendeNachricht**
+            audioFxClick.play().catch(() => { });
             setSendButtonGlyph('ready');
             setChatStatus('Hab alles gesagt', 'yellow');
             chatStateVar = 0; // Zuruecksetzen
@@ -813,7 +815,7 @@ function frameMonitor() {
     const frameRms = computeRMSFromTimeDomain(dataArray);
     maxRms *= 0.9;
     if (frameRms > maxRms) maxRms = frameRms;
-    minRms = 0.998 * minRms + 0.002 * sliderThreshold;
+    minRms = 0.999 * minRms + 0.001 * sliderThreshold;
     if (frameRms < minRms) minRms = frameRms;
     if (autoThreshEnable) thresholdRms = minRms * 5 + 0.025; // Etwas Puffer
     updateSpeechState(maxRms);
@@ -1032,6 +1034,7 @@ async function login(cmd = '', luser = '', lpassword = '', lsessionId = '', stat
             const nHelpTexts = data.helpTexts;
             helpTxts = nHelpTexts;
             persona = data.persona;
+            introText = data.intro;
             // OK
             isLoggedIn = true;
             sendenBtn.disabled = false;
@@ -1089,13 +1092,19 @@ async function mainLogin(cred) {
     if (cred.username.length > 0 && cred.sessionId.length > 0) {
         res = await login('logrem', cred.username, '', cred.sessionId, null); // Test-Login: true: ALles OK
     }
-    if(res !== true) credentialsDialog.showModal();
+    if(res !== true) {      
+        credentialsDialog.showModal();
+        while (!isLoggedIn) {
+            await jsSleepMs(100);
+        }
+    }
     requestWakeLock(); // Screen ON
+    if(introText) addMessage(introText, 'bot info');
+
 }
 
 const cred = getCredentialsFromLocalStorage();
 document.getElementById('input-user').value = cred.username;
-
 
 mainLogin(cred);
 // === ENDE MODLogin ===

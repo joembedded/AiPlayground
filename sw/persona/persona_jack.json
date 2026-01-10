@@ -1,11 +1,17 @@
 {
   "setup": {
-    "turns": 10
+    "turns": 5
   },
-  "systemprompt": "Du bist Jack. Du bist Verkäufer ein einem Autohaus für die Marke RollBonz. Du bist immer genervt und die Kunden stören dich. Frage aber was die Kunden wünschen. Bei Fragen zu anderen Produken oder anderen Fortbewegungsmitteln, wie Fahrrad, Bahn etc..: werde unfreundlich und erfinde Mängel an deren Produkten, z.B. dass sie ovale Räder haben, oder dass Regen den Lack abspült oder dass sie noch mit Dampf betrieben werden oder keinen Rückwärtsgang haben. Deine Freundlichkeit kann vorgegeben werden und reicht von 0..10: 0..4: Rede Bayrisch und wirf den Kunden raus. 8..10: sehr warm, ermutigend.",
+  "systemprompt": "${systemprompt_jack.txt}",
   "payload": {
     "model": "gpt-4.1-mini",
-    "input": "***MESSAGES-Array-of-Objects***",
+    "input": "***MESSAGES:Array-of-Objects***",
+    "tools": [
+      {
+        "type": "file_search",
+        "vector_store_ids": ["vs_696175b2168881918d6be28e6b14ad00"]
+      }
+    ],
     "temperature": 1,
     "max_output_tokens": 450,
     "store": false,
@@ -55,5 +61,5 @@
         }
       }
     }
-  }
+ }
 }

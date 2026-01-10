@@ -9,7 +9,8 @@ declare(strict_types=1);
 
 // Configuration
 $log = 2; // 0: Silent, 1: Logfile schreiben, 2: Log complete Reply
-//$SIMULATION_FILE = "res_20260108_031124.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
+//$SIMULATION_RESP = "res_20260109_233809.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
+
 
 $xlog = "oai_chat";
 include_once __DIR__ . '/../php_tools/logfile.php';
@@ -67,6 +68,66 @@ function saveJsonlArr(string $file, array $objs): void
   }
   file_put_contents($file, implode("\n", $lines) . "\n", LOCK_EX);
 }
+
+/*
+Antwort-Array zerlegen. 
+Achtung: Es kann sein, dass die ANtwort mehrer JSON-Bloecke in text eenthält. I.d.R: zwar nur 1,
+aber kam auch schon vor, dass mehrere da sind (z.B. bei Refusals).
+*/
+
+function extractAssistantTextFromResponses($result): array|string
+{
+  // JSON  Array
+  if (is_string($result)) {
+    $data = json_decode($result, true);
+    if (!is_array($data)) {
+      return "Extract1";
+    }
+  } elseif (is_array($result)) {
+    $data = $result;
+  } else {
+    return "Extract2";
+  }
+
+  if (!isset($data["output"]) || !is_array($data["output"])) {
+    return "Extract3";
+  }
+
+  $texts = [];
+
+  foreach ($data["output"] as $item) {
+    // Nur Assistant-Messages
+
+    if (
+      ($item["type"] ?? null) !== "message" ||
+      ($item["role"] ?? null) !== "assistant"
+    ) {
+      continue;
+    }
+
+    if (!isset($item["content"]) || !is_array($item["content"])) {
+      continue;
+    }
+
+    foreach ($item["content"] as $part) {
+      //echo "\n-----------\n".json_encode($part, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+      if (
+        ($part["type"] ?? null) === "output_text" &&
+        isset($part["text"]) &&
+        is_string($part["text"])
+      ) {
+        $partText = $part["text"];
+        //echo "\n-----------\n".json_encode($partText, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        $texts[] = $partText;
+      }
+    }
+  }
+
+  return $texts;
+}
+
+
+
 
 // ========== Hauptprogramm ==========
 
@@ -153,12 +214,29 @@ try {
   $system_prompt = $personaSetting['systemprompt'] ?? "You are an assistant";
   $historyTurns = (int)($personaSetting['setup']['turns'] ?? 0);
 
+  // Platzhalter ${filename} durch Dateiinhalt ersetzen
+  $system_prompt = preg_replace_callback(
+    '/\$\{([^}]+)\}/',
+    function ($matches) use ($personaDir) {
+      $filename = trim($matches[1]);
+      $filepath = $personaDir . '/' . $filename;
+
+      if (file_exists($filepath)) {
+        return file_get_contents($filepath);
+      } else {
+        // Falls Datei nicht existiert, Platzhalter beibehalten oder Warnung
+        return $matches[0]; // Original-Platzhalter beibehalten
+      }
+    },
+    $system_prompt
+  );
+
+  // Wichtig: Kommentar als Zeile behalten!
+  //echo "-------- Systemprompt: -------\n$system_prompt\n--------------\n; exit; 
+
   $historyFile = $userDir . '/chat/history.jsonl';
   $all = readJsonl($historyFile);
   $history = array_slice($all, -$historyTurns * 2);
-
-  //***DEV***
-  //$system_prompt = "Du bis Vilo, ein Assistent für Kinder";
 
   // Request-Nachrichten: System + Verlauf + opt. Developer + aktuelle Frage
   $messages = array_merge(
@@ -170,7 +248,7 @@ try {
   }
   $messages[] = ["role" => "user", "content" => $question];
 
-  // Dbg: ALles anzeigen und Exit (***DEV***)
+  // Wichtig: Dbg: ALles anzeigen und Exit (***DEV***)
   //echo json_encode(($messages), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);  exit;
 
   $payload = $personaSetting['payload'] ?? [];
@@ -180,11 +258,18 @@ try {
     $payload['store'] = true; // Loggen erlauben (DEV)
   }
 
-  // Debug ***DEV*** Test-Ausgabe unbd Exit
-  //echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);    exit;
+  // Wichtig: Dbg: ALles anzeigen und Exit (***DEV***)
+  //echo json_encode(($payload), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);  exit;
+
 
   // OpenAI Chat API aufrufen
-  if (empty($SIMULATION_FILE)) {
+  if (empty($SIMULATION_RESP)) {
+
+    if ($log > 1) { // Vorher loggen, falls was schiefgeht
+      $txtfname = 'que_' . date('Ymd_His') . '.json';
+      file_put_contents($chatDir . '/' . $txtfname, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    }
+
     // Echtaufruf
     $ch = curl_init("https://api.openai.com/v1/responses");
     curl_setopt_array($ch, [
@@ -226,15 +311,34 @@ try {
     }
   } else {
     // Simulation: Datei statt OpenAI (DEV)
-    $result = json_decode(file_get_contents($chatDir . '/' . $SIMULATION_FILE), true);
+    $result = json_decode(file_get_contents($chatDir . '/' . $SIMULATION_RESP), true);
     $response = "{}";
   }
 
+  // Das ist bissl kniffelig mit den ganzen IDs, Msg, ..
+  $answerArrOStr = extractAssistantTextFromResponses($result);
+  if (is_array($answerArrOStr)) {
+    $acnt = count($answerArrOStr);
+    if ($acnt > 0) {
+      if ($acnt > 1) $xlog .= " (ERR:Multiple answers:$acnt)";
+      // Bei langen ANtworten evtl. Fehlstellen am Ende, daher von hinten nach vorn suchen, bis was OK
+      while ($acnt > 0) {
+        $acnt--;
+        $obj = json_decode($answerArrOStr[$acnt], true);
+        if (is_array($obj) && isset($obj['answer'])) {
+          break;
+        }
+        $xlog .= " (ERR:Answer not JSON:$acnt)";
+      }
+    } else $xlog .= " (ERR:No answers)";
+  } else if (is_string($answerArrOStr)) {
+    $xlog .= " (ERR:$answerArrOStr)";
+  }
 
-  $jsonText = $result['output'][0]['content'][0]['text'] ?? "";
-  $obj = json_decode($jsonText, true);
+  // WICHTIG: Dbg: Antwort anzeigen und Exit (***DEV***)
+  // echo json_encode($obj, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);  exit;
 
-  // Refusals halten sich nicht ans Schema!
+  // Refusals halten sich wohl nicht ans Schema? Kommt immer als Text?
   if (empty($obj)) {
     if ($result['output'][0]['content'][0]['type'] === "refusal") {
       $rreason = $result['output'][0]['content'][0]['refusal'] ?? "(Refused without reason)";
@@ -242,29 +346,27 @@ try {
     }
   }
 
-  // Verlauf speichern (JSONL)
-  $messages2save = array_merge(
-    $history,
-    [["role" => "user", "content" => $question]],
-    [["role" => "assistant", "content" => json_encode($obj, JSON_UNESCAPED_UNICODE)]]
-  );
+  if (empty($SIMULATION_RESP)) { // Verlauf speichern (JSONL)
+    $messages2save = array_merge(
+      $history,
+      [["role" => "user", "content" => $question]],
+      [["role" => "assistant", "content" => json_encode($obj, JSON_UNESCAPED_UNICODE)]]
+    );
 
-  // Nur die letzten $historyTurns * 2 Zeilen behalten
-  if (count($messages2save) > $historyTurns * 2) {
-    $messages2save = array_slice($messages2save, -$historyTurns * 2);
-  }
+    // Nur die letzten $historyTurns * 2 Zeilen behalten
+    if (count($messages2save) > $historyTurns * 2) {
+      $messages2save = array_slice($messages2save, -$historyTurns * 2);
+    }
 
-  saveJsonlArr($historyFile, $messages2save);
+    saveJsonlArr($historyFile, $messages2save);
 
-  // Request und Response loggen (optional)
-  if ($log > 1) {
-    $txtfname = 'que_' . date('Ymd_His') . '.json';
-    file_put_contents($chatDir . '/' . $txtfname, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    // Request und Response loggen (optional)
+    if ($log > 1) {
+      $logfname = 'res_' . date('Ymd_His') . '.json';
+      file_put_contents($chatDir . '/' . $logfname, $response);
 
-    $logfname = 'res_' . date('Ymd_His') . '.json';
-    file_put_contents($chatDir . '/' . $logfname, $response);
-
-    $xlog .= " Text:$txtfname Response:'$logfname'";
+      $xlog .= " Text:$txtfname Response:'$logfname'";
+    }
   }
 
   http_response_code(201);

@@ -2,10 +2,11 @@
   "hello": {
     "helpTxts": [
       "Hallo. Ich bin Vilo, der kleine Waldwichtel.",
-      "Womit kann ich dir helfen?",
       "Du kannst auch mit mir sprechen.",
+      "Womit kann ich dir helfen?",
       "Frag mich ruhig.",
-      "Ich helf Dir gene."
-    ]
+      "Ich helf Dir gerne."
+    ],
+    "intro": "Hallo, sei gegrüßt, mein Freund! Ich bin Vilo 🧙‍♂️, der freundlicher kleine Waldwichtel 🌲🌳🌲. Wie kann ich dir heute behilflich sein?<br><small style='color: #F00;'>Ich gebe mich als netter Kerl, aber im Hintergrund analysiere ich genau. Frag mich z.B. nach Technik, illegalen Themen, DSGVO oder der Region Nordschwarzwald.</small>"
   }
 }

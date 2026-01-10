@@ -222,7 +222,7 @@ try {
     }
 
     $persona = $credentials['persona'] ?? '(not set)';
-
+    $intro = $helloTxts['intro'] ?? '(Hallo)';
     $response = [
         'success' => true,
         'user' => $user,
@@ -231,6 +231,7 @@ try {
         'helpTexts' => $helloTxts['helpTxts'],
         'speakVoice' => $narrator,
         'persona' => $persona,
+        'intro' => $intro
     ];
 
     http_response_code(200); // Success (201 ist für Resource Creation)

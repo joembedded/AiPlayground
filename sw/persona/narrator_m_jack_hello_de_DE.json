@@ -1,12 +1,14 @@
 {
   "hello": {
     "helpTxts": [
-    "Hallo. Jack hier.",
-    "Was gibts?",
-    "Was?",
-    "Hallo?",
-    "Was soll ich tun?",
-    "Worum geht es?"
-    ]
+      "Hallo, ich bin Jack.",
+      "Wie kann ich helfen?",
+      "Was gibts?",
+      "Worum geht es?",
+      "Hallo?",
+      "Was jetzt?",
+      "Komm zur Sache!"
+    ],
+    "intro": "Hallo, ich bin Jack 👨‍🔧, dein Ansprechpartner für alle Fragen rund um Roll-Bonz Fahrzeuge. Wie kann ich dir helfen?<br><small style='color: #F00;'>Das Freundlichkeits-Level von mir ist 😠 0-10 🥰. Es kann per Sprache (z.B. 'Freundlichkeits-Level 10' oder 'Sei nett', oder per '.pcmd..' gesetzt werden).</small>"
   }
 }

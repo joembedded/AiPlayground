@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>AI Playground</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">AI Playground</h1>
+</header>
+<h1 id="ai-playground">AI Playground</h1>
+<p>Eine Sammlung nützlicher Routinen rund um OpenAI, Sprache und kleine
+Tools.<br> (C)JoEmbedded.de V0.01 / 10.01.2026</p>
+<h2 id="ziel">Ziel</h2>
+<p>Bau einer sicheren und schnellen API-Kette von <strong>JS → PHP →
+OpenAI</strong> mit modernem, kryptografisch sicherem Login und
+responsive HTML.</p>
+<h2 id="live-version">Live-Version</h2>
+<p>🎤⌨🔉 <a href="https://joembedded.de/x3/aibot/sw/minichat.html">Live
+Version</a> auf JoEmbedded.de</p>
+<h2 id="highlights">Highlights</h2>
+<ul>
+<li><strong>MiniChat</strong> implementiert einen Voice-Chat mit
+kostengünstigen GPT-4x-Modellen.</li>
+<li>Als Datenformat werden lokale <strong>N-Turns</strong> verwendet;
+dadurch kann die Kommunikation DSGVO-konform umgesetzt werden.</li>
+<li>Je nach Modell werden <strong>PII</strong>-Daten (personenbezogene
+Daten) sofort zurückgewiesen.</li>
+<li>Hinweis: Es wird die <strong>Response API</strong> mit eigenem
+<strong>WebRTC</strong>-Treiber verwendet – für ein Chat-System
+ausreichend schnell und im Betrieb günstiger als „Real-Time“.</li>
+<li>Optional: Anbindung des OpenAI <strong>Vector Stores</strong>, um
+große Datenmengen (Handbücher, Stories, …) an Chats anzubinden.</li>
+</ul>
+<h2 id="einsatzideen">Einsatzideen</h2>
+<ul>
+<li>Beratungs-Bots auf Webseiten: kennt „jedes“ Handbuch und Datenblatt
+des Betreibers, ist erreichbar und kompetent.</li>
+<li>Sprachassistenten für interne Verwendung (z. B. für Hands-Free-Tasks
+oder Assistenz-Systeme).</li>
+<li>Storyteller (z. B. für statische und dynamische
+Kinder-Geschichten).</li>
+</ul>
+<h2 id="charaktere-test-personas">Charaktere (Test-Personas)</h2>
+<p>Drei Charaktere sind vordefiniert, um diverse Features zu testen:</p>
+<h3 id="jack33-der-genervte-autoverkäufer">👨‍🔧 jack33 – Der genervte
+Autoverkäufer</h3>
+<ul>
+<li><strong>Login:</strong> <code>jack33</code> /
+<code>geheimnix</code></li>
+<li><strong>Charakter:</strong> Jack ist ein genervter
+Autoverkäufer</li>
+<li><strong>Besonderheiten:</strong>
+<ul>
+<li>Freundlichkeits-Level von 😠 0-10 🥰 steuerbar</li>
+<li>Kann per Sprache („Freundlichkeits-Level 10” oder „Sei nett”) oder
+per <code>.pcmd</code> gezielt beeinflusst werden</li>
+<li>Verwendet den <code>Vector Store</code> für
+Fahrzeug-Informationen</li>
+<li>Antworten mit Meta-Logik (Topic: freundlichkeit)</li>
+</ul></li>
+</ul>
+<h3 id="janalm-die-almwirtin">👩‍🦰 janalm – Die Almwirtin 🐄⛰🐮</h3>
+<ul>
+<li><strong>Login:</strong> <code>janalm</code> /
+<code>geheimnix</code></li>
+<li><strong>Charakter:</strong> Jana betreibt einen Kiosk auf einer Alm
+in den Bergen. Sie ist sehr freundlich, redet gerne und viel mit
+Wanderern.</li>
+<li><strong>Besonderheiten:</strong>
+<ul>
+<li>Sie rollt das ‘R’</li>
+<li>Stellt sehr viele Fragen, da ihr ‘oft langweilig ist’</li>
+</ul></li>
+</ul>
+<h3 id="vilo77-der-waldwichtel">🧙‍♂️ vilo77 – Der Waldwichtel 🌲🌳🌲</h3>
+<ul>
+<li><strong>Login:</strong> <code>vilo77</code> /
+<code>geheimnix</code></li>
+<li><strong>Charakter:</strong> Vilo ist Waldwichtel. Er spricht langsam
+und kindgerecht.</li>
+<li><strong>Besonderheiten:</strong>
+<ul>
+<li>Gibt sich als netter Kerl, aber im Hintergrund analysiert er
+genau</li>
+<li>Antworten werden mit Meta-Logik ausgewertet (Topics: wichtel,
+technik, natur, geschichten, essen, unpassend)</li>
+<li>Weist PII-Daten und illegale Inhalte strikt zurück</li>
+</ul></li>
+</ul>
+<hr />
+</body>
+</html>

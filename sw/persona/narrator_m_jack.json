@@ -2,7 +2,7 @@
   "model": "gpt-4o-mini-tts",
   "voice": "alloy",
   "input": "USER",
- "instructions": "Stimme: Genervt, zackig und schnell.",
+ "instructions": "Sprechstil: genervt bis konfrontativ. Tempo: schnell. Tonfall: kalt, gereizt. Intonation: wenig melodisch. Artikulation: hart, leicht abgehackt. Pausen: kaum orhanden.",
   "speed": 1,
   "response_format": "FORMAT"
 }
