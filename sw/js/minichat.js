@@ -18,7 +18,7 @@
 //--------- globals ------ 
 export const VERSION = 'V0.01 / 10.01.2026';
 export const COPYRIGHT = '(C)JoEmbedded.de';
-let dbgLevel = 1;
+let dbgLevel = 2;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro immer abspielen
 
 // Session Credentials
 let apiSessionId = null; // 32 Zeichen SessionID
@@ -542,7 +542,7 @@ let maxPauseMs = 800; // >200 , msec max. Sprachpause - Ext. via Slider
 
 const MAX_SPEECH_MS = 30000; // msec max. Sprachdauer
 const STREAM_DELAY_SEC = 0.3; // sec Delay, ca. 150 msec Vorlauf mind. 
-const MICRO_INIT_MS = 200; // msec Mikrofon-(Re-)Initialisierung
+const MICRO_INIT_MS = 100; // msec Mikrofon-(Re-)Initialisierung
 const MIN_LEN_SPEECH_MS = 250; // msec min. Sprachdauer
 
 let speechStateTime0; // Zeitstempel Sprachbeginn
@@ -694,8 +694,12 @@ function processAudio(e) {
 }
 
 // Sprach-Zustandsmaschine
+let totalRms = 0;   // Statistik (dbgLevel 3)
+let frameCount = 0;
 function updateSpeechState(frameRms) {
     const dur = performance.now() - speechStateTime0;
+    frameCount++;   // Statistik mitfuehren
+    totalRms += frameRms;
 
     if (dbgLevel>1) dbgInfo.textContent = `microStatus: ${microStatus}  Dur: ${dur.toFixed(0)} msec`;
     if (isMenuVisible) {
@@ -721,6 +725,8 @@ function updateSpeechState(frameRms) {
                 if (mediaRecorder.state === "inactive") {
                     mediaRecorder.start();
                     isRecording = true;
+                    frameCount = 0;
+                    totalRms = frameRms;
                 }
                 microStatus = 3;
                 speechStateTime0 = performance.now();
@@ -770,13 +776,17 @@ function updateSpeechState(frameRms) {
                     if (dbgLevel>1) terminalPrint(`Speech End (${speechTotalDur} msec)`);
                 }
                 setChatStatus('Sprache beendet', 'yellow');
+                if (dbgLevel>1) terminalPrint(`Stats: Frames:${frameCount}, T.RMS:${totalRms.toFixed(4)}, Avg RMS:${(totalRms / frameCount).toFixed(4)}, T./RMS:${(totalRms/thresholdRms).toFixed(4)}`);
                 if (dbgLevel > 2) { // OPtional immer abspielen zum Testen
                     microStatus = 7;
                     stdPlayer.play(); // Zum Testen immer abspielen            
+                    if(dbgLevel>2) {
+                     microStatus = 1; // Zuruecksetzen
+                    }
                 } else microStatus = 8; // Direkt fertig
             } else {
                 if (dbgLevel>1) terminalPrint(`Speech too short (${speechTotalDur} msec), discarded.`);
-                microStatus = 0; // Zuruecksetzen
+                microStatus = 1; // Zuruecksetzen
             }
             break;
 

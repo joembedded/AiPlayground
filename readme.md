@@ -1,3 +1,12 @@
+
+---
+title: AI Playground
+author: JoEmbedded.de
+version: 0.01
+date: 10.01.2026
+info_convert: pandoc readme.md -o pandoc/readme.html --standalone --metadata title="AI Playground" --css=style.css 
+---
+
 # AI Playground
 
 Eine Sammlung nützlicher Routinen rund um OpenAI, Sprache und kleine Tools.<br>
@@ -5,7 +14,11 @@ Eine Sammlung nützlicher Routinen rund um OpenAI, Sprache und kleine Tools.<br>
 
 ## Ziel
 
-Bau einer sicheren und schnellen API-Kette von **JS → PHP → OpenAI** mit modernem, kryptografisch sicherem Login und responsive HTML.
+Bau einer sicheren und schnellen API-Kette von **JS → PHP → OpenAI** mit modernem, kryptografisch sicherem Login und responsive HTML und einer darüberliegenden Sprachsteuerung, basierend auf **WebRTC** Technologie (so dass die auch kontinuierlich aktiviert sein kann, also echtes Hands-Free-Bedienerlebnis).
+
+> Ziel war es nicht, eine echte (synchrone) Real-Time-Anwendung zu entwickeln, sondern einen (asynchronen) Voice-Chat zu bauen. Die Latenzzeiten liegen also nur im Sekunden-Bereich. Für einen Sprachassistenten ist dies aber absolut akzeptabel. Und außerdem ist der asynchrone Betrieb (hier über die OpenAI-Responses API) wesentlich kostengünstiger.
+
+
 
 ## Live-Version
 
@@ -21,9 +34,9 @@ Bau einer sicheren und schnellen API-Kette von **JS → PHP → OpenAI** mit mod
 
 ## Einsatzideen
 
-- Beratungs-Bots auf Webseiten: kennt „jedes“ Handbuch und Datenblatt des Betreibers, ist erreichbar und kompetent.
-- Sprachassistenten für interne Verwendung (z. B. für Hands-Free-Tasks oder Assistenz-Systeme).
-- Storyteller (z. B. für statische und dynamische Kinder-Geschichten).
+- Beratungs-Bots auf Webseiten: kennt „jedes“ Handbuch und alle Datenblätter des Betreibers, ist immer erreichbar und kompetent.
+- Sprachassistenten für interne Verwendung (z. B. für Hands-Free-Tasks oder Assistenz-Systeme), z.B. zum Ausführen von Aufgaben.
+- Storyteller (z. B. für statische und dynamische Kinder-Geschichten). Hier kann der Bot ganz speziell auf die Zielgruppe zugeschnittene mediale Inhalte liefern. 
 
 ## Charaktere (Test-Personas)
 
@@ -32,28 +45,28 @@ Drei Charaktere sind vordefiniert, um diverse Features zu testen:
 ### 👨‍🔧 jack33 – Der genervte Autoverkäufer
 
 - **Login:** `jack33` / `geheimnix`
-- **Charakter:** Jack ist ein genervter Autoverkäufer 
+- **Charakter:** Jack ist ein genervter Autoverkäufer der Marke Roll-Bonz. Nur auf Anweisung wird er freundlich (oder auch ganz unfreundlich). Er bezieht seine Verkaufs-Infos aus einem sogenannten „Verkaufshandbuch". Fragen zu anderen Themen mag er nur ungern oder gar nicht beantworten.
 - **Besonderheiten:**
   - Freundlichkeits-Level von 😠 0-10 🥰 steuerbar
   - Kann per Sprache („Freundlichkeits-Level 10" oder „Sei nett") oder per `.pcmd` gezielt beeinflusst werden
-  - Verwendet den `Vector Store` für Fahrzeug-Informationen
+  - Verwendet einen `Vector Store` für das „Verkaufshandbuch", als Beispiel für einen Daten-Pool.
   - Antworten mit Meta-Logik (Topic: freundlichkeit)
 
 ### 👩‍🦰 janalm – Die Almwirtin 🐄⛰🐮
 
 - **Login:** `janalm` / `geheimnix`
-- **Charakter:** Jana betreibt einen Kiosk auf einer Alm in den Bergen. Sie ist sehr freundlich, redet gerne und viel mit Wanderern.
+- **Charakter:** Jana betreibt einen Kiosk auf einer Alm in den Bergen. Sie ist sehr freundlich, redet gerne und viel mit Wanderern, hat aber keine spezielle Aufgabe, außer etwas Smalltalk.
 - **Besonderheiten:**
-  - Sie rollt das 'R'
-  - Stellt sehr viele Fragen, da ihr 'oft langweilig ist'
+  - Sie rollt das ‚R'
+  - Stellt sehr viele Fragen, da ihr ‚oft langweilig ist'
 
 ### 🧙‍♂️ vilo77 – Der Waldwichtel 🌲🌳🌲
 
 - **Login:** `vilo77` / `geheimnix`
-- **Charakter:** Vilo ist Waldwichtel. Er spricht langsam und kindgerecht.
+- **Charakter:** Vilo ist ein Waldwichtel. Er spricht langsam und kindgerecht und moderiert bei „schwierigen" Themen.
 - **Besonderheiten:** 
   - Gibt sich als netter Kerl, aber im Hintergrund analysiert er genau
   - Antworten werden mit Meta-Logik ausgewertet (Topics: wichtel, technik, natur, geschichten, essen, unpassend)
-  - Weist PII-Daten und illegale Inhalte strikt zurück
+  - Weist PII-Daten und illegale Inhalte kindgerecht zurück
 
 ***
