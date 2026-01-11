@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 // Configuration
 $log = 2; // 0: Silent, 1: Logfile schreiben, 2: Log complete Reply
-//$SIMULATION_RESP = "res_20260110_222954.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
+//$SIMULATION_RESP = "res_20260111_192109.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
 
 $xlog = "oai_chat";
 include_once __DIR__ . '/../php_tools/logfile.php';
@@ -352,10 +352,13 @@ try {
   // WICHTIG: Dbg: Antwort anzeigen und Exit (***DEV***)
   // echo json_encode($obj, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);  exit;
 
-  // Refusals halten sich wohl nicht ans Schema? Kommt immer als Text?
+  // Refusals halten sich wohl nicht ans Schema? Kommt immer als Text? Manche wohl als "refusal" explizit, endere nur 'text'...
   if (empty($obj)) {
     if ($result['output'][0]['content'][0]['type'] === "refusal") {
       $rreason = $result['output'][0]['content'][0]['refusal'] ?? "(Refused without reason)";
+      $obj = ["answer" => ["text" => $rreason]];
+    }else if ($result['output'][0]['content'][0]['text'] ?? null) {
+      $rreason = $result['output'][0]['content'][0]['text'] ?? "(No answer text)";
       $obj = ["answer" => ["text" => $rreason]];
     }
   }

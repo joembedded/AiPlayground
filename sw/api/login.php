@@ -1,7 +1,7 @@
 <?php
 
 /**
- * login.php - (C) JoEmbedded - 06.01.2026
+ * login.php - (C) JoEmbedded - 11.01.2026
  * 
  * Im Verzeichnis des Users (Verzeichnis muss credentials enthalten).
  * Die Daten sind als PHP und hashed hinterlegt, damit sicher nicht scanbar.
@@ -189,60 +189,83 @@ try {
         }
     }
 
-    $personaDir = __DIR__ . '/../persona';
-    $userLang = $credentials['userLang'] ?? 'de_DE';
-    // Sanitize language code (e.g., de-DE -> de_DE, en-US -> en_US)
-    $userLangPrefix = preg_replace('/[^a-zA-Z0-9]/', '_', $userLang);
-
-    $narrator = $credentials['narrator'] ?? 'narrator_f_jane';
-    $hellosFile = $personaDir . '/' . $narrator . '_hello_' . $userLangPrefix . '.json';
-
-    if (!file_exists($hellosFile)) {
-        if (!file_exists($hellosFile)) {
-            http_response_code(500);
-            throw new Exception("Missing hellos file '$hellosFile'");
-        }
+    // Guthaben prüfen 
+    $creditsFile = $userDir . '/credits.json.php';
+    $creditsAvailable = 0;
+    if (file_exists($creditsFile)) {
+        $credits = json_decode(file_get_contents($creditsFile), true);
+        $creditsAvailable = (int)($credits['chat'] ?? 0);
     }
 
-    $hellosContent = file_get_contents($hellosFile);
-    if ($hellosContent === false) {
-        http_response_code(500);
-        throw new Exception("Failed to read hellos file");
-    }
-
-    $helloAll = json_decode($hellosContent, true);
-    $helloTxts = $helloAll['hello'] ?? [];
-    
-    // Opt. DEBUG + Exit - dinn lassen, da gel. nuetzlich
-    //echo json_encode($helloTxts, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT  ); exit;
-
-    if (!is_array($helloTxts) || !isset($helloTxts['helpTxts']) || !is_array($helloTxts['helpTxts'])) {
-        http_response_code(500);
-        throw new Exception("Invalid hellos file format");
-    }
-
- // Zum Schluss noch Guthaben prüfen 
-  $creditsFile = $userDir . '/credits.json.php';
-  $creditsAvailable = 0;
-  if (file_exists($creditsFile)) {
-    $credits = json_decode(file_get_contents($creditsFile), true);
-    $creditsAvailable = (int)($credits['chat'] ?? 0);
-  }
-
-
-    $persona = $credentials['persona'] ?? '(not set)';
-    $intro = $helloTxts['intro'] ?? '(Hallo)';
+    // Resppnse Basics
     $response = [
         'success' => true,
         'user' => $user,
         'sessionId' => $sessionId,
-        'userLang' => $userLang,
-        'helpTexts' => $helloTxts['helpTxts'],
-        'speakVoice' => $narrator,
-        'persona' => $persona,
-        'intro' => $intro,
         'creditsAvailable' => $creditsAvailable
     ];
+
+    $role = $credentials['role'] ?? 'user';
+    switch ($role) {
+        case 'user':    // Default (ohne Role ist der USER)
+            // =========== Role USER START ===========
+            $personaDir = __DIR__ . '/../persona';
+            $userLang = $credentials['userLang'] ?? 'de_DE';
+            // Sanitize language code (e.g., de-DE -> de_DE, en-US -> en_US)
+            $userLangSanitized = preg_replace('/[^a-zA-Z0-9]/', '_', $userLang);
+
+            $narrator = $credentials['narrator'] ?? 'narrator_f_jane';
+            $hellosFile = $personaDir . '/' . $narrator . '_hello_' . $userLangSanitized . '.json';
+
+            if (!file_exists($hellosFile)) {
+                http_response_code(500);
+                throw new Exception("Missing hellos file '$hellosFile'");
+            }
+
+            $hellosContent = file_get_contents($hellosFile);
+            if ($hellosContent === false) {
+                http_response_code(500);
+                throw new Exception("Failed to read hellos file");
+            }
+
+            $helloAll = json_decode($hellosContent, true);
+            $helloTxts = $helloAll['hello'] ?? [];
+
+            // Opt. DEBUG + Exit - drin lassen, da ggf. nuetzlich
+            //echo json_encode($helloTxts, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); exit;
+
+            if (!is_array($helloTxts) || !isset($helloTxts['helpTxts']) || !is_array($helloTxts['helpTxts'])) {
+                http_response_code(500);
+                throw new Exception("Invalid hellos file format");
+            }
+
+            $response['userLang'] = $userLang;
+            $response['helpTexts'] = $helloTxts['helpTxts'];
+            $response['speakVoice'] = $narrator;
+            $response['persona'] = $credentials['persona'] ?? '(not set)';
+            $response['intro'] = $helloTxts['intro'] ?? '(Hallo)';
+            // =========== Role USER ENDE ===========
+            break;
+        case 'admin':
+            // =========== Role admin(darf ALLES) START ===========
+            $response['role'] = 'admin';
+
+            // =========== Role admin ENDE ===========
+            break;
+        case 'agent':
+            // =========== Role agent(darf User verwalten) START ===========
+            $response['role'] = 'agent';
+
+            // =========== Role agent ENDE ===========
+            break;
+
+        default:
+            // =========== Role Unbekannt ===========
+            http_response_code(500);
+            throw new Exception('Invalid user role');
+    }
+
+
 
     http_response_code(200); // Success (201 ist für Resource Creation)
     echo json_encode($response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

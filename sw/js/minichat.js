@@ -12,13 +12,13 @@
 * 0: Kein Debug
 * 1: Meta-Daten angeben, kein Terminal
 * 2: Terminal-Ausgabe aktivieren
-* 3: Wie 2, aber Sample vor Post immer abspielen (zum Testen)
+* 3: Nur Samplen und ggfs. abspielen (zum Testen des Input, MIN_LEN_SPEECH_MS)
 */
 
 //--------- globals ------ 
 export const VERSION = 'V0.02 / 11.01.2026';
 export const COPYRIGHT = '(C)JoEmbedded.de';
-let dbgLevel = 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro immer abspielen
+let dbgLevel = 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
 
 // Session Credentials
 let apiSessionId = null; // 32 Zeichen SessionID
@@ -574,7 +574,7 @@ let maxPauseMs = 800; // >200 , msec max. Sprachpause - Ext. via Slider
 const MAX_SPEECH_MS = 30000; // msec max. Sprachdauer
 const STREAM_DELAY_SEC = 0.3; // sec Delay, ca. 150 msec Vorlauf mind. 
 const MICRO_INIT_MS = 100; // msec Mikrofon-(Re-)Initialisierung
-const MIN_LEN_SPEECH_MS = 250; // msec min. Sprachdauer
+const MIN_LEN_SPEECH_MS = 1400; // msec min. Sprachdauer (heuristisch, inkl. Pausen)
 
 let speechStateTime0; // Zeitstempel Sprachbeginn
 
@@ -807,7 +807,7 @@ function updateSpeechState(frameRms) {
                     if (dbgLevel > 1) terminalPrint(`Speech End (${speechTotalDur} msec)`);
                 }
                 setChatStatus('Sprache beendet', 'yellow');
-                if (dbgLevel > 1) terminalPrint(`Stats: Frames:${frameCount}, T.RMS:${totalRms.toFixed(4)}, Avg RMS:${(totalRms / frameCount).toFixed(4)}, T./RMS:${(totalRms / thresholdRms).toFixed(4)}`);
+                if (dbgLevel > 1) terminalPrint(`Stats: Frames:${frameCount}/${speechTotalDur } ms, T.RMS:${totalRms.toFixed(4)}, Avg RMS:${(totalRms / frameCount).toFixed(4)}, T./RMS:${(totalRms / thresholdRms).toFixed(4)}`);
                 if (dbgLevel > 2) { // OPtional immer abspielen zum Testen
                     microStatus = 7;
                     stdPlayer.play(); // Zum Testen immer abspielen            
@@ -934,7 +934,7 @@ async function requestWakeLock() {
     try {
       /*const wakeLock =*/ await navigator.wakeLock.request("screen");
     } catch (err) {
-        console.warn(`ERROR(requestWakeLock): ${err}`)
+        addMessage(`Fehler: Bildschirm-Lock: ${err.message}`, 'bot error');
     }
 }
 
