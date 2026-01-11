@@ -1,25 +1,205 @@
+:root {
+    --md-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    --md-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+    --md-bg: #f6f7fb;
+    --md-surface: #ffffff;
+    --md-text: #1f1f1f;
+    --md-text-muted: #5f6368;
+    --md-border: rgba(31, 31, 31, 0.12);
+    --md-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 6px 18px rgba(0, 0, 0, 0.08);
+
+    --md-primary: #1a73e8;
+    --md-primary-ink: #174ea6;
+    --md-primary-tint: rgba(26, 115, 232, 0.08);
+    --md-primary-tint-2: rgba(26, 115, 232, 0.10);
+    --md-primary-outline: rgba(26, 115, 232, 0.35);
+    --md-code-bg: #f3f4f7;
+    --md-code-border: rgba(31, 31, 31, 0.10);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --md-bg: #0f1115;
+        --md-surface: #171a21;
+        --md-text: #e8eaed;
+        --md-text-muted: #a6adb7;
+        --md-border: rgba(232, 234, 237, 0.16);
+        --md-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
+
+        --md-primary: #8ab4f8;
+        --md-primary-ink: #c7dbff;
+        --md-primary-tint: rgba(138, 180, 248, 0.12);
+        --md-primary-tint-2: rgba(138, 180, 248, 0.16);
+        --md-primary-outline: rgba(138, 180, 248, 0.40);
+        --md-code-bg: rgba(255, 255, 255, 0.06);
+        --md-code-border: rgba(232, 234, 237, 0.12);
+    }
+}
+
+html {
+    background: var(--md-bg);
+    color: var(--md-text);
+}
+
 body {
-    max-width: 1000px;
-    margin: 2rem auto;
-    padding: 2rem;
-    line-height: 1.6;
-    font-family: Arial, Helvetica, sans-serif;
-    background-color: #f0f0f0;
+    max-width: 980px;
+    margin: 48px auto;
+    padding: 40px;
+    line-height: 1.65;
+    font-family: var(--md-font-sans);
+    font-size: 16px;
+    background: var(--md-surface);
+    border: 1px solid var(--md-border);
+    border-radius: 16px;
+    box-shadow: var(--md-shadow);
 }
 
-h1, h2, h3 {
-    margin-top: 1.5rem;
+@media (max-width: 720px) {
+    body {
+        margin: 16px;
+        padding: 20px;
+        border-radius: 14px;
+    }
 }
 
+/* Title block (Pandoc standalone) */
+#title-block-header {
+    margin: 0 0 28px 0;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--md-border);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    line-height: 1.25;
+    margin: 28px 0 12px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+}
+
+h1 {
+    font-size: 2.15rem;
+}
+
+h2 {
+    font-size: 1.55rem;
+}
+
+h3 {
+    font-size: 1.2rem;
+}
+
+p {
+    margin: 12px 0;
+}
+
+a {
+    color: var(--md-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+a:focus-visible {
+    outline: 3px solid var(--md-primary-outline);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+blockquote {
+    margin: 18px 0;
+    padding: 12px 16px;
+    border-left: 4px solid var(--md-primary);
+    background: var(--md-primary-tint);
+    border-radius: 12px;
+    color: var(--md-text);
+}
+
+blockquote p {
+    margin: 0;
+    color: var(--md-text);
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background: var(--md-border);
+    margin: 28px 0;
+}
+
+ul, ol {
+    padding-left: 1.25rem;
+    margin: 12px 0;
+}
+
+li {
+    margin: 6px 0;
+}
+
+/* Inline code + code blocks */
 code {
-    background-color: #f4f4f4;
-    padding: 0.2rem 0.4rem;
-    border-radius: 3px;
+    font-family: var(--md-font-mono);
+    font-size: 0.95em;
+    background: var(--md-code-bg);
+    border: 1px solid var(--md-code-border);
+    padding: 0.15rem 0.35rem;
+    border-radius: 8px;
 }
 
 pre {
-    background-color: #f4f4f4;
-    padding: 1rem;
-    border-radius: 5px;
+    background: var(--md-code-bg);
+    border: 1px solid var(--md-code-border);
+    padding: 14px 16px;
+    border-radius: 14px;
     overflow-x: auto;
+    margin: 14px 0;
 }
+
+pre code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 16px 0;
+    border: 1px solid var(--md-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--md-border);
+    vertical-align: top;
+}
+
+th {
+    text-align: left;
+    font-weight: 650;
+    background: var(--md-primary-tint-2);
+}
+
+tr:last-child td {
+    border-bottom: 0;
+}
+
+/* Images */
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+}
+
+/* Small pandoc helpers */
+.smallcaps { letter-spacing: 0.02em; }
+
+/* Ensure long URLs don't break layout */
+p, li { overflow-wrap: anywhere; }

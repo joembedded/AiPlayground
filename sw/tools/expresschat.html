@@ -295,7 +295,6 @@
 
             const status = response.status;
             let dataString = await response.text();
-            
             try {
                 const dataObj = JSON.parse(dataString);
                 dataString = JSON.stringify(dataObj, null, 2);

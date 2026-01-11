@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="author" content="JoEmbedded.de" />
   <title>AI Playground</title>
   <style>
     /* Default styles provided by pandoc.
@@ -31,33 +30,31 @@
 <body>
 <header id="title-block-header">
 <h1 class="title">AI Playground</h1>
-<p class="author">JoEmbedded.de</p>
-<p class="date">10.01.2026</p>
 </header>
 <h1 id="ai-playground">AI Playground</h1>
 <p>Eine Sammlung nützlicher Routinen rund um OpenAI, Sprache und kleine
-Tools.<br> (C)JoEmbedded.de V0.01 / 10.01.2026</p>
+Tools.<br> (C)JoEmbedded.de V0.02 / 11.01.2026</p>
 <h2 id="ziel">Ziel</h2>
 <p>Bau einer sicheren und schnellen API-Kette von <strong>JS → PHP →
-OpenAI</strong> mit modernem, kryptografisch sicherem Login und
-responsive HTML und einer darüberliegenden Sprachsteuerung, basierend
-auf <strong>WebRTC</strong> Technologie (so dass die auch kontinuierlich
+OpenAI</strong> mit modernem, sicherem (Hash) Login und responsive HTML
+und einer darüberliegenden Sprachsteuerung, basierend auf
+<strong>WebRTC</strong> Technologie (so dass die auch kontinuierlich
 aktiviert sein kann, also echtes Hands-Free-Bedienerlebnis).</p>
 <blockquote>
 <p>Ziel war es nicht, eine echte (synchrone) Real-Time-Anwendung zu
 entwickeln, sondern einen (asynchronen) Voice-Chat zu bauen. Die
-Latenzzeiten liegen also nur im Sekunden-Bereich. Für einen
-Sprachassistenten ist dies aber absolut akzeptabel. Und außerdem ist der
-asynchrone Betrieb (hier über die OpenAI-Responses API) wesentlich
-kostengünstiger.</p>
+Latenzzeiten liegen also daher im Bereich ca. 2-5 Sekunden. Für einen
+asynchronen Sprachassistenten ist dies aber absolut akzeptabel. Und
+außerdem ist der asynchrone Betrieb (hier über die OpenAI-Responses API)
+wesentlich kostengünstiger.</p>
 </blockquote>
 <h2 id="live-version">Live-Version</h2>
-<p>🎤⌨🔉 <a href="https://joembedded.de/x3/aibot/sw/minichat.html">Live
+<p>🎤⌨🔉 <a href="https://joembedded.de/x3/aias/sw/minichat.html">Live
 Version</a> auf JoEmbedded.de</p>
 <h2 id="highlights">Highlights</h2>
 <ul>
 <li><strong>MiniChat</strong> implementiert einen Voice-Chat mit
-kostengünstigen GPT-4x-Modellen.</li>
+kostengünstigen GPT-mini-Modellen.</li>
 <li>Als Datenformat werden lokale <strong>N-Turns</strong> verwendet;
 dadurch kann die Kommunikation DSGVO-konform umgesetzt werden.</li>
 <li>Je nach Modell werden <strong>PII</strong>-Daten (personenbezogene
@@ -68,10 +65,11 @@ ausreichend schnell und im Betrieb günstiger als „Real-Time“.</li>
 <li>Optional: Anbindung des OpenAI <strong>Vector Stores</strong>, um
 große Datenmengen (Handbücher, Stories, …) an Chats anzubinden.</li>
 </ul>
-<h2 id="einsatzideen">Einsatzideen</h2>
+<h2 id="einsatz-szenarien">Einsatz-Szenarien</h2>
 <ul>
 <li>Beratungs-Bots auf Webseiten: kennt „jedes“ Handbuch und alle
-Datenblätter des Betreibers, ist immer erreichbar und kompetent.</li>
+Datenblätter des Betreibers, absolut exakt und schnell, ist immer
+erreichbar und kompetent.</li>
 <li>Sprachassistenten für interne Verwendung (z. B. für Hands-Free-Tasks
 oder Assistenz-Systeme), z.B. zum Ausführen von Aufgaben.</li>
 <li>Storyteller (z. B. für statische und dynamische Kinder-Geschichten).
@@ -100,7 +98,7 @@ per <code>.pcmd</code> gezielt beeinflusst werden</li>
 <li>Antworten mit Meta-Logik (Topic: freundlichkeit)</li>
 </ul></li>
 </ul>
-<h3 id="janalm-die-almwirtin">👩‍🦰 janalm – Die Almwirtin 🐄⛰🐮</h3>
+<h3 id="janalm-die-almwirtin">👩‍🦰 janalm – Die Almwirtin 🐄🐮🐂</h3>
 <ul>
 <li><strong>Login:</strong> <code>janalm</code> /
 <code>geheimnix</code></li>

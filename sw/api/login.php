@@ -221,6 +221,15 @@ try {
         throw new Exception("Invalid hellos file format");
     }
 
+ // Zum Schluss noch Guthaben prüfen 
+  $creditsFile = $userDir . '/credits.json.php';
+  $creditsAvailable = 0;
+  if (file_exists($creditsFile)) {
+    $credits = json_decode(file_get_contents($creditsFile), true);
+    $creditsAvailable = (int)($credits['chat'] ?? 0);
+  }
+
+
     $persona = $credentials['persona'] ?? '(not set)';
     $intro = $helloTxts['intro'] ?? '(Hallo)';
     $response = [
@@ -231,7 +240,8 @@ try {
         'helpTexts' => $helloTxts['helpTxts'],
         'speakVoice' => $narrator,
         'persona' => $persona,
-        'intro' => $intro
+        'intro' => $intro,
+        'creditsAvailable' => $creditsAvailable
     ];
 
     http_response_code(200); // Success (201 ist für Resource Creation)

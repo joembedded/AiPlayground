@@ -16,13 +16,14 @@
 */
 
 //--------- globals ------ 
-export const VERSION = 'V0.01 / 10.01.2026';
+export const VERSION = 'V0.02 / 11.01.2026';
 export const COPYRIGHT = '(C)JoEmbedded.de';
-let dbgLevel = 2;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro immer abspielen
+let dbgLevel = 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro immer abspielen
 
 // Session Credentials
 let apiSessionId = null; // 32 Zeichen SessionID
 let apiUser = null; // z.B. 'testuser'
+let userCredits = 0; // Verfügbare Credits
 
 let userLanguage = null; // de-DE
 let speakVoice = null; // z.B 'narrator_f_jane'; 
@@ -32,9 +33,7 @@ let introText = null; // Intro-Text der Persona
 let personaCommand = ''; // Zusätzliche Persona-Kommandos
 let voiceCommand = ''; // Zusätzliche Voice-Kommandos
 
-
 let isLoggedIn = false; // true wenn eingeloggt
-
 
 // -------- ENDE globals ------
 
@@ -79,7 +78,7 @@ async function sendeNachricht() {
 
     sendenBtnGlyph.classList.add('spinner');
     if (chatStateVar >= 4) {
-        if (dbgLevel>1) terminalPrint('sendeNachricht: Abbruch, chatStateVar=' + chatStateVar);
+        if (dbgLevel > 1) terminalPrint('sendeNachricht: Abbruch, chatStateVar=' + chatStateVar);
         chatStateVar = 9; // Alles Abbrechen
         return; // Bereits senden in Arbeit, abbrechen
     }
@@ -98,7 +97,7 @@ async function sendeNachricht() {
     if (text.startsWith('.debug')) {
         const debugValue = text.substring(6).trim();
         if (debugValue.length) dbgLevel = parseInt(debugValue);
-        dbgDiv.hidden = (dbgLevel>1);
+        dbgDiv.hidden = (dbgLevel < 2);
         chatStateVar = 5; // Warte auf sendeNachricht
         addMessage('.debug:' + dbgLevel, 'bot info');
         textEingabe.value = '';
@@ -106,7 +105,7 @@ async function sendeNachricht() {
     }
     if (text.startsWith('.vcmd')) { // '.' only removes
         const vcmdValue = text.substring(5).trim();
-        if (vcmdValue.length) voiceCommand = (vcmdValue=='.')?'':vcmdValue;
+        if (vcmdValue.length) voiceCommand = (vcmdValue == '.') ? '' : vcmdValue;
         chatStateVar = 5; // Warte auf sendeNachricht
         addMessage('.vcmd: ' + voiceCommand, 'bot info');
         textEingabe.value = '';
@@ -114,9 +113,21 @@ async function sendeNachricht() {
     }
     if (text.startsWith('.pcmd')) { // '.' only removes
         const pcmdValue = text.substring(5).trim();
-        if (pcmdValue.length) personaCommand = (pcmdValue=='.')?'':pcmdValue;
+        if (pcmdValue.length) personaCommand = (pcmdValue == '.') ? '' : pcmdValue;
         chatStateVar = 5; // Warte auf sendeNachricht
         addMessage('.pcmd: ' + personaCommand, 'bot info');
+        textEingabe.value = '';
+        return;
+    }
+    if (text.startsWith('.credits')) {
+        addMessage('.credits: ' + userCredits, 'bot info');
+        textEingabe.value = '';
+        return;
+    }
+
+    if (userCredits <= 0) {
+        addMessage('Keine Credits mehr!', 'bot error');
+        chatStateVar = 5; // Warte auf sendeNachricht
         textEingabe.value = '';
         return;
     }
@@ -130,7 +141,7 @@ async function sendeNachricht() {
 // Background Monitor - alle ca. 100 msec
 let chatStateVar = 0;     // 0: idle - darf extern mod. werden!
 function periodical() {
-    if (dbgLevel>1) dbgAudioStatus.textContent = `chatStateVar: ${chatStateVar} ${isLoggedIn ? '(logged in)' : '(not logged in)'}`;
+    if (dbgLevel > 1) dbgAudioStatus.textContent = `chatStateVar: ${chatStateVar} ${isLoggedIn ? '(logged in)' : '(not logged in)'} Credits: ${userCredits}`;
 
     switch (chatStateVar) {
         case 0: // idle
@@ -149,14 +160,13 @@ function periodical() {
             } else {
                 chatStateVar = 10; // Gleich weiter
             }
-
             break;
         case 4: // Erwarte sendeNachricht - Antwort
             // todo
             break;
 
         case 5: // Erwarte sendeNachricht - Plop & Say 
-            chatStateVar = 6; 
+            chatStateVar = 6;
             audioFxPlop.play().catch(() => { });
         case 6: // Verarbeitet
             checkAndPlayAudio();
@@ -180,7 +190,7 @@ function periodical() {
             break;
 
         default:
-            if (dbgLevel>1) terminalPrint('ERROR: chatStateVar:' + chatStateVar);
+            if (dbgLevel > 1) terminalPrint('ERROR: chatStateVar:' + chatStateVar);
             setChatStatus('ERROR(internal):' + chatStateVar, 'red');
             chatStateVar = 0; // Zuruecksetzen
             microStatus = 1; // Micro wieder ggfs. bereit, falls vorhanden
@@ -205,7 +215,7 @@ const audioPlayer = document.getElementById('audioPlayer');
 // Abspielen sobald möglich
 audioPlayer.oncanplay = function () {
     audioPlayer.play().catch(error => {
-        if (dbgLevel>1) terminalPrint('ERROR(audioPlayerA): ' + error);
+        if (dbgLevel > 1) terminalPrint('ERROR(audioPlayerA): ' + error);
         setChatStatus('ERROR(audioPlayerA): ' + error, 'red');
         isLoading = false;
     });
@@ -221,7 +231,7 @@ audioPlayer.onended = function () {
 };
 audioPlayer.onerror = function (error) {
     const errorMsg = error?.currentTarget?.error?.message ?? 'Unknown';
-    if (dbgLevel>1) terminalPrint('ERROR(audioPlayerB): ' + errorMsg);
+    if (dbgLevel > 1) terminalPrint('ERROR(audioPlayerB): ' + errorMsg);
     setChatStatus('ERROR(audioPlayerB): ' + errorMsg, 'red');
     isLoading = false;
 }
@@ -248,9 +258,9 @@ function checkAndPlayAudio() {
     playAudioUrl = URL.createObjectURL(audioBlob);
     audioPlayer.src = playAudioUrl;
     audioPlayer.play().then(() => {
-        if (dbgLevel>1) terminalPrint(`Play - verbleibende Dateien: ${audioCache.length}`);
+        if (dbgLevel > 1) terminalPrint(`Play - verbleibende Dateien: ${audioCache.length}`);
     }).catch(err => {
-        if (dbgLevel>1) terminalPrint('Fehler beim Abspielen: ' + err.message);
+        if (dbgLevel > 1) terminalPrint('Fehler beim Abspielen: ' + err.message);
     });
 };
 
@@ -302,7 +312,7 @@ function splitIntoSentences(text) {
 // Audio für einen Satz abrufen 
 // Fängt ggfs. SOFORT an zu spielen, wenn Player idle ist. Dazu Abküerzung vis <audio>.src verwenden
 async function fetchAudioForSentence(sentence, voice, cache = false) {
-    if (dbgLevel>1) terminalPrint(`Satz: '${sentence.substring(0, 50)}${sentence.length > 50 ? '...' : ''}'`);
+    if (dbgLevel > 1) terminalPrint(`Satz: '${sentence.substring(0, 50)}${sentence.length > 50 ? '...' : ''}'`);
     const methodGET = (audioPlayer.paused == true) && (audioCache.length == 0) && (isLoading == false);
 
     const formData = new FormData();
@@ -312,26 +322,26 @@ async function fetchAudioForSentence(sentence, voice, cache = false) {
         formData.append('sessionId', apiSessionId);
         formData.append('user', apiUser);
         formData.append('stream', '1');
-        if(cache) formData.append('cache', '1');
-        if(voiceCommand.length) formData.append('vcmd', voiceCommand);
+        if (cache) formData.append('cache', '1');
+        if (voiceCommand.length) formData.append('vcmd', voiceCommand);
     } else {
         var url = `./api/oai_tts.php?`;
         url += `text=${encodeURIComponent(sentence)}`;
         url += `&voice=${encodeURIComponent(voice)}`;
         url += `&sessionId=${encodeURIComponent(apiSessionId)}&stream=1`;
         url += `&user=${encodeURIComponent(apiUser)}`;
-        if(voiceCommand.length) url += `&vcmd=${encodeURIComponent(voiceCommand)}`;
-        if(cache) url += `&cache=1`;
+        if (voiceCommand.length) url += `&vcmd=${encodeURIComponent(voiceCommand)}`;
+        if (cache) url += `&cache=1`;
         isLoading = true;
     }
     try {
         if (!isLoggedIn) throw new Error("Not logged in!");
         if (methodGET) {
-            if (dbgLevel>1) terminalPrint(`Lade Audio via GET/src...`);
+            if (dbgLevel > 1) terminalPrint(`Lade Audio via GET/src...`);
             audioPlayer.src = url;
             audioPlayer.load();
         } else {
-            if (dbgLevel>1) terminalPrint(`Lade Audio via POST/cache...`);
+            if (dbgLevel > 1) terminalPrint(`Lade Audio via POST/cache...`);
             var response = await fetch("./api/oai_tts.php", { method: "POST", body: formData });
             const contentType = response.headers.get('content-type');
 
@@ -339,20 +349,20 @@ async function fetchAudioForSentence(sentence, voice, cache = false) {
             if (response.ok && contentType && contentType.includes('audio')) {
                 const audioBlob = await response.blob();
                 audioCache.push(audioBlob);
-                if (dbgLevel>1) terminalPrint(`Audio für Satz geladen: "${sentence.substring(0, 50)}${sentence.length > 50 ? '...' : ''}"`);
+                if (dbgLevel > 1) terminalPrint(`Audio für Satz geladen: "${sentence.substring(0, 50)}${sentence.length > 50 ? '...' : ''}"`);
             } else {
                 // Fehler als Text oder JSON
                 const errorText = await response.text();
                 try {
                     const errorJson = JSON.parse(errorText);
-                    if (dbgLevel>1) terminalPrint(`ERROR(JSON): ${JSON.stringify(errorJson)}`);
+                    if (dbgLevel > 1) terminalPrint(`ERROR(JSON): ${JSON.stringify(errorJson)}`);
                 } catch {
-                    if (dbgLevel>1) terminalPrint(`ERROR(TEXT): ${errorText.substring(0, 100)}`);
+                    if (dbgLevel > 1) terminalPrint(`ERROR(TEXT): ${errorText.substring(0, 100)}`);
                 }
             }
         }
     } catch (error) {
-        if (dbgLevel>1) terminalPrint(`ERROR(Server) Scentence:"${sentence.substring(0, 50)}...": ${error.message}`);
+        if (dbgLevel > 1) terminalPrint(`ERROR(Server) Scentence:"${sentence.substring(0, 50)}...": ${error.message}`);
     }
 }
 
@@ -362,7 +372,7 @@ async function speakText(inputText, cache = false) {
         return;
     }
     if (inputText.length === 0) {
-        if (dbgLevel>1) terminalPrint('Kein Text eingegeben!');
+        if (dbgLevel > 1) terminalPrint('Kein Text eingegeben!');
         return;
     }
     isProcessing = true;
@@ -373,7 +383,7 @@ async function speakText(inputText, cache = false) {
     const normalizedText = inputText.replace(/[\n\r\t]+/g, ' ');
     // Text in Sätze zerlegen
     const sentences = splitIntoSentences(normalizedText);
-    if (dbgLevel>1) terminalPrint(`Text in ${sentences.length} Sätze zerlegt`);
+    if (dbgLevel > 1) terminalPrint(`Text in ${sentences.length} Sätze zerlegt`);
 
     // Jeden Satz verarbeiten
     const selectedVoice = speakVoice;  // Damit nicht aenderbar within Funktion
@@ -381,7 +391,7 @@ async function speakText(inputText, cache = false) {
         await fetchAudioForSentence(sentences[i], selectedVoice, cache);
     }
 
-    if (dbgLevel>1) terminalPrint('Alle Sätze verarbeitet');
+    if (dbgLevel > 1) terminalPrint('Alle Sätze verarbeitet');
     isProcessing = false;
 
 }
@@ -394,7 +404,7 @@ async function speakText(inputText, cache = false) {
 async function talkWithServer(text, persona, concerningMessage = null) {
     // Quasi Global für interne Verwendung
     lastServerText = null;
-        lastServerMeta = null;
+    lastServerMeta = null;
 
     const payload = {
         sessionId: apiSessionId,
@@ -403,7 +413,7 @@ async function talkWithServer(text, persona, concerningMessage = null) {
         text: text,
         persona: persona
     };
-    if(personaCommand.length) payload.pcmd = personaCommand; // Ggfs. Persona Command
+    if (personaCommand.length) payload.pcmd = personaCommand; // Ggfs. Persona Command
     try {
         if (!isLoggedIn) throw new Error("Not logged in!");
         const response = await fetch('./api/oai_chat.php', {  // './api/echo_sim.php'
@@ -413,12 +423,12 @@ async function talkWithServer(text, persona, concerningMessage = null) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            if (dbgLevel>1) terminalPrint(`POST failed: ${response.status} ${response.statusText}: ${errorText}`);
+            if (dbgLevel > 1) terminalPrint(`POST failed: ${response.status} ${response.statusText}: ${errorText}`);
             if (concerningMessage) updateMessage(concerningMessage, `ERROR(ServerP3): ${response.status} ${response.statusText}: ${errorText}`, 'bot error');
             chatStateVar = -996;
             return;
         }
-        const data = await response.json();
+        const data = await response.json(); // Das ist noch nicht richtig schön, besser .text() -> JSON.parse() mit try/catch
         if (data.success) {
             let text = '?';
             // console.log('data:',data); // - Die Antwort der KI kann alles mögliche enthalten...
@@ -428,25 +438,35 @@ async function talkWithServer(text, persona, concerningMessage = null) {
                 if (data.result?.meta) {
                     lastServerMeta = data.result.meta;
                 }
+                if (data.credits !== undefined) {
+                    userCredits = data.credits; // Update Credits
+                    //console.log('Credits(Chat):', userCredits);
+                }
             } catch (e) { }
 
             if (concerningMessage) {
                 let plopText = text;
-                if(dbgLevel && lastServerMeta){
+                if (dbgLevel && lastServerMeta) {
                     const metaString = JSON.stringify(lastServerMeta, null, 2);
                     plopText += '<br><small><pre style="color: #00A; white-space: pre-wrap;">' + metaString + '</pre></small>';
                 }
                 updateMessage(concerningMessage, plopText, 'bot ok');
             }
-            speakText(text, false);    // Sprichs aus! (Ohne Cache)
-            chatStateVar = 5; // Fertig, nun audio setzt auch 10
+            if (userCredits <= 0) {
+                addMessage('Keine Credits mehr!', 'bot error');
+                concerningMessage = null;
+                chatStateVar = -993;
+            } else {
+                speakText(text, false);    // Sprichs aus! (Ohne Cache)
+                chatStateVar = 5; // Fertig, nun audio setzt auch 10
+            }
         } else {
             if (concerningMessage) updateMessage(concerningMessage, 'ERROR: ' + (data.error || 'Unbekannter Fehler'), 'bot error');
             chatStateVar = -994;
         }
-        if (dbgLevel>1) terminalPrint('POST returned: ' + JSON.stringify(text)); // Nur Text reicht
+        if (dbgLevel > 1) terminalPrint('POST returned: ' + JSON.stringify(text)); // Nur Text reicht
     } catch (e) {
-        if (dbgLevel>1) terminalPrint('POST failed: ' + e.message);
+        if (dbgLevel > 1) terminalPrint('POST failed: ' + e.message);
         if (concerningMessage) updateMessage(concerningMessage, 'ERROR(ServerP4): ' + e.message, 'bot error');
         chatStateVar = -995;
     }
@@ -455,9 +475,15 @@ async function talkWithServer(text, persona, concerningMessage = null) {
 // Ausm STD-Player Audio holen und transkibe
 async function postAudio() {
     try {
+        if (userCredits <= 0) {
+            addMessage("Keine Credits mehr!", 'bot error');
+            chatStateVar = -992;
+            return;
+        }
+
         const audioSrc = stdPlayer?.src;
         if (!audioSrc) {
-            if (dbgLevel>1) terminalPrint('ERROR: No audio src');
+            if (dbgLevel > 1) terminalPrint('ERROR: No audio src');
             chatStateVar = -999;
             return;
         }
@@ -480,24 +506,29 @@ async function postAudio() {
 
         if (!postResponse.ok) {
             const errorText = await postResponse.text();
-            if (dbgLevel>1) terminalPrint(`POST failed: ${postResponse.status} ${postResponse.statusText}: ${errorText}`);
+            if (dbgLevel > 1) terminalPrint(`POST failed: ${postResponse.status} ${postResponse.statusText}: ${errorText}`);
             addMessage(`ERROR(ServerP2): ${postResponse.status} ${postResponse.statusText}: ${errorText}`, 'bot error');
             chatStateVar = -998;
             return;
         }
-        const text = await postResponse.json();
-        const spoken = text.text || text;
+        const text = await postResponse.json(); // Das ist noch nicht richtig schön, besser .text() -> JSON.parse() mit try/catch
+        const spoken = text.text;
+        if (text.credits !== undefined) {
+            userCredits = text.credits; // Update Credits
+            //console.log('Credits(STT):', userCredits);
+        }
+
         const oldText = textEingabe.value.trim();
         if (oldText.length > 0) {
             textEingabe.value = oldText + ' ' + spoken;
         } else {
             textEingabe.value = spoken;
         }
-        if (dbgLevel>1) terminalPrint('POST successful: ' + JSON.stringify(text));
+        if (dbgLevel > 1) terminalPrint('POST successful: ' + JSON.stringify(text));
         chatStateVar = 3; // Fertig
 
     } catch (e) {
-        if (dbgLevel>1) terminalPrint('POST failed: ' + e.message);
+        if (dbgLevel > 1) terminalPrint('POST failed: ' + e.message);
         addMessage('ERROR(ServerP1): ' + e.message, 'bot error');
         chatStateVar = -997;
     }
@@ -572,7 +603,7 @@ stdPlayer.addEventListener('ended', () => {
 
 function addAudioChunk(data) {
     audioChunks.push(data);
-    if (dbgLevel>1) terminalPrint('Audio chunk: ' + data.size + ' bytes, Total Chunks: ' + audioChunks.length);
+    if (dbgLevel > 1) terminalPrint('Audio chunk: ' + data.size + ' bytes, Total Chunks: ' + audioChunks.length);
 }
 
 async function startMicro() {
@@ -686,7 +717,7 @@ function computeRMSFromTimeDomain(byteArray) {
 function processAudio(e) {
     const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/webm" });
     const info = "Len: " + blob.size + " bytes (" + speechTotalDur + " msec) " + blob.type;
-    if (dbgLevel>1) terminalPrint("Audio recorded: " + info);
+    if (dbgLevel > 1) terminalPrint("Audio recorded: " + info);
     const procAudioURL = window.URL.createObjectURL(blob);
     audioChunks = [];
     if (microStatus === 5) microStatus = 6; // Verarbeitet!
@@ -694,14 +725,14 @@ function processAudio(e) {
 }
 
 // Sprach-Zustandsmaschine
-let totalRms = 0;   // Statistik (dbgLevel 3)
+let totalRms = 0;   // Statistik (dbgLevel 3) Bisher noch nicht verwendet
 let frameCount = 0;
 function updateSpeechState(frameRms) {
     const dur = performance.now() - speechStateTime0;
     frameCount++;   // Statistik mitfuehren
-    totalRms += frameRms;
+    totalRms += frameRms; // integriere RMS
 
-    if (dbgLevel>1) dbgInfo.textContent = `microStatus: ${microStatus}  Dur: ${dur.toFixed(0)} msec`;
+    if (dbgLevel > 1) dbgInfo.textContent = `microStatus: ${microStatus}  Dur: ${dur.toFixed(0)} msec`;
     if (isMenuVisible) {
         if (isRecording) {
             mediaRecorder.stop();
@@ -771,21 +802,21 @@ function updateSpeechState(frameRms) {
         case 6: // Zustand 6: Warten auf Restart
             if (speechTotalDur > MIN_LEN_SPEECH_MS) {
                 if (speechTotalDur > MAX_SPEECH_MS) { // Max. Dauer erreicht
-                    if (dbgLevel>1) terminalPrint(`Speech Max Length reached (${speechTotalDur} msec), stopping.`);
+                    if (dbgLevel > 1) terminalPrint(`Speech Max Length reached (${speechTotalDur} msec), stopping.`);
                 } else {
-                    if (dbgLevel>1) terminalPrint(`Speech End (${speechTotalDur} msec)`);
+                    if (dbgLevel > 1) terminalPrint(`Speech End (${speechTotalDur} msec)`);
                 }
                 setChatStatus('Sprache beendet', 'yellow');
-                if (dbgLevel>1) terminalPrint(`Stats: Frames:${frameCount}, T.RMS:${totalRms.toFixed(4)}, Avg RMS:${(totalRms / frameCount).toFixed(4)}, T./RMS:${(totalRms/thresholdRms).toFixed(4)}`);
+                if (dbgLevel > 1) terminalPrint(`Stats: Frames:${frameCount}, T.RMS:${totalRms.toFixed(4)}, Avg RMS:${(totalRms / frameCount).toFixed(4)}, T./RMS:${(totalRms / thresholdRms).toFixed(4)}`);
                 if (dbgLevel > 2) { // OPtional immer abspielen zum Testen
                     microStatus = 7;
                     stdPlayer.play(); // Zum Testen immer abspielen            
-                    if(dbgLevel>2) {
-                     microStatus = 1; // Zuruecksetzen
+                    if (dbgLevel > 2) {
+                        microStatus = 1; // Zuruecksetzen
                     }
                 } else microStatus = 8; // Direkt fertig
             } else {
-                if (dbgLevel>1) terminalPrint(`Speech too short (${speechTotalDur} msec), discarded.`);
+                if (dbgLevel > 1) terminalPrint(`Speech too short (${speechTotalDur} msec), discarded.`);
                 microStatus = 1; // Zuruecksetzen
             }
             break;
@@ -983,7 +1014,7 @@ overlay.addEventListener('click', () => {
 document.getElementById('sidebar-close').addEventListener('click', () => {
     menuManage(false); // ZU
 });
-if (dbgLevel>1) {
+if (dbgLevel > 1) {
     dbgDiv.hidden = false;
     terminalPrint(''); // Initial anzeigen
 }
@@ -1030,11 +1061,11 @@ async function login(cmd = '', luser = '', lpassword = '', lsessionId = '', stat
 
         if (!response.ok) {
             const errorText = await response.text();
-            if (dbgLevel>1) terminalPrint(`POST failed: ${response.status} ${response.statusText}: ${errorText}`);
+            if (dbgLevel > 1) terminalPrint(`POST failed: ${response.status} ${response.statusText}: ${errorText}`);
             if (statusElement) statusElement.textContent = `Login failed: ${response.status} ${response.statusText}: ${errorText}`;
             return false;
         }
-        const data = await response.json();
+        const data = await response.json(); // Das ist noch nicht richtig schön, besser .text() -> JSON.parse() mit try/catch
         if (data.success && luser === data.user) {
             apiSessionId = data.sessionId;
             apiUser = data.user;
@@ -1045,15 +1076,16 @@ async function login(cmd = '', luser = '', lpassword = '', lsessionId = '', stat
             helpTxts = nHelpTexts;
             persona = data.persona;
             introText = data.intro;
+            userCredits = data.creditsAvailable;
             // OK
             isLoggedIn = true;
             sendenBtn.disabled = false;
 
             return true;
         }
-        if (dbgLevel>1) terminalPrint('POST returned: ' + JSON.stringify(data));
+        if (dbgLevel > 1) terminalPrint('POST returned: ' + JSON.stringify(data));
     } catch (e) {
-        if (dbgLevel>1) terminalPrint('POST failed: ' + e.message);
+        if (dbgLevel > 1) terminalPrint('POST failed: ' + e.message);
     }
     return false;
 }
@@ -1102,15 +1134,15 @@ async function mainLogin(cred) {
     if (cred.username.length > 0 && cred.sessionId.length > 0) {
         res = await login('logrem', cred.username, '', cred.sessionId, null); // Test-Login: true: ALles OK
     }
-    if(res !== true) {      
+    if (res !== true) {
         credentialsDialog.showModal();
         while (!isLoggedIn) {
             await jsSleepMs(100);
         }
     }
     requestWakeLock(); // Screen ON
-    if(introText) addMessage(introText, 'bot info');
-
+    //addMessage(`Verfügbare Credits: ${userCredits<0?'0':userCredits}`, 'bot info');
+    if (introText) addMessage(introText, 'bot info');
 }
 
 const cred = getCredentialsFromLocalStorage();

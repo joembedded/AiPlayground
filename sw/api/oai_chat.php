@@ -9,8 +9,7 @@ declare(strict_types=1);
 
 // Configuration
 $log = 2; // 0: Silent, 1: Logfile schreiben, 2: Log complete Reply
-//$SIMULATION_RESP = "res_20260109_233809.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
-
+//$SIMULATION_RESP = "res_20260110_222954.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
 
 $xlog = "oai_chat";
 include_once __DIR__ . '/../php_tools/logfile.php';
@@ -170,6 +169,10 @@ try {
     http_response_code(400);
     throw new Exception('ERROR: No Text');
   }
+  if (strlen($question) > 4000) {
+    http_response_code(400);
+    throw new Exception('ERROR: Text too long');
+  }
   $xlog .= " Question:'$question'";
 
   // Validate and sanitize persona
@@ -261,6 +264,17 @@ try {
   // Wichtig: Dbg: ALles anzeigen und Exit (***DEV***)
   //echo json_encode(($payload), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);  exit;
 
+  // Guthaben prüfen (aber noch nicht abziehen)
+  $creditsFile = $userDir . '/credits.json.php';
+  $creditsAvailable = 0;
+  if (file_exists($creditsFile)) {
+    $credits = json_decode(file_get_contents($creditsFile), true);
+    $creditsAvailable = (int)($credits['chat'] ?? 0);
+  }
+  if ($creditsAvailable <= 0) {
+    http_response_code(402);
+    throw new Exception('No Credits');
+  }
 
   // OpenAI Chat API aufrufen
   if (empty($SIMULATION_RESP)) {
@@ -368,9 +382,15 @@ try {
       $xlog .= " Text:$txtfname Response:'$logfname'";
     }
   }
+  // Credits abziehen (erst nach erfolgreichem API-Call)
+  $tokenUsage = $result['usage']['total_tokens'] ?? 100; // Mindestens xx Token
+  $creditsAvailable -= $tokenUsage;
+  $credits['chat'] = $creditsAvailable;
+  @file_put_contents($creditsFile, json_encode($credits, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+  $xlog .= " Cost:" . $tokenUsage;
 
   http_response_code(201);
-  echo json_encode(['success' => true, 'result' => $obj ?? ''], JSON_UNESCAPED_SLASHES);
+  echo json_encode(['success' => true, 'result' => $obj ?? '', 'credits' => $creditsAvailable], JSON_UNESCAPED_SLASHES);
 } catch (Exception $e) {
   // Error handling
   if (http_response_code() === 200) {

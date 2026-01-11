@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 // Configuration - Loglevel
 $log = 3; // 0: Silent, 1: Logfile schreiben 2:Alles cachen 3: Mit Instructions
+$TTS_COST = 1; // Kosten pro TTS Anfrage in Credits
 $xlog = "oai_tts"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
 
@@ -78,7 +79,7 @@ try {
 
     // Loggen wenn explizit gesetzt oder bei Bedarf
     $cache = !empty($_REQUEST['cache']);
-    if(($log >= 2)) $cache = true; // Dann in jedem Fall cachen
+    if (($log >= 2)) $cache = true; // Dann in jedem Fall cachen
     if ($cache) $xlog .= " Cache";
 
     $audioContent = match ($format) {
@@ -150,14 +151,27 @@ try {
 
     // Voice Command: Wenn mit ! beginnt, ersetzt es die Anweisungen
     if (strlen($voiceCommand) > 0) {
-        if($voiceCommand[0] === '!') {
+        if ($voiceCommand[0] === '!') {
             $payload['instructions'] = substr($voiceCommand, 1);
         } else {
-            $payload['instructions'] .= '\n'.$voiceCommand;
+            $payload['instructions'] .= '\n' . $voiceCommand;
         }
     }
 
-    if($log >2) $xlog.= " Ins.:'" . str_replace("\n", '\n', $payload['instructions']) . "'";
+    if ($log > 2) $xlog .= " Ins.:'" . str_replace("\n", '\n', $payload['instructions']) . "'";
+
+    // Guthaben prüfen (aber noch nicht abziehen)
+    $creditsFile = $userDir . '/credits.json.php';
+    $creditsAvailable = 0;
+    if (file_exists($creditsFile)) {
+        $credits = json_decode(file_get_contents($creditsFile), true);
+        $creditsAvailable = (int)($credits['chat'] ?? 0);
+    }
+
+    if ($creditsAvailable <= 0) {
+        http_response_code(402);
+        throw new Exception('No Credits');
+    }
 
     $ch = curl_init("https://api.openai.com/v1/audio/speech");
     curl_setopt_array($ch, [
@@ -197,6 +211,7 @@ try {
             throw new Exception($err ?: "TTS fehlgeschlagen (HTTP: $http)");
         }
 
+
         // MP3/OPUS an den Browser ausliefern
         header("Content-Type: $audioContent");
         header("Content-Length: " . strlen($audioBytes));
@@ -204,13 +219,19 @@ try {
     }
 
     // Aufschreiben, entweder gestreamt oder normal
-    if ($cache){
+    if ($cache) {
         file_put_contents($diskPath, $stream ? $audioStreamed : $audioBytes);
         $xlog .= " File[" . strlen($stream ? $audioStreamed : $audioBytes) . "]:$diskFname " . ($stream ? "(Stream-CREATED)" : "(CREATED)");
-    }else{
+    } else {
         $xlog .= " Blob[" . strlen($stream ? $audioStreamed : $audioBytes) . "] " . ($stream ? "(Stream)" : "");
     }
 
+    // Credits abziehen (erst nach erfolgreichem API-Call)
+    $tokenUsage = (int)(1 + strlen($text) * 0.25); // Lt. OpenAI grob ca. 0.25 Tokens/Buchstabe
+    $creditsAvailable -= $tokenUsage;
+    $credits['chat'] = $creditsAvailable;
+    @file_put_contents($creditsFile, json_encode($credits, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+    $xlog .= " Cost:" . $tokenUsage;
 } catch (Exception $e) {
     header('Content-Type: application/json; charset=UTF-8');
     if (http_response_code() === 200) {

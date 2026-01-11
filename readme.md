@@ -1,40 +1,34 @@
 
 ---
-title: AI Playground
-author: JoEmbedded.de
-version: 0.01
-date: 10.01.2026
 info_convert: pandoc readme.md -o pandoc/readme.html --standalone --metadata title="AI Playground" --css=style.css 
 ---
 
 # AI Playground
 
 Eine Sammlung nützlicher Routinen rund um OpenAI, Sprache und kleine Tools.<br>
-(C)JoEmbedded.de V0.01 / 10.01.2026
+(C)JoEmbedded.de V0.02 / 11.01.2026
 
 ## Ziel
 
-Bau einer sicheren und schnellen API-Kette von **JS → PHP → OpenAI** mit modernem, kryptografisch sicherem Login und responsive HTML und einer darüberliegenden Sprachsteuerung, basierend auf **WebRTC** Technologie (so dass die auch kontinuierlich aktiviert sein kann, also echtes Hands-Free-Bedienerlebnis).
+Bau einer sicheren und schnellen API-Kette von **JS → PHP → OpenAI** mit modernem, sicherem (Hash) Login und responsive HTML und einer darüberliegenden Sprachsteuerung, basierend auf **WebRTC** Technologie (so dass die auch kontinuierlich aktiviert sein kann, also echtes Hands-Free-Bedienerlebnis).
 
-> Ziel war es nicht, eine echte (synchrone) Real-Time-Anwendung zu entwickeln, sondern einen (asynchronen) Voice-Chat zu bauen. Die Latenzzeiten liegen also nur im Sekunden-Bereich. Für einen Sprachassistenten ist dies aber absolut akzeptabel. Und außerdem ist der asynchrone Betrieb (hier über die OpenAI-Responses API) wesentlich kostengünstiger.
-
-
+> Ziel war es nicht, eine echte (synchrone) Real-Time-Anwendung zu entwickeln, sondern einen (asynchronen) Voice-Chat zu bauen. Die Latenzzeiten liegen also daher im Bereich ca. 2-5 Sekunden. Für einen asynchronen Sprachassistenten ist dies aber absolut akzeptabel. Und außerdem ist der asynchrone Betrieb (hier über die OpenAI-Responses API) wesentlich kostengünstiger.
 
 ## Live-Version
 
-🎤⌨🔉 [Live Version](https://joembedded.de/x3/aibot/sw/minichat.html) auf JoEmbedded.de
+🎤⌨🔉 [Live Version](https://joembedded.de/x3/aias/sw/minichat.html) auf JoEmbedded.de
 
 ## Highlights
 
-- **MiniChat** implementiert einen Voice-Chat mit kostengünstigen GPT-4x-Modellen.
+- **MiniChat** implementiert einen Voice-Chat mit kostengünstigen GPT-mini-Modellen.
 - Als Datenformat werden lokale **N-Turns** verwendet; dadurch kann die Kommunikation DSGVO-konform umgesetzt werden.
 - Je nach Modell werden **PII**-Daten (personenbezogene Daten) sofort zurückgewiesen.
 - Hinweis: Es wird die **Response API** mit eigenem **WebRTC**-Treiber verwendet – für ein Chat-System ausreichend schnell und im Betrieb günstiger als „Real-Time“.
 - Optional: Anbindung des OpenAI **Vector Stores**, um große Datenmengen (Handbücher, Stories, …) an Chats anzubinden.
 
-## Einsatzideen
+## Einsatz-Szenarien
 
-- Beratungs-Bots auf Webseiten: kennt „jedes“ Handbuch und alle Datenblätter des Betreibers, ist immer erreichbar und kompetent.
+- Beratungs-Bots auf Webseiten: kennt „jedes“ Handbuch und alle Datenblätter des Betreibers, absolut exakt und schnell, ist immer erreichbar und kompetent.
 - Sprachassistenten für interne Verwendung (z. B. für Hands-Free-Tasks oder Assistenz-Systeme), z.B. zum Ausführen von Aufgaben.
 - Storyteller (z. B. für statische und dynamische Kinder-Geschichten). Hier kann der Bot ganz speziell auf die Zielgruppe zugeschnittene mediale Inhalte liefern. 
 
@@ -52,7 +46,7 @@ Drei Charaktere sind vordefiniert, um diverse Features zu testen:
   - Verwendet einen `Vector Store` für das „Verkaufshandbuch", als Beispiel für einen Daten-Pool.
   - Antworten mit Meta-Logik (Topic: freundlichkeit)
 
-### 👩‍🦰 janalm – Die Almwirtin 🐄⛰🐮
+### 👩‍🦰 janalm – Die Almwirtin 🐄🐮🐂
 
 - **Login:** `janalm` / `geheimnix`
 - **Charakter:** Jana betreibt einen Kiosk auf einer Alm in den Bergen. Sie ist sehr freundlich, redet gerne und viel mit Wanderern, hat aber keine spezielle Aufgabe, außer etwas Smalltalk.

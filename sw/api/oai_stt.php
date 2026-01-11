@@ -1,4 +1,5 @@
 <?php
+
 /**
  * oai_stt.php - (C) JoEmbedded - 31.12.2025
  * Receives audio file via POST for OpenAI STT transcription.
@@ -9,6 +10,7 @@ declare(strict_types=1);
 
 // Configuration
 $log = 2; // 0: Silent, 1: Logfile schreiben 2:Upload speichern
+
 $xlog = "oas_stt"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
 
@@ -30,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Load API keys
 include_once __DIR__ . '/../secret/keys.inc.php';
 $apiKey = OPENAI_API_KEY;
-$uploadDir = __DIR__ . '/../../' . USERDIR . '/audio/uploads'; 
+$uploadDir = __DIR__ . '/../../' . USERDIR . '/audio/uploads';
 $dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 
 try {
@@ -148,6 +150,18 @@ try {
         exit;
     }
 
+    // Guthaben prüfen (aber noch nicht abziehen)
+    $creditsFile = $userDir . '/credits.json.php';
+    $creditsAvailable = 0;
+    if (file_exists($creditsFile)) {
+        $credits = json_decode(file_get_contents($creditsFile), true);
+        $creditsAvailable = (int)($credits['chat'] ?? 0);
+    }
+    if ($creditsAvailable <= 0) {
+        http_response_code(402);
+        throw new Exception('No Credits');
+    }
+
     // Call OpenAI STT API
     $ch = curl_init('https://api.openai.com/v1/audio/transcriptions');
     curl_setopt_array($ch, [
@@ -183,8 +197,15 @@ try {
 
     $xlog .= " Text:'$stt'";
 
+    // Credits abziehen (erst nach erfolgreichem API-Call)
+    $tokenUsage = $data['usage']['total_tokens'] ?? 10; // Mindestens xx Token
+    $creditsAvailable -= $tokenUsage;
+    $credits['chat'] = $creditsAvailable;
+    @file_put_contents($creditsFile, json_encode($credits, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+    $xlog .= " Cost:" . $tokenUsage;
+
     http_response_code(201); // Success - Was Neues
-    echo json_encode(['success' => true, 'text' => $stt], JSON_UNESCAPED_SLASHES);
+    echo json_encode(['success' => true, 'text' => $stt, 'credits' => $creditsAvailable], JSON_UNESCAPED_SLASHES);
 } catch (Exception $e) {
     // Error handling
     if (http_response_code() === 200) {
@@ -196,6 +217,6 @@ try {
     ], JSON_UNESCAPED_SLASHES);
     $xlog = "ERROR:'" . $e->getMessage() . "' " . $xlog;
     $ip = $_SERVER['REMOTE_ADDR'];
-    if ( !empty($ip))  $xlog = "IP:$ip " . $xlog;
+    if (!empty($ip))  $xlog = "IP:$ip " . $xlog;
 }
 log2file($xlog);
