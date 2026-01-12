@@ -16,7 +16,6 @@ declare(strict_types=1);
 
 // Configuration - Loglevel
 $log = 3; // 0: Silent, 1: Logfile schreiben 2:Alles cachen 3: Mit Instructions
-$TTS_COST = 1; // Kosten pro TTS Anfrage in Credits
 $xlog = "oai_tts"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
 
@@ -78,6 +77,7 @@ try {
     $stream =  !empty($_REQUEST['stream']) ?? false;
 
     // Loggen wenn explizit gesetzt oder bei Bedarf
+        
     $cache = !empty($_REQUEST['cache']);
     if (($log >= 2)) $cache = true; // Dann in jedem Fall cachen
     if ($cache) $xlog .= " Cache";
@@ -125,7 +125,6 @@ try {
 
     if (strlen($voiceCommand) > 0) {
         $xlog .= " VCmd:'" . substr($voiceCommand, 0, 50) . (strlen($voiceCommand) > 50 ? "...'" : "'");
-        $cache = false; // Kein Cache bei VCmd
     } else {
         // Wenn schon da, aus CACHE nehmen
         if (file_exists($diskPath)) {

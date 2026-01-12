@@ -6,7 +6,7 @@ info_convert: pandoc readme.md -o pandoc/readme.html --standalone --metadata tit
 # AI Playground
 
 Eine Sammlung nützlicher Routinen rund um OpenAI, Sprache und kleine Tools.<br>
-(C) JoEmbedded.de V0.02 / 11.01.2026
+(C) JoEmbedded.de V0.03 / 12.01.2026
 
 ## Ziel
 

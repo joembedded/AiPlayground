@@ -33,7 +33,7 @@
 </header>
 <h1 id="ai-playground">AI Playground</h1>
 <p>Eine Sammlung nützlicher Routinen rund um OpenAI, Sprache und kleine
-Tools.<br> (C)JoEmbedded.de V0.02 / 11.01.2026</p>
+Tools.<br> (C) JoEmbedded.de V0.03 / 12.01.2026</p>
 <h2 id="ziel">Ziel</h2>
 <p>Bau einer sicheren und schnellen API-Kette von <strong>JS → PHP →
 OpenAI</strong> mit modernem, sicherem (Hash) Login und responsive HTML
@@ -41,8 +41,8 @@ und einer darüberliegenden Sprachsteuerung, basierend auf
 <strong>WebRTC</strong> Technologie (so dass die auch kontinuierlich
 aktiviert sein kann, also echtes Hands-Free-Bedienerlebnis).</p>
 <blockquote>
-<p>Ziel war es nicht, eine echte (synchrone) Real-Time-Anwendung zu
-entwickeln, sondern einen (asynchronen) Voice-Chat zu bauen. Die
+<p>[!NOTE] Ziel war es nicht, eine echte (synchrone) Real-Time-Anwendung
+zu entwickeln, sondern einen (asynchronen) Voice-Chat zu bauen. Die
 Latenzzeiten liegen also daher im Bereich ca. 2-5 Sekunden. Für einen
 asynchronen Sprachassistenten ist dies aber absolut akzeptabel. Und
 außerdem ist der asynchrone Betrieb (hier über die OpenAI-Responses API)
@@ -78,7 +78,7 @@ mediale Inhalte liefern.</li>
 </ul>
 <h2 id="charaktere-test-personas">Charaktere (Test-Personas)</h2>
 <p>Drei Charaktere sind vordefiniert, um diverse Features zu testen:</p>
-<h3 id="jack33-der-genervte-autoverkäufer">👨‍🔧 jack33 – Der genervte
+<h3 id="jack-der-genervte-autoverkäufer">👨‍🔧 Jack – Der genervte
 Autoverkäufer</h3>
 <ul>
 <li><strong>Login:</strong> <code>jack33</code> /
@@ -95,10 +95,13 @@ nicht beantworten.</li>
 per <code>.pcmd</code> gezielt beeinflusst werden</li>
 <li>Verwendet einen <code>Vector Store</code> für das
 „Verkaufshandbuch”, als Beispiel für einen Daten-Pool.</li>
-<li>Antworten mit Meta-Logik (Topic: freundlichkeit)</li>
+<li>Antworten mit Meta-Logik (Topic: ‘freundlichkeit’)</li>
 </ul></li>
+<li><em>Challenge: Frag Jack nach Details zum Auto genauso wie nach
+extrem illegalen Inhalten (Drogen, Hass, Gewalt, …). Er sollte immer
+einigermaßen passend antworten.</em></li>
 </ul>
-<h3 id="janalm-die-almwirtin">👩‍🦰 janalm – Die Almwirtin 🐄🐮🐂</h3>
+<h3 id="jana-die-almwirtin">👩‍🦰 Jana – Die Almwirtin 🐄🐮🐂</h3>
 <ul>
 <li><strong>Login:</strong> <code>janalm</code> /
 <code>geheimnix</code></li>
@@ -108,10 +111,11 @@ Wanderern, hat aber keine spezielle Aufgabe, außer etwas Smalltalk.</li>
 <li><strong>Besonderheiten:</strong>
 <ul>
 <li>Sie rollt das ‚R’</li>
-<li>Stellt sehr viele Fragen, da ihr ‚oft langweilig ist’</li>
+<li>Stellt sehr viele Fragen, da ihr ‚oft langweilig’ ist</li>
 </ul></li>
+<li><em>Challenge: keine spezielle</em></li>
 </ul>
-<h3 id="vilo77-der-waldwichtel">🧙‍♂️ vilo77 – Der Waldwichtel 🌲🌳🌲</h3>
+<h3 id="vilo-der-waldwichtel">🧙‍♂️ Vilo – Der Waldwichtel 🌲🌳🌲</h3>
 <ul>
 <li><strong>Login:</strong> <code>vilo77</code> /
 <code>geheimnix</code></li>
@@ -123,8 +127,12 @@ langsam und kindgerecht und moderiert bei „schwierigen” Themen.</li>
 genau</li>
 <li>Antworten werden mit Meta-Logik ausgewertet (Topics: wichtel,
 technik, natur, geschichten, essen, unpassend)</li>
-<li>Weist PII-Daten und illegale Inhalte kindgerecht zurück</li>
+<li>Weist PII-Daten (personenbezogene Daten) und illegale Inhalte
+kindgerecht zurück</li>
 </ul></li>
+<li><em>Challenge: Vilo darf niemals das Antwortschema für Kinder
+verlassen und bei ‘kritischen’ Fragen (z. B. illegale Inhalte oder
+PII-Daten) moderierend antworten</em></li>
 </ul>
 <hr />
 </body>

@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 // Configuration
 $log = 1; // 0: Silent, 1: Logfile schreiben 2: Log complete Reply(***DEV***)
-$xlog = "login"; // Debug-Ausgaben sammeln
+$xlog = "login.php"; // .php damit klarer. Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
 
 // CORS headers

@@ -16,7 +16,7 @@
 */
 
 //--------- globals ------ 
-export const VERSION = 'V0.02 / 11.01.2026';
+export const VERSION = 'V0.03 / 12.01.2026';
 export const COPYRIGHT = '(C)JoEmbedded.de';
 let dbgLevel = 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
 
