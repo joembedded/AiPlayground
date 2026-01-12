@@ -1,44 +1,27 @@
 <?php
-
 /**
  * admin.php - (C) JoEmbedded - 11.01.2026
- * Benutzer muss eingeloggt sein!
- 
- * aauser-List:
- * http://localhost/wrk/ai/playground/sw/api/admin.php?cmd=userlist&user=admin_jo&sessionId=74884c7b0572d5aed170663cee71e1b9
-
- * personas
- * http://localhost/wrk/ai/playground/sw/api/admin.php?cmd=personalist&user=admin_jo&sessionId=74884c7b0572d5aed170663cee71e1b9
+ * Benutzerverwaltung für Admin- und Agent-Benutzer
  * 
- *
- * credentials, credit, etc.. holen
- * http://localhost/wrk/ai/playground/sw/api/admin.php?cmd=getdata&mandant=vilo33&user=admin_jo&sessionId=74884c7b0572d5aed170663cee71e1b9
- * Antworten im JSON-Format
- *
- * setpassword for user
- * http://localhost/wrk/ai/playground/sw/api/admin.php?cmd=setpassword&mandant=vilo33&newpassword=neuespasswort123&user=admin_jo&sessionId=74884c7b0572d5aed170663cee71e1b9
- *
-*
-* generateuser
- * http://localhost/wrk/ai/playground/sw/api/admin.php?cmd=generateuser&mandant=_template_vilo&newuser=newuser123&newpassword=neuespasswort123&user=admin_jo&sessionId=74884c7b0572d5aed170663cee71e1b9
- * credentials und credits muessen im admin/agent User hinterlegt sein
- * credits werden dem admin/agent abgezogen
-
-* setdata for user (nur admin)
- * http://localhost/wrk/ai/playground/sw/api/admin.php?cmd=setdata&mandant=vilo33&credentials={...}&credits={...}&user=admin_jo&sessionId=74884c7b0572d5aed170663cee71e1b9
- *
- * deleteuser (nur admin)
- * http://localhost/wrk/ai/playground/sw/api/admin.php?cmd=deleteuser&mandant=vilo33&user=admin_jo&sessionId=74884c7b0572d5aed170663cee71e1b9    
- *
- * Wichtig Die Dateianfänge '_' (z.B. Template) sind Systemordner und werden nicht angezeigt!
- * Die Dateianfange 'admin_' und 'agent_' sind fuer Admins bzw. Agenten reserviert
+ * Verfügbare Commands:
+ * - userlist: Liste aller Benutzer
+ * - personalist: Liste aller verfügbaren Persona-Templates
+ * - getdata: Credentials und Credits eines Benutzers abrufen
+ * - setpassword: Passwort eines Benutzers ändern (admin/agent)
+ * - setdata: Credentials und Credits setzen (nur admin)
+ * - generateuser: Neuen Benutzer erstellen (admin/agent)
+ * - deleteuser: Benutzer löschen (nur admin)
+ * 
+ * Hinweise:
+ * - Ordner mit '_' am Anfang sind Systemordner (z.B. _template_*)
+ * - 'admin_' und 'agent_' Prefixe sind für Admins bzw. Agenten reserviert
  */
 
 declare(strict_types=1);
 
 // Configuration
 $log = 1; // 0: Silent, 1: Logfile schreiben
-$xlog = "admin.php"; // .php damit klarer. Debug-Ausgaben sammeln
+$logMessage = 'admin.php';
 include_once __DIR__ . '/../php_tools/logfile.php';
 
 // CORS headers
@@ -47,7 +30,6 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// CORS preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
@@ -61,259 +43,283 @@ define('MIN_USER_LENGTH', 6);
 define('MAX_USER_LENGTH', 32);
 define('MIN_PASSWORD_LENGTH', 8);
 define('MAX_PASSWORD_LENGTH', 32);
-define('SESSION_ID_BYTES', 16);
 
-$dataDir = __DIR__ . '/../../' . USERDIR . '/users';
+$usersBaseDir = __DIR__ . '/../../' . USERDIR . '/users';
+
 try {
-
-    // CMD immer und fix in Laenge
+    // Command validation
     $cmd = $_REQUEST['cmd'] ?? '';
 
-    // User/admin/agent auch immer -  Validate and sanitize user
-    $user = $_REQUEST['user'] ?? '';
-    if (!preg_match('/^[a-zA-Z0-9_-]{' . MIN_USER_LENGTH . ',' . MAX_USER_LENGTH . '}$/', $user)) {
+    // Validate requesting user (admin/agent)
+    $requestingUser = $_REQUEST['user'] ?? '';
+    if (!preg_match('/^[a-zA-Z0-9_-]{' . MIN_USER_LENGTH . ',' . MAX_USER_LENGTH . '}$/', $requestingUser)) {
         http_response_code(400);
         throw new Exception('Invalid user format');
     }
-    $xlog_back = $xlog;
-    $xlog .= " User:'$user'";
+    $logMessageBackup = $logMessage;
+    $logMessage .= " User:'$requestingUser'";
 
-    // Nun alle Dirs
-    $userDir = $dataDir . '/' . $user;
-    $accessFile = $userDir . '/access.json.php';
+    // User directories
+    $requestingUserDir = $usersBaseDir . '/' . $requestingUser;
+    $accessFile = $requestingUserDir . '/access.json.php';
 
-    // Check user directory (nicht anlegen!) und alle antworten identisch ***
-    if (!is_dir($userDir)) {
+    // Check user directory exists
+    if (!is_dir($requestingUserDir)) {
         http_response_code(401);
-        throw new Exception('Access denied'); // Nix preisgeben!
+        throw new Exception('Access denied');
     }
 
-    // Fuer logrem und logout wird die SessionId gebraucht
+    // Validate session
     $sessionId = $_REQUEST['sessionId'] ?? '';
 
-    $access = null;
+    $accessData = null;
     if (strlen($sessionId) === 32 && file_exists($accessFile)) {
         $accessContent = file_get_contents($accessFile);
         if ($accessContent !== false) {
-            $access = json_decode($accessContent, true);
+            $accessData = json_decode($accessContent, true);
         }
     }
 
-    if (empty($access) || !isset($access['sessionId']) || $access['sessionId'] !== $sessionId) {
+    if (empty($accessData) || !isset($accessData['sessionId']) || $accessData['sessionId'] !== $sessionId) {
         http_response_code(401);
-        throw new Exception('Access denied'); // Nix preisgeben!
+        throw new Exception('Access denied');
     }
 
-    // Credentials sind mmer notwendig
-    $credentialsFile = $userDir . '/credentials.json.php';
-    if (!file_exists($credentialsFile)) {
+    // Load and validate credentials
+    $requestingUserCredentialsFile = $requestingUserDir . '/credentials.json.php';
+    if (!file_exists($requestingUserCredentialsFile)) {
         http_response_code(401);
-        throw new Exception('Access denied'); // Nix preisgeben!
+        throw new Exception('Access denied');
     }
-    $credentialsContent = file_get_contents($credentialsFile);
+    $credentialsContent = file_get_contents($requestingUserCredentialsFile);
     if ($credentialsContent === false) {
         http_response_code(401);
         throw new Exception('Access denied');
     }
-    $credentials = json_decode($credentialsContent, true);
-    if (!is_array($credentials) || empty($credentials)) {
+    $requestingUserCredentials = json_decode($credentialsContent, true);
+    if (!is_array($requestingUserCredentials) || empty($requestingUserCredentials)) {
         http_response_code(401);
-        throw new Exception('Access denied'); // Nix preisgeben!
+        throw new Exception('Access denied');
     }
-    $role = $credentials['role'] ?? '';
-    // Nur admin und agent kommen hier weiter
-    if (empty($role) || ($role !== 'admin' && $role !== 'agent')) {
+
+    // Check role (only admin and agent allowed)
+    $userRole = $requestingUserCredentials['role'] ?? '';
+    if (empty($userRole) || ($userRole !== 'admin' && $userRole !== 'agent')) {
         http_response_code(401);
-        throw new Exception('Access denied'); // Nix preisgeben!
+        throw new Exception('Access denied');
     }
-    $xlog = "$xlog_back $role:'$user' cmd:'$cmd' ";
+    $logMessage = "$logMessageBackup $userRole:'$requestingUser' cmd:'$cmd' ";
 
-    // Resppnse Basics
-    $response = [
-        'success' => true,
-    ];
+    // Initialize response
+    $response = ['success' => true];
 
-    // Immer gut
-    $mandant = $_REQUEST['mandant'] ?? '';
-    if (!empty($mandant)) { // Wenn Mandant angegeb, muss er auch gueltig sein
-        //sanitize mandant
-        if (!preg_match('/^[a-zA-Z0-9_-]{0,' . MAX_USER_LENGTH . '}$/', $mandant)) {
+    // Load target user (mandant) data if specified
+    $targetUser = $_REQUEST['mandant'] ?? '';
+    $targetUserCredentials = null;
+    $targetUserCredits = null;
+
+    if (!empty($targetUser)) {
+        // Validate target user format
+        if (!preg_match('/^[a-zA-Z0-9_-]{0,' . MAX_USER_LENGTH . '}$/', $targetUser)) {
             http_response_code(400);
             throw new Exception('Invalid mandant format');
         }
-        $selUserDir = $dataDir . '/' . $mandant;
-        $userCredentialsFile = $selUserDir . '/credentials.json.php';
-        if (!is_dir($selUserDir) || !file_exists($userCredentialsFile)) {
+
+        $targetUserDir = $usersBaseDir . '/' . $targetUser;
+        $targetUserCredentialsFile = $targetUserDir . '/credentials.json.php';
+        $targetUserCreditsFile = $targetUserDir . '/credits.json.php';
+
+        // Load credentials
+        if (!is_dir($targetUserDir) || !file_exists($targetUserCredentialsFile)) {
             http_response_code(400);
             throw new Exception('Invalid user for credentials');
         }
-        $userCredentialsContent = file_get_contents($userCredentialsFile);
-        if ($userCredentialsContent === false) {
+        $credentialsContent = file_get_contents($targetUserCredentialsFile);
+        if ($credentialsContent === false) {
             http_response_code(400);
             throw new Exception('Could not read credentials');
         }
-        $userCredentials = json_decode($userCredentialsContent, true);
-        // Credentials nun da
+        $targetUserCredentials = json_decode($credentialsContent, true);
 
-        // Credits auch holen
-        $userCreditsFile = $selUserDir . '/credits.json.php';
-        if (!is_dir($selUserDir) || !file_exists($userCreditsFile)) {
+        // Load credits
+        if (!file_exists($targetUserCreditsFile)) {
             http_response_code(400);
             throw new Exception('Invalid user for credits');
         }
-        $userCreditsContent = file_get_contents($userCreditsFile);
-        if ($userCreditsContent === false) {
+        $creditsContent = file_get_contents($targetUserCreditsFile);
+        if ($creditsContent === false) {
             http_response_code(400);
             throw new Exception('Could not read credits');
         }
-        $userCredits = json_decode($userCreditsContent, true);
+        $targetUserCredits = json_decode($creditsContent, true);
     }
 
-    // Admin Commands. Admin und agenten finden sich auch selbst
+    // Command handling
     switch ($cmd) {
-        case 'userlist': // List-of-users (agent/admin)
-            $dirlist = [];
-            $dirs = scandir($dataDir);
-            foreach ($dirs as $dir) {
+        case 'userlist':
+            $userList = [];
+            $directories = scandir($usersBaseDir);
+            foreach ($directories as $dir) {
+                // Skip system directories and special entries
                 if ($dir === '.' || $dir === '..' || $dir[0] === '_') {
                     continue;
                 }
-                if ($role !== 'admin' && strpos($dir, 'admin') === 0) {
+                // Agents cannot see admin users
+                if ($userRole !== 'admin' && strpos($dir, 'admin') === 0) {
                     continue;
                 }
-                if (is_dir($dataDir . '/' . $dir)) {
-                    $dirlist[] = $dir;
+                if (is_dir($usersBaseDir . '/' . $dir)) {
+                    $userList[] = $dir;
                 }
             }
-            $response['users'] = $dirlist;
+            $response['users'] = $userList;
             break;
 
-        case 'personalist': // List of narrators (agent/admin)
-            $dirlist = [];
-            $dirs = scandir($dataDir);
-            foreach ($dirs as $dir) {
-                if (strpos($dir, '_template_') !== 0)  continue; // Nur _template_* Ordner
-
-                if (is_dir($dataDir . '/' . $dir)) {
-                    $dirlist[] = substr($dir, strlen('_template_'));
+        case 'personalist':
+            $personaList = [];
+            $directories = scandir($usersBaseDir);
+            foreach ($directories as $dir) {
+                // Only process template directories
+                if (strpos($dir, '_template_') === 0 && is_dir($usersBaseDir . '/' . $dir)) {
+                    $personaList[] = substr($dir, strlen('_template_'));
                 }
             }
-            $response['persona'] = $dirlist;
+            $response['persona'] = $personaList;
             break;
 
-        case 'setpassword': // Set password for user (agent/admin)
-            if (empty($mandant)) throw new Exception('Mandant is required for setpassword');
-            $newpassword = $_REQUEST['newpassword'] ?? '';
-            if (!preg_match('/^.{' . MIN_PASSWORD_LENGTH . ',' . MAX_PASSWORD_LENGTH . '}$/', $newpassword)) {
+        case 'setpassword':
+            if (empty($targetUser)) {
+                throw new Exception('Mandant is required for setpassword');
+            }
+            $newPassword = $_REQUEST['newpassword'] ?? '';
+            if (!preg_match('/^.{' . MIN_PASSWORD_LENGTH . ',' . MAX_PASSWORD_LENGTH . '}$/', $newPassword)) {
                 http_response_code(400);
                 throw new Exception('Password must be ' . MIN_PASSWORD_LENGTH . '-' . MAX_PASSWORD_LENGTH . ' characters');
             }
             // Update password
-            $userCredentials['passwordhash'] = password_hash($newpassword, PASSWORD_DEFAULT);
-            file_put_contents($userCredentialsFile, json_encode($userCredentials, JSON_PRETTY_PRINT));
-            $response['message'] = "Password updated for user '$mandant' to '$newpassword'";
-            $xlog .= " SetPassword_for_user:'$mandant'";
+            $targetUserCredentials['passwordhash'] = password_hash($newPassword, PASSWORD_DEFAULT);
+            file_put_contents($targetUserCredentialsFile, json_encode($targetUserCredentials, JSON_PRETTY_PRINT));
+            $response['message'] = "Password updated for user '$targetUser'";
+            $logMessage .= " SetPassword_for_user:'$targetUser'";
             break;
 
-        case 'deleteuser': // Delete user (admin only)
-            if ($role !== 'admin') throw new Exception('Only admin can use deleteuser');
-            if (empty($mandant)) throw new Exception('Mandant is required for deleteuser');
+        case 'deleteuser':
+            if ($userRole !== 'admin') {
+                throw new Exception('Only admin can use deleteuser');
+            }
+            if (empty($targetUser)) {
+                throw new Exception('Mandant is required for deleteuser');
+            }
 
-            $selUserDir = $dataDir . '/' . $mandant;
-            if (!is_dir($selUserDir)) {
+            $targetUserDir = $usersBaseDir . '/' . $targetUser;
+            if (!is_dir($targetUserDir)) {
                 http_response_code(400);
                 throw new Exception('Invalid user for deletion');
             }
-            // Recursively delete user directory
-            function rrmdir($dir)
-            {
+
+            // Recursively delete directory
+            $deleteDirectory = function($dir) use (&$deleteDirectory) {
                 if (is_dir($dir)) {
                     $objects = scandir($dir);
                     foreach ($objects as $object) {
-                        if ($object != "." && $object != "..") {
-                            if (is_dir($dir . "/" . $object) && !is_link($dir . "/" . $object))
-                                rrmdir($dir . "/" . $object);
-                            else
-                                unlink($dir . "/" . $object);
+                        if ($object !== '.' && $object !== '..') {
+                            $path = $dir . '/' . $object;
+                            if (is_dir($path) && !is_link($path)) {
+                                $deleteDirectory($path);
+                            } else {
+                                unlink($path);
+                            }
                         }
                     }
                     rmdir($dir);
                 }
+            };
+            $deleteDirectory($targetUserDir);
+            $response['message'] = "User '$targetUser' deleted successfully";
+            $logMessage .= " Deleted_user:'$targetUser'";
+            break;
+
+        case 'getdata':
+            if (empty($targetUser)) {
+                throw new Exception('Mandant is required for getdata');
             }
-            rrmdir($selUserDir);
-            $response['message'] = "User '$mandant' deleted successfully";
-            $xlog .= " Deleted_user:'$mandant'";
+            $response['credentials'] = $targetUserCredentials;
+            $response['credits'] = $targetUserCredits;
             break;
 
-        case 'getdata': // Get credentials (agent/admin)
-            if (empty($mandant)) throw new Exception('Mandant is required for getdata');
-            $response['credentials'] = $userCredentials;
-            $response['credits'] =  $userCredits;
-            break;
+        case 'setdata':
+            if ($userRole !== 'admin') {
+                throw new Exception('Only admin can use setdata');
+            }
+            if (empty($targetUser)) {
+                throw new Exception('Mandant is required for setdata');
+            }
 
-        case 'setdata': // Set credentials (Darf nur der Admin, da JSON ändern riskant ist)
-            if ($role !== 'admin') throw new Exception('Only admin can use setdata');
-            if (empty($mandant)) throw new Exception('Mandant is required for setdata');
-            $newUserCredentials = json_decode($_REQUEST['credentials'] ?? '', true);
-
-
-            if (!is_array($newUserCredentials) || empty($newUserCredentials)) {
+            $newCredentials = json_decode($_REQUEST['credentials'] ?? '', true);
+            if (!is_array($newCredentials) || empty($newCredentials)) {
                 throw new Exception('Invalid credentials format');
             }
-            $newUserCredits = json_decode($_REQUEST['credits'] ?? '', true);
-            if (empty($newUserCredits) || !is_array($newUserCredits)) {
+
+            $newCredits = json_decode($_REQUEST['credits'] ?? '', true);
+            if (empty($newCredits) || !is_array($newCredits)) {
                 throw new Exception('Invalid credits format');
             }
-            file_put_contents($userCredentialsFile, json_encode($newUserCredentials, JSON_PRETTY_PRINT));
-            file_put_contents($userCreditsFile, json_encode($newUserCredits, JSON_PRETTY_PRINT));
-            $response['credentials'] = $newUserCredentials;
-            $response['credits'] =  $newUserCredits;
-            $response['message'] = "Data updated for user '$mandant'";
+
+            file_put_contents($targetUserCredentialsFile, json_encode($newCredentials, JSON_PRETTY_PRINT));
+            file_put_contents($targetUserCreditsFile, json_encode($newCredits, JSON_PRETTY_PRINT));
+            $response['credentials'] = $newCredentials;
+            $response['credits'] = $newCredits;
+            $response['message'] = "Data updated for user '$targetUser'";
             break;
 
-        case 'generateuser': // Darf jeder admin/agent
-            if (empty($mandant)) throw new Exception('Mandant is required for generateuser');
-
-            $callerCreditsFile = $dataDir . '/' . $user . '/credits.json.php';
-            $callerCreditsContent = file_get_contents($callerCreditsFile);
-            $callerCredits = json_decode($callerCreditsContent, true);
-            if ($callerCredits === null || !is_array($callerCredits))  throw new Exception('Could not read caller credits');
-            $callerCreditsAvailable = $callerCredits['chat'] ?? 0; // Wieviel Credits der Caller hat
-            // Requested Modell hat 2 Parameter: NAME und PW. Die Default-Credits müssen reichen, da die dem admin/agent abgezogen werden
-            // Das Neue Modell wurde per Mandant geladen
-            $requiredCredits = $userCredits['chat'] ?? 0; // Wieviel Credits der neue User haben soll    
-            if ($callerCreditsAvailable < $requiredCredits) { // Minimum  Credits
-                throw new Exception('Not enough credits to create new user. Available: ' . $callerCreditsAvailable . ', required: ' . $requiredCredits);
+        case 'generateuser':
+            if (empty($targetUser)) {
+                throw new Exception('Mandant is required for generateuser');
             }
 
-            $newuser = $_REQUEST['newuser'] ?? '';
-            if (!preg_match('/^[a-zA-Z0-9_-]{' . MIN_USER_LENGTH . ',' . MAX_USER_LENGTH . '}$/', $newuser)) {
+            // Load requesting user's credits
+            $requestingUserCreditsFile = $requestingUserDir . '/credits.json.php';
+            $requestingUserCreditsContent = file_get_contents($requestingUserCreditsFile);
+            $requestingUserCredits = json_decode($requestingUserCreditsContent, true);
+            if ($requestingUserCredits === null || !is_array($requestingUserCredits)) {
+                throw new Exception('Could not read caller credits');
+            }
+
+            $availableCredits = $requestingUserCredits['chat'] ?? 0;
+            $requiredCredits = $targetUserCredits['chat'] ?? 0;
+
+            if ($availableCredits < $requiredCredits) {
+                throw new Exception("Not enough credits. Available: $availableCredits, required: $requiredCredits");
+            }
+
+            // Validate new user parameters
+            $newUsername = $_REQUEST['newuser'] ?? '';
+            if (!preg_match('/^[a-zA-Z0-9_-]{' . MIN_USER_LENGTH . ',' . MAX_USER_LENGTH . '}$/', $newUsername)) {
                 throw new Exception('Invalid new user format');
             }
-            $newpassword = $_REQUEST['newpassword'] ?? '';
-            if (!preg_match('/^.{' . MIN_PASSWORD_LENGTH . ',' . MAX_PASSWORD_LENGTH . '}$/', $newpassword)) {
+
+            $newPassword = $_REQUEST['newpassword'] ?? '';
+            if (!preg_match('/^.{' . MIN_PASSWORD_LENGTH . ',' . MAX_PASSWORD_LENGTH . '}$/', $newPassword)) {
                 throw new Exception('Password must be ' . MIN_PASSWORD_LENGTH . '-' . MAX_PASSWORD_LENGTH . ' characters');
             }
-            $newuserDir = $dataDir . '/' . $newuser;
-            $newuserCredentialsFile = $newuserDir . '/credentials.json.php';
-            $newuserCreditsFile = $newuserDir . '/credits.json.php';
-            if (is_dir($newuserDir)) {                
-                throw new Exception("User '$newuser' already exists");
+
+            $newUserDir = $usersBaseDir . '/' . $newUsername;
+            if (is_dir($newUserDir)) {
+                throw new Exception("User '$newUsername' already exists");
             }
-            mkdir($newuserDir, 0755, true);
-            // Default credentials
 
-            // Update password
-            $userCredentials['passwordhash'] = password_hash($newpassword, PASSWORD_DEFAULT);
-            file_put_contents($newuserCredentialsFile, json_encode($userCredentials, JSON_PRETTY_PRINT));
-            file_put_contents($newuserCreditsFile, json_encode($userCredits, JSON_PRETTY_PRINT));
+            // Create new user
+            mkdir($newUserDir, 0755, true);
+            $targetUserCredentials['passwordhash'] = password_hash($newPassword, PASSWORD_DEFAULT);
+            file_put_contents($newUserDir . '/credentials.json.php', json_encode($targetUserCredentials, JSON_PRETTY_PRINT));
+            file_put_contents($newUserDir . '/credits.json.php', json_encode($targetUserCredits, JSON_PRETTY_PRINT));
 
-            // OK Credits haben gereicht
-            $callerCredits['chat'] -= $requiredCredits;
-            file_put_contents($callerCreditsFile, json_encode($callerCredits, JSON_PRETTY_PRINT));
+            // Deduct credits from requesting user
+            $requestingUserCredits['chat'] -= $requiredCredits;
+            file_put_contents($requestingUserCreditsFile, json_encode($requestingUserCredits, JSON_PRETTY_PRINT));
 
-            $response['message'] = "User '$newuser' / '$newpassword' created from template '$mandant', credits left: " . $callerCredits['chat'];
-            $xlog .= "User '$newuser' created from template '$mandant', credits left: " . $callerCredits['chat'];
+            $response['message'] = "User '$newUsername' created from template '$targetUser', credits left: " . $requestingUserCredits['chat'];
+            $logMessage .= " User '$newUsername' created from template '$targetUser', credits left: " . $requestingUserCredits['chat'];
 
             break;
 
@@ -322,11 +328,10 @@ try {
             throw new Exception("Invalid command '$cmd'");
     }
 
-
-    http_response_code(200); // Success (201 ist für Resource Creation)
+    http_response_code(200);
     echo json_encode($response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
 } catch (Exception $e) {
-    // Error handling
     $currentCode = http_response_code();
     if ($currentCode === 200 || $currentCode === false) {
         http_response_code(500);
@@ -335,9 +340,10 @@ try {
         'success' => false,
         'error' => $e->getMessage()
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    $xlog = "ERROR:'" . $e->getMessage() . "' " . $xlog;
+
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    $xlog = "IP:$ip " . $xlog;
+    $logMessage = "IP:$ip ERROR:'" . $e->getMessage() . "' " . $logMessage;
+
 } finally {
-    log2file($xlog);
+    log2file($logMessage);
 }

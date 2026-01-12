@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
 <!-- http://localhost/wrk/ai/playground/sw/tools/admin.html -->
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -202,7 +201,8 @@
             word-wrap: break-word;
         }
 
-        #user-settings::-webkit-scrollbar {
+        #user-settings::-webkit-scrollbar,
+        .form-section::-webkit-scrollbar {
             width: 10px;
             height: 10px;
         }
@@ -218,10 +218,6 @@
 
         #user-settings::-webkit-scrollbar-thumb:hover {
             background: #656565;
-        }
-
-        .form-section::-webkit-scrollbar {
-            width: 8px;
         }
 
         .form-section::-webkit-scrollbar-track {
@@ -256,47 +252,40 @@
         <header>
             <h3>👤 User Administration</h3>
         </header>
-
         <div class="form-section">
             <div class="form-group">
                 <label for="session-id">🎫 Session ID (aus localStorage)</label>
-                <input type="text" id="session-id" name="session-id" placeholder="Session ID" readonly>
+                <input type="text" id="session-id" placeholder="Session ID" readonly>
             </div>
             <div class="form-group">
                 <label for="admin-user">👤 Admin/Agent User (aus localStorage)</label>
-                <input type="text" id="admin-user" name="admin-user" placeholder="Admin/Agent User" readonly>
+                <input type="text" id="admin-user" placeholder="Admin/Agent User" readonly>
             </div>
-
             <div class="form-group">
                 <label for="username">✏️ Username</label>
-                <input type="text" id="username" name="username" placeholder="Wähle aus der Benutzerliste..." readonly>
+                <input type="text" id="username" placeholder="Wähle aus der Benutzerliste..." readonly>
             </div>
-
-
             <div class="form-group">
                 <label for="users-list">👥 Users (existierende Benutzer)</label>
-                <select id="users-list" name="users-list" size="10">
+                <select id="users-list" size="10">
                     <option value="">-- Lade Benutzerliste --</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label for="newuser">➕ Neuer User (min. 6 Zeichen)</label>
-                <input type="text" id="newuser" name="newuser" placeholder="Neuen Benutzernamen eingeben" minlength="6">
+                <input type="text" id="newuser" placeholder="Neuen Benutzernamen eingeben" minlength="6">
             </div>
-
             <div class="form-group">
                 <label for="userpass">🔐 Neues Password</label>
-                <input type="text" id="userpass" name="userpass" placeholder="Passwort eingeben">
+                <input type="text" id="userpass" placeholder="Passwort eingeben">
             </div>
-
             <div class="form-group">
                 <label for="persona-list">🎭 Persona (verfügbare Modelle)</label>
-                <select id="persona-list" name="persona-list" size="6">
+                <select id="persona-list" size="6">
                     <option value="">-- Lade Persona-Liste --</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <div class="button-group">
                     <button type="button" id="create-user-btn">👤 Neuen User erstellen</button>
@@ -305,7 +294,6 @@
                     <button type="button" id="delete-btn">🗑️ User löschen</button>
                 </div>
             </div>
-
             <div style="margin-top: 20px;">
                 <small>
                     Dieses Tool ermöglicht Admin- und Agent-Benutzern die Verwaltung von Benutzern und deren
@@ -313,13 +301,11 @@
                 </small>
             </div>
         </div>
-
         <div class="response-section">
             <div class="response-header">📋 User-Einstellungen (JSON)</div>
             <textarea id="user-settings" placeholder="Wählen Sie einen Benutzer aus der Liste aus..."></textarea>
         </div>
     </div>
-
 </body>
 <script>
     let sessionId = '';
@@ -328,10 +314,8 @@
 
     // Session-Daten aus localStorage laden
     function loadSessionData() {
-
-    localStorage.getItem('loginmonitor-username') && (adminUser = localStorage.getItem('loginmonitor-username'));
-    localStorage.getItem('loginmonitor-sessionid') && (sessionId = localStorage.getItem('loginmonitor-sessionid'));
-
+        adminUser = localStorage.getItem('loginmonitor-username') || '';
+        sessionId = localStorage.getItem('loginmonitor-sessionid') || '';
 
         if (!sessionId || !adminUser) {
             alert('Warnung: Session ID oder Admin/Agent User konnte nicht aus localStorage geladen werden.');
@@ -406,10 +390,10 @@
     // User-Daten laden. Entweder wenn selektiert oder per Parameter
     async function fetch_user(extname = null) {
         const userSettings = document.getElementById('user-settings');
+        const selectedUser = extname || document.getElementById('users-list').value;
 
-        const selectedUser = extname ? extname : document.getElementById('users-list').value;
         if (!selectedUser) {
-            userSettings.value = 'Fehler: Keine selektierte Benutzer';
+            userSettings.value = 'Fehler: Kein Benutzer ausgewählt';
             return;
         }
 
@@ -429,13 +413,13 @@
                     credentials: data.credentials,
                     credits: data.credits
                 };
-                userJsonData = data
+                userJsonData = data;
                 userSettings.value = JSON.stringify(userData, null, 2);
             } else {
                 userSettings.value = `Fehler beim Laden der User-Daten:\n${JSON.stringify(data, null, 2)}`;
             }
         } catch (error) {
-            userSettings.value = `Fehler Laden User-Daten: ${error.message}`;
+            userSettings.value = `Fehler beim Laden der User-Daten: ${error.message}`;
         }
         return userJsonData;
     }
@@ -449,26 +433,25 @@
         }
     });
 
-    // Event-Listener für Buttons (Dummy-Handler)
+    // Event-Listener für Buttons
     document.getElementById('save-btn').addEventListener('click', async function () {
-        documentUserText = document.getElementById('user-settings');
+        const documentUserText = document.getElementById('user-settings');
         const userSettingsText = documentUserText.value;
+        const username = document.getElementById('username').value;
 
         if (!userSettingsText) {
             alert('Keine User-Daten geladen.');
             return;
         }
-        const username = document.getElementById('username').value;
 
         if (!username) {
             alert('Bitte wählen Sie zuerst einen Benutzer aus.');
             return;
         }
 
-        documentUserText.value = "Speichere Daten...";
+        documentUserText.value = 'Speichere Daten...';
         try {
             const userData = JSON.parse(userSettingsText);
-
             const postData = {
                 cmd: 'setdata',
                 mandant: username,
@@ -491,12 +474,11 @@
             if (result.success) {
                 delete result.success;
                 documentUserText.value = JSON.stringify(result, null, 2);
-
             } else {
-                documentUserText.value = "Fehler beim Speichern: " + (result.error || 'Unbekannter Fehler');
+                documentUserText.value = 'Fehler beim Speichern: ' + (result.error || 'Unbekannter Fehler');
             }
         } catch (error) {
-            documentUserText.value = "Fehler: " + error.message;
+            documentUserText.value = 'Fehler: ' + error.message;
         }
 
     });
@@ -607,14 +589,15 @@
     // Initialisierung beim Laden der Seite
     window.addEventListener('DOMContentLoaded', async function () {
         loadSessionData();
-        console.log("Session ID:", sessionId);
-        console.log("Admin User:", adminUser);
+        console.log('Session ID:', sessionId);
+        console.log('Admin User:', adminUser);
+
         adminagentData = await fetch_user(adminUser);
-        console.log("Admin/Agent User:", adminagentData);
-        // Werte in Felder eintragen
-        let dispalyedUser = adminUser + ' (' + (adminagentData?.credentials?.role || 'unknown role') + ')'; // e.g.,
+        console.log('Admin/Agent User:', adminagentData);
+
+        const displayedUser = adminUser + ' (' + (adminagentData?.credentials?.role || 'unknown role') + ')';
         document.getElementById('session-id').value = sessionId;
-        document.getElementById('admin-user').value = dispalyedUser;
+        document.getElementById('admin-user').value = displayedUser;
 
         loadPersonaList();
         loadUserList();
