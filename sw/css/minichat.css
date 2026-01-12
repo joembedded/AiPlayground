@@ -101,6 +101,28 @@ header h1 {
     transform: translateY(-50%) scale(1.1);
 }
 
+.header-stats {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.header-stats .stat-line {
+    white-space: nowrap;
+}
+
+.header-stats span {
+    font-weight: 600;
+}
+
 /* ==================== */
 /* Sidebar & Overlay    */
 /* ==================== */

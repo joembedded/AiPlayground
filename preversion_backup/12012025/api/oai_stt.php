@@ -205,7 +205,7 @@ try {
     $xlog .= " Cost:" . $tokenUsage;
 
     http_response_code(201); // Success - Was Neues
-    echo json_encode(['success' => true, 'text' => $stt, 'credits' => $creditsAvailable,'costs' => $tokenUsage], JSON_UNESCAPED_SLASHES);
+    echo json_encode(['success' => true, 'text' => $stt, 'credits' => $creditsAvailable], JSON_UNESCAPED_SLASHES);
 } catch (Exception $e) {
     // Error handling
     if (http_response_code() === 200) {

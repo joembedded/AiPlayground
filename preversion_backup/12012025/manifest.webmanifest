@@ -1,0 +1,45 @@
+{
+	"lang": "de-DE",
+	"name": "MicroChat",
+	"short_name": "MicroChat",
+	"description": "AI Playground MicroChat App - (C)JoEmbedded.de",
+	"background_color": "#808080",
+	"theme_color": "#347936",
+	"display": "standalone",
+	"orientation": "any",
+	"scope": "./",
+	"start_url": "./",
+	"id": "microchat001",
+	"categories": [
+		"education",
+		"business"
+	],
+	"icons": [
+		{
+			"src": "./static/preview512.png",
+			"type": "image/png",
+			"sizes": "512x512",
+			"purpose": "maskable"
+		},
+		{
+			"src": "./static/preview512.png",
+			"type": "image/png",
+			"sizes": "512x512"
+		}
+	],
+	"screenshots": [
+		{
+			"src": "./static/preview512.png",
+			"type": "image/png",
+			"sizes": "512x512",
+			"label": "Preview512x512"
+		},
+		{
+			"src": "./static/preview1024x768.png",
+			"sizes": "1024x768",
+			"type": "image/png",
+			"form_factor": "wide",
+			"label": "Preview1024x768"
+		}
+	]
+}

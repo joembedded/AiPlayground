@@ -1,0 +1,11 @@
+{
+  "hello": {
+    "helpTxts": [
+      "Hallo, ich bin Fabi.",
+      "Wie kann ich dir helfen?",
+      "Was möchtest du wissen?",
+      "Du kannst auch mit mir sprechen."
+    ],
+    "intro": "Hallo, ich bin Fabi 👨 und ich erzähle gerne Geschichten."
+  }
+}

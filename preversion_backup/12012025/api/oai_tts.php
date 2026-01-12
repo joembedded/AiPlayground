@@ -77,7 +77,7 @@ try {
     $stream =  !empty($_REQUEST['stream']) ?? false;
 
     // Loggen wenn explizit gesetzt oder bei Bedarf
-
+        
     $cache = !empty($_REQUEST['cache']);
     if (($log >= 2)) $cache = true; // Dann in jedem Fall cachen
     if ($cache) $xlog .= " Cache";
@@ -101,20 +101,7 @@ try {
         throw new Exception("ERROR: No Voice '$voice.json'");
     }
 
-    $voiceCommand = trim($_REQUEST['vcmd'] ?? '');
-    // Sanitize voice command
-    $voiceCommand =  preg_replace('/[^\w\s.,!?:=;<>-]/u', ' ',   $voiceCommand);
-    if (strlen($voiceCommand) > 200) {
-        http_response_code(500);
-        throw new Exception('Voice not 0-200 characters');
-    }
-    // Sonst Probleme mit Cache
-    if (!empty($voiceCommand)) {
-        $hash = hash('md5', $text . '|' . $voiceCommand);
-    } else {
-        $hash = hash('md5', $text);
-    }
-
+    $hash = hash('md5', $text);
     $diskFname = $hash . '.' . $format;
     $diskPath = $speechDir . '/' . $voice . '/';
 
@@ -128,19 +115,28 @@ try {
     $xlog .= " Voice:$voice Text[$slen]:'" . (substr($text, 0, 120)) . ($slen > 120 ? "...'" : "'");
 
 
+    $voiceCommand = trim($_REQUEST['vcmd'] ?? '');
+    // Sanitize voice command
+    $voiceCommand =  preg_replace('/[^\w\s.,!?:=;<>-]/u', ' ',   $voiceCommand);
+    if (strlen($voiceCommand) > 200) {
+        http_response_code(500);
+        throw new Exception('Voice not 0-200 characters');
+    }
+
     if (strlen($voiceCommand) > 0) {
         $xlog .= " VCmd:'" . substr($voiceCommand, 0, 50) . (strlen($voiceCommand) > 50 ? "...'" : "'");
-    }
-    // Wenn schon da, aus CACHE nehmen
-    if (file_exists($diskPath)) {
-        $cachedAudio = file_get_contents($diskPath);
-        @touch($diskPath);
-        header("Content-Type: $audioContent");
-        header("Content-Length: " . strlen($cachedAudio));
-        echo $cachedAudio;
-        $xlog .= " File[" . strlen($cachedAudio) . "]:$diskFname (Cached)";
-        log2file($xlog);
-        exit;
+    } else {
+        // Wenn schon da, aus CACHE nehmen
+        if (file_exists($diskPath)) {
+            $cachedAudio = file_get_contents($diskPath);
+            @touch($diskPath);
+            header("Content-Type: $audioContent");
+            header("Content-Length: " . strlen($cachedAudio));
+            echo $cachedAudio;
+            $xlog .= " File[" . strlen($cachedAudio) . "]:$diskFname (Cached)";
+            log2file($xlog);
+            exit;
+        }
     }
 
     $payload = @json_decode($voiceRaw, true);

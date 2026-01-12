@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 // Configuration
 $log = 1; // 0: Silent, 1: Logfile schreiben
-$xlog = 'admin.php';
+$logMessage = 'admin.php';
 include_once __DIR__ . '/../php_tools/logfile.php';
 
 // CORS headers
@@ -56,8 +56,8 @@ try {
         http_response_code(400);
         throw new Exception('Invalid user format');
     }
-    $logMessageBackup = $xlog;
-    $xlog .= " User:'$requestingUser'";
+    $logMessageBackup = $logMessage;
+    $logMessage .= " User:'$requestingUser'";
 
     // User directories
     $requestingUserDir = $usersBaseDir . '/' . $requestingUser;
@@ -108,7 +108,7 @@ try {
         http_response_code(401);
         throw new Exception('Access denied');
     }
-    $xlog = "$logMessageBackup $userRole:'$requestingUser' cmd:'$cmd' ";
+    $logMessage = "$logMessageBackup $userRole:'$requestingUser' cmd:'$cmd' ";
 
     // Initialize response
     $response = ['success' => true];
@@ -200,12 +200,12 @@ try {
             $targetUserCredentials['passwordhash'] = password_hash($newPassword, PASSWORD_DEFAULT);
             file_put_contents($targetUserCredentialsFile, json_encode($targetUserCredentials, JSON_PRETTY_PRINT));
             $response['message'] = "Password updated for user '$targetUser'";
-            $xlog .= " SetPassword_for_user:'$targetUser'";
+            $logMessage .= " SetPassword_for_user:'$targetUser'";
             break;
 
         case 'deleteuser':
-            if ($userRole !== 'admin' && $userRole !== 'agent') {
-                throw new Exception('Only admin or agent can use deleteuser');
+            if ($userRole !== 'admin') {
+                throw new Exception('Only admin can use deleteuser');
             }
             if (empty($targetUser)) {
                 throw new Exception('Mandant is required for deleteuser');
@@ -236,7 +236,7 @@ try {
             };
             $deleteDirectory($targetUserDir);
             $response['message'] = "User '$targetUser' deleted successfully";
-            $xlog .= " Deleted_user:'$targetUser'";
+            $logMessage .= " Deleted_user:'$targetUser'";
             break;
 
         case 'getdata':
@@ -276,6 +276,7 @@ try {
             if (empty($targetUser)) {
                 throw new Exception('Mandant is required for generateuser');
             }
+
             // Load requesting user's credits
             $requestingUserCreditsFile = $requestingUserDir . '/credits.json.php';
             $requestingUserCreditsContent = file_get_contents($requestingUserCreditsFile);
@@ -296,10 +297,6 @@ try {
             if (!preg_match('/^[a-zA-Z0-9_-]{' . MIN_USER_LENGTH . ',' . MAX_USER_LENGTH . '}$/', $newUsername)) {
                 throw new Exception('Invalid new user format');
             }
-
-            if((str_starts_with($newUsername, 'admin') || str_starts_with($newUsername, 'agent')) && $userRole !== 'admin') {
-                throw new Exception("Only admin can create users with 'admin' or 'agent' prefix");
-            }   
 
             $newPassword = $_REQUEST['newpassword'] ?? '';
             if (!preg_match('/^.{' . MIN_PASSWORD_LENGTH . ',' . MAX_PASSWORD_LENGTH . '}$/', $newPassword)) {
@@ -322,7 +319,7 @@ try {
             file_put_contents($requestingUserCreditsFile, json_encode($requestingUserCredits, JSON_PRETTY_PRINT));
 
             $response['message'] = "User '$newUsername' created from template '$targetUser', credits left: " . $requestingUserCredits['chat'];
-            $xlog .= " User '$newUsername' created from template '$targetUser', credits left: " . $requestingUserCredits['chat'];
+            $logMessage .= " User '$newUsername' created from template '$targetUser', credits left: " . $requestingUserCredits['chat'];
 
             break;
 
@@ -345,8 +342,8 @@ try {
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    $xlog = "IP:$ip ERROR:'" . $e->getMessage() . "' " . $xlog;
+    $logMessage = "IP:$ip ERROR:'" . $e->getMessage() . "' " . $logMessage;
 
 } finally {
-    log2file($xlog);
+    log2file($logMessage);
 }

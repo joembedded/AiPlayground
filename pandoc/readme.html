@@ -40,6 +40,14 @@ OpenAI</strong> mit modernem, sicherem (Hash) Login und responsive HTML
 und einer darüberliegenden Sprachsteuerung, basierend auf
 <strong>WebRTC</strong> Technologie (so dass die auch kontinuierlich
 aktiviert sein kann, also echtes Hands-Free-Bedienerlebnis).</p>
+<p><strong>OpenAI</strong> stellt verschiedene KI-Modelle zur Verfügung,
+die unterschiedlich komplex antworten können und natürlich damit auch,
+als Kostenfaktor, unterschiedlich viele sogenannte ‘Tokens’ verbrauchen.
+Implementiert sind: - <code>GPT-4.1-nano</code>: kostengünstig und
+schnell, für einfache Aufgaben - <code>GPT-4.1-mini</code>: deutlich
+wortgewandter, aber auch etwas höher im Verbrauch -
+<code>GPT-5-nano</code>/<code>GPT-5-mini</code>: die 5-er Version als
+Pendant: etwas höherer Verbrauch als die 4-Versionen</p>
 <blockquote>
 <p>[!NOTE] Ziel war es nicht, eine echte (synchrone) Real-Time-Anwendung
 zu entwickeln, sondern einen (asynchronen) Voice-Chat zu bauen. Die
@@ -49,12 +57,12 @@ außerdem ist der asynchrone Betrieb (hier über die OpenAI-Responses API)
 wesentlich kostengünstiger.</p>
 </blockquote>
 <h2 id="live-version">Live-Version</h2>
-<p>🎤⌨🔉 <a href="https://joembedded.de/x3/aias/sw/minichat.html">Live
+<p>🎤⌨🔉 <a href="https://joembedded.de/x3/xxxx/sw/minichat.html">Live
 Version</a> auf JoEmbedded.de</p>
 <h2 id="highlights">Highlights</h2>
 <ul>
 <li><strong>MiniChat</strong> implementiert einen Voice-Chat mit
-kostengünstigen GPT-mini-Modellen.</li>
+kostengünstigen GPT-mini/nano-Modellen.</li>
 <li>Als Datenformat werden lokale <strong>N-Turns</strong> verwendet;
 dadurch kann die Kommunikation DSGVO-konform umgesetzt werden.</li>
 <li>Je nach Modell werden <strong>PII</strong>-Daten (personenbezogene
@@ -80,8 +88,9 @@ mediale Inhalte liefern.</li>
 <p>Drei Charaktere sind vordefiniert, um diverse Features zu testen:</p>
 <h3 id="jack-der-genervte-autoverkäufer">👨‍🔧 Jack – Der genervte
 Autoverkäufer</h3>
+<p>🔊 <a href="./pandoc/jack.opus">Sprechprobe: Jack</a></p>
 <ul>
-<li><strong>Login:</strong> <code>jack33</code> /
+<li><strong>Login:</strong> <code>jack_xxxxxx</code> /
 <code>geheimnix</code></li>
 <li><strong>Charakter:</strong> Jack ist ein genervter Autoverkäufer der
 Marke Roll-Bonz. Nur auf Anweisung wird er freundlich (oder auch ganz
@@ -102,8 +111,9 @@ extrem illegalen Inhalten (Drogen, Hass, Gewalt, …). Er sollte immer
 einigermaßen passend antworten.</em></li>
 </ul>
 <h3 id="jana-die-almwirtin">👩‍🦰 Jana – Die Almwirtin 🐄🐮🐂</h3>
+<p>🔊 <a href="./pandoc/jana.opus">Sprechprobe: Jana</a></p>
 <ul>
-<li><strong>Login:</strong> <code>janalm</code> /
+<li><strong>Login:</strong> <code>janalm_xxxxxx</code> /
 <code>geheimnix</code></li>
 <li><strong>Charakter:</strong> Jana betreibt einen Kiosk auf einer Alm
 in den Bergen. Sie ist sehr freundlich, redet gerne und viel mit
@@ -116,8 +126,9 @@ Wanderern, hat aber keine spezielle Aufgabe, außer etwas Smalltalk.</li>
 <li><em>Challenge: keine spezielle</em></li>
 </ul>
 <h3 id="vilo-der-waldwichtel">🧙‍♂️ Vilo – Der Waldwichtel 🌲🌳🌲</h3>
+<p>🔊 <a href="./pandoc/vilo.opus">Sprechprobe: Vilo</a></p>
 <ul>
-<li><strong>Login:</strong> <code>vilo77</code> /
+<li><strong>Login:</strong> <code>vilo_xxxxxx</code> /
 <code>geheimnix</code></li>
 <li><strong>Charakter:</strong> Vilo ist ein Waldwichtel. Er spricht
 langsam und kindgerecht und moderiert bei „schwierigen” Themen.</li>
@@ -133,6 +144,23 @@ kindgerecht zurück</li>
 <li><em>Challenge: Vilo darf niemals das Antwortschema für Kinder
 verlassen und bei ‘kritischen’ Fragen (z. B. illegale Inhalte oder
 PII-Daten) moderierend antworten</em></li>
+</ul>
+<h3 id="fabi---die-stimme.">Fabi 👨 - Die Stimme….</h3>
+<p>🔊 <a href="./pandoc/fabi.opus">Sprechprobe: Fabi</a></p>
+<p>Dies ist eine Stimme für den Test der ‘unfiltrierten’ Modelle
+<code>GPT-4.1-nano</code>, <code>GPT-4.1-mini</code>,
+<code>GPT-5-nano</code> und <code>GPT-5-mini</code>. Diese Charactere
+haben keinerlei Meta-Anweisungen, weder für Stimme, noch für Charakter
+Aber sind damit auch immer eine gute Ausgangsbasis:</p>
+<ul>
+<li><strong>Login:</strong> <code>fabi41n_xxxxxx</code> /
+<code>geheimnix</code> verwendet <code>GPT-4.1-nano</code></li>
+<li><strong>Login:</strong> <code>fabi41m_xxxxxx</code> /
+<code>geheimnix</code> verwendet <code>GPT-4.1-mini</code></li>
+<li><strong>Login:</strong> <code>fabi5n_xxxxxx</code> /
+<code>geheimnix</code> verwendet <code>GPT-5-nano</code></li>
+<li><strong>Login:</strong> <code>fabi5m_xxxxxx</code> /
+<code>geheimnix</code> verwendet <code>GPT-5-mini</code></li>
 </ul>
 <hr />
 </body>

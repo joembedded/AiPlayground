@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="de">
-<!-- http://localhost/wrk/ai/playground/sw/tools/expressvoice.html -->
-
+<!-- http://localhost/wrk/ai/playground/sw/tools/expresschat.html -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExpressVoice</title>
+    <title>ExpressChat</title>
     <style>
         * {
             box-sizing: border-box;
@@ -92,22 +91,6 @@
         input:read-only {
             background: #e9ecef;
             color: #6c757d;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: auto;
-            cursor: pointer;
-        }
-
-        .checkbox-group label {
-            margin: 0;
-            cursor: pointer;
         }
 
         button {
@@ -234,7 +217,7 @@
 <body>
     <div class="container">
         <header>
-            <h3>💬 ExpressVoice - AudioTester</h3>
+            <h3>💬 ExpressChat (JSON)</h3>
         </header>
 
         <div class="form-section">
@@ -246,28 +229,22 @@
                 <label for="user-sessionid">🎫 Session ID</label>
                 <input type="text" id="user-sessionid" name="sessionId" readonly placeholder="Session ID">
             </div>
+
             <div class="form-group">
-                <label for="voice-name">🎭 Voice ('narrator')</label>
-                <input type="text" id="voice-name" name="voice" placeholder="z.B. narrator_f_jane">
+                <label for="voice-pcmd">➕ Zusatz-Kommandos ('pcmd') </label>
+                <input type="text" id="voice-pcmd" name="pcmd" placeholder="z.B.: Freundlichkeitslevel: 0">
+            </div>
+
+            <div class="form-group">
+                <label for="persona-name">🎭 Personalität ('persona')</label>
+                <input type="text" id="persona-name" name="persona"  placeholder="z. B. persona_jane">
             </div>
             <div class="form-group">
-                <label for="voice-vcmd">➕ Zusatz-Kommandos ('vcmd') </label>
-                <input type="text" id="voice-vcmd" name="vcmd" placeholder="z.B.: flüstern">
-            </div>
-            <div class="form-group">
-                <label for="text-input">✉️ Text zum Sprechen</label>
-                <input type="text" id="text-input" name="text" required placeholder="Text eingeben..." autofocus>
-            </div>
-            <div class="form-group checkbox-group">
-                <input type="checkbox" id="use-cache" name="cache">
-                <label for="use-cache">💾 Cache explizit verwenden</label>
+                <label for="text-input">✉️ Nachricht</label>
+                <input type="text" id="text-input" name="text" required placeholder="Nachricht eingeben..." autofocus>
             </div>
             <div class="form-group">
                 <button type="submit" id="send-btn">📤 Senden</button>
-            </div>
-            <div class="form-group">
-                <audio id="audio-playback" style="width: 100%; border: 1px solid #ced4da; border-radius: 4px;" controls
-                    autoplay src="../static/soundfx/bell3.opus"></audio>
             </div>
         </div>
 
@@ -282,20 +259,17 @@
     const sendMessage = async () => {
         const textInput = document.getElementById('text-input').value.trim();
         const responseOutput = document.getElementById('response-output');
-        const voiceInput = document.getElementById('voice-name').value.trim();
-        const voiceVcmd = document.getElementById('voice-vcmd').value.trim();
-
-        localStorage.setItem('expressvoice-voice', voiceInput);
-        localStorage.setItem('expressvoice-vcmd', voiceVcmd);
-
-        const audioPlayer = document.getElementById('audio-playback');
+        const personaInput = document.getElementById('persona-name').value.trim();
+        const pcmd = document.getElementById('voice-pcmd').value.trim();  
+        localStorage.setItem('expressvoice-persona', personaInput);
+        localStorage.setItem('expressvoice-pcmd', pcmd);    
 
         if (!textInput) {
-            alert('Bitte geben Sie einen Text ein');
+            alert('Bitte geben Sie eine Nachricht ein');
             return;
         }
-        if (!voiceInput) {
-            alert('Bitte geben Sie eine Stimme ein');
+        if (!personaInput) {
+            alert('Bitte geben Sie eine Personalität ein');
             return;
         }
 
@@ -304,16 +278,11 @@
                 user: document.getElementById('user-name').value,
                 sessionId: document.getElementById('user-sessionid').value,
                 text: textInput,
-                voice: voiceInput,
+                persona: personaInput,
             };
-            if (voiceVcmd.length) {
-                payload.vcmd = voiceVcmd;
-            }
-            if (document.getElementById('use-cache').checked) {
-                payload.cache = '1';
-            }
+            if(pcmd.length>0)   payload.pcmd = pcmd;    
 
-            const api = '../api/oai_tts.php';
+            const api = '../api/oai_chat.php';
             responseOutput.value = `'${api}':\n` + JSON.stringify(payload, null, 2) + '\n\nAntwort:\n';
 
             const response = await fetch(api, {
@@ -325,37 +294,22 @@
             });
 
             const status = response.status;
-            const contentType = response.headers.get('content-type');
+            let dataString = await response.text();
+            try {
+                const dataObj = JSON.parse(dataString);
+                dataString = JSON.stringify(dataObj, null, 2);
+            } catch (e) {
+                // Nicht JSON
+            }
 
-            if (response.ok && contentType && contentType.includes('audio')) {
-                // Audio-Blob abrufen und abspielen
-                const audioBlob = await response.blob();
-                // console.log(audioBlob);
-                const playAudioUrl = URL.createObjectURL(audioBlob);
-
-                // Problematik: Wenn das Audio defekt ist, gibt es keine Möglichkeit sauber zu verlassen.
-                audioPlayer.onerror = (e) => {
-                    console.error('FATAL: Audio-Playback-Fehler:', e.currentTarget?.error?.message ?? 'Unknown');
-                };
-                audioPlayer.src = playAudioUrl;
-
-
-                responseOutput.value += `HTTP-Status: ${status}\n\nAudio erfolgreich geladen und wird abgespielt.`;
-                document.getElementById('text-input').focus();
-
-            } else {
-
-                let dataString = await response.text();
-
-                try {
-                    const dataObj = JSON.parse(dataString);
-                    dataString = JSON.stringify(dataObj, null, 2);
-                } catch (e) {
-                    // Nicht JSON
-                    dataString = e.message;
+            responseOutput.value += `HTTP-Status: ${status}\n\n` + dataString;
+            
+            // Clear input on success
+            if (response.ok) {
+                if(pcmd.length>0) { // Einzelzeichen bleibt stehen (Testzwecke)
+                    document.getElementById('text-input').value = '';
+                    document.getElementById('text-input').focus();
                 }
-
-                responseOutput.value += `HTTP-Status: ${status}\n\n` + dataString;
             }
         } catch (error) {
             responseOutput.value += `Fehler: ${error.message}`;
@@ -374,20 +328,20 @@
     // Load user data from localStorage
     const storedUsername = localStorage.getItem('loginmonitor-username');
     const storedSessionId = localStorage.getItem('loginmonitor-sessionid');
-    const storedVoice = localStorage.getItem('expressvoice-voice');
-    const storedVCmd = localStorage.getItem('expressvoice-vcmd');
-
+    const storedPersona = localStorage.getItem('expressvoice-persona');
+    const storedPCmd = localStorage.getItem('expressvoice-pcmd');
+    
     if (storedUsername) {
         document.getElementById('user-name').value = storedUsername;
     }
     if (storedSessionId) {
         document.getElementById('user-sessionid').value = storedSessionId;
     }
-    if (storedVoice) {
-        document.getElementById('voice-name').value = storedVoice;
+    if (storedPersona) {
+        document.getElementById('persona-name').value = storedPersona;
     }
-    if (storedVCmd) {
-        document.getElementById('voice-vcmd').value = storedVCmd;
+    if (storedPCmd) {
+        document.getElementById('persona-pcmd').value = storedPCmd;
     }
 
 </script>

@@ -3,17 +3,13 @@
 /**
  * OpenAI Chat mit Persona
  * http://localhost/wrk/ai/playground/sw/api/oai_chat.php?user=TESTUSER&sessionid=355c6639f2cfef7ab651286ef9a6d488&text=Wer_bist_Du
-*
-* Das Debuggen der Q/R mit dem Chatserver kann tückisch sein, Formatfehler im JSONinJSON, Refusals....
-* machen das Debuggen schwer. Das Script vesucht Schrott in jedem Fall aufzuzeichnen und
-* mit $SIMULATION_RESP ist ein einfaches Replay im ExpressChat.html möglich.
-*/
+ */
 
 declare(strict_types=1);
 
 // Configuration
 $log = 2; // 0: Silent, 1: Logfile schreiben, 2: Log complete Reply
-//$SIMULATION_RESP = "res_20260112_144613.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
+//$SIMULATION_RESP = "res_20260111_192109.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
 
 $xlog = "oai_chat";
 include_once __DIR__ . '/../php_tools/logfile.php';
@@ -74,73 +70,62 @@ function saveJsonlArr(string $file, array $objs): void
 
 /*
 Antwort-Array zerlegen. 
-Achtung: Es kann sein, dass die Antwort mehrer JSON-Bloecke in text eenthält. I.d.R: zwar nur 1,
+Achtung: Es kann sein, dass die ANtwort mehrer JSON-Bloecke in text eenthält. I.d.R: zwar nur 1,
 aber kam auch schon vor, dass mehrere da sind (z.B. bei Refusals).
-Auch kann es durchaus sein, dass die Antwort kein JSON oder JSONinJSONist (Refusal etc).
-Eigtl. nur durch try-errror rauszufinden...
 */
+
 function extractAssistantTextFromResponses($result): array|string
 {
   // JSON  Array
   if (is_string($result)) {
     $data = json_decode($result, true);
     if (!is_array($data)) {
-      return "Ext-1"; // als String Errors
+      return "Extract1";
     }
   } elseif (is_array($result)) {
     $data = $result;
   } else {
-    return "Ext-2";
+    return "Extract2";
   }
 
   if (!isset($data["output"]) || !is_array($data["output"])) {
-    return "Ext-3";
+    return "Extract3";
   }
 
-  $texts = []; // Leeres Array wird überliegend abgefangen
+  $texts = [];
 
   foreach ($data["output"] as $item) {
-    if (  // Kombi "typ":message und "role":assistant filtern
-      ($item["type"] ?? '') !== "message" ||
-      ($item["role"] ?? '') !== "assistant"
+    // Nur Assistant-Messages
+
+    if (
+      ($item["type"] ?? null) !== "message" ||
+      ($item["role"] ?? null) !== "assistant"
     ) {
       continue;
     }
+
     if (!isset($item["content"]) || !is_array($item["content"])) {
       continue;
     }
-    // echo "\n--xx0---------\n".json_encode($item, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-    // Zeilenweise durchgehen. Nur JSONinJSON Strings extrahieren
     foreach ($item["content"] as $part) {
-      //echo "\n-xx1----------\n" . json_encode($part, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-      switch ($part["type"] ?? '') {
-        case "output_text":
-          $partText = $part["text"];
-          //echo "\n-xx2----------\n" . json_encode($partText, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)."\n-----\n";
-          if (!is_string($partText)) break;
-          //echo "\nTXT:'" . $partText . "'\n\n"; // Koennt Nicht-JSON sein..
-          if(json_decode($partText, true) === null){
-            // Kein JSON
-            $texts[] = json_encode(["answer" => ["text" => "ERROR: " . $partText]], JSON_UNESCAPED_UNICODE);
-          }else{
-            $texts[] = $partText;
-          }
-          break;
-
-        case "refusal":
-          $rreason = $part["refusal"] ?? "(Refused without reason)";
-          $texts[] = json_encode(["answer" => ["text" => $rreason]], JSON_UNESCAPED_UNICODE);
-          break;
-
-        default:
-        // Unbekannter Typ?
+      //echo "\n-----------\n".json_encode($part, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+      if (
+        ($part["type"] ?? null) === "output_text" &&
+        isset($part["text"]) &&
+        is_string($part["text"])
+      ) {
+        $partText = $part["text"];
+        //echo "\n-----------\n".json_encode($partText, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        $texts[] = $partText;
       }
     }
   }
 
   return $texts;
 }
+
+
 
 
 // ========== Hauptprogramm ==========
@@ -344,11 +329,6 @@ try {
     $response = "{}";
   }
 
-  $antwortDate = date('Ymd_His');
-
-  // *Wichtig1*: Dbg: Ganze Antwort anzeigen und Exit (***DEV***)
-  // echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); exit; // Dbg: Ganze Antwort anzeigen (***DEV***)
-
   // Das ist bissl kniffelig mit den ganzen IDs, Msg, ..
   $answerArrOStr = extractAssistantTextFromResponses($result);
   if (is_array($answerArrOStr)) {
@@ -369,18 +349,19 @@ try {
     $xlog .= " (ERR:$answerArrOStr)";
   }
 
-  // *WICHTIG2*: Dbg: Antwort anzeigen und Exit (***DEV***)
+  // WICHTIG: Dbg: Antwort anzeigen und Exit (***DEV***)
   // echo json_encode($obj, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);  exit;
 
-  // Refusals-ETC- halten sich wohl nicht ans Schema? Kommt immer als Text? Manche wohl als "refusal" explizit, endere nur 'text'...
+  // Refusals halten sich wohl nicht ans Schema? Kommt immer als Text? Manche wohl als "refusal" explizit, endere nur 'text'...
   if (empty($obj)) {
-    $obj = ["answer" => ["text" => "ERR:Invalid Reply ($user/res_" . $antwortDate . ")"]];
-    if ($log < 2) $log = 2; // Dann unbeding aufzeichnen
+    if ($result['output'][0]['content'][0]['type'] === "refusal") {
+      $rreason = $result['output'][0]['content'][0]['refusal'] ?? "(Refused without reason)";
+      $obj = ["answer" => ["text" => $rreason]];
+    }else if ($result['output'][0]['content'][0]['text'] ?? null) {
+      $rreason = $result['output'][0]['content'][0]['text'] ?? "(No answer text)";
+      $obj = ["answer" => ["text" => $rreason]];
+    }
   }
-
-  // *WICHTIG3*: Dbg: Antwort anzeigen und Exit (***DEV***)
-  //echo json_encode($obj, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);  exit;
-
 
   if (empty($SIMULATION_RESP)) { // Verlauf speichern (JSONL)
     $messages2save = array_merge(
@@ -398,7 +379,7 @@ try {
 
     // Request und Response loggen (optional)
     if ($log > 1) {
-      $logfname = 'res_' . $antwortDate . '.json';
+      $logfname = 'res_' . date('Ymd_His') . '.json';
       file_put_contents($chatDir . '/' . $logfname, $response);
 
       $xlog .= " Text:$txtfname Response:'$logfname'";
@@ -412,7 +393,7 @@ try {
   $xlog .= " Cost:" . $tokenUsage;
 
   http_response_code(201);
-  echo json_encode(['success' => true, 'result' => $obj ?? '', 'credits' => $creditsAvailable, 'costs' => $tokenUsage], JSON_UNESCAPED_SLASHES);
+  echo json_encode(['success' => true, 'result' => $obj ?? '', 'credits' => $creditsAvailable], JSON_UNESCAPED_SLASHES);
 } catch (Exception $e) {
   // Error handling
   if (http_response_code() === 200) {

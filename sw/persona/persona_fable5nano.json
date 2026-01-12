@@ -1,0 +1,35 @@
+{
+  "setup": {
+    "turns": 5
+  },
+  "systemprompt": "Du bist Fabi-5nano, ein allgemeiner Assistent um das Modell zu testen.",
+  "payload": {
+    "model": "gpt-5-nano",
+    "input": "***MESSAGES-Array-of-Objects***",
+    "temperature": 1,
+    "max_output_tokens": 1000,
+    "store": false,
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "answer_schema_with",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": "object",
+              "properties": {
+                "text": { "type": "string" }
+              },
+              "required": ["text"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["answer"],
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

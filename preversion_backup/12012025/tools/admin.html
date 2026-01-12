@@ -144,20 +144,6 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
-        button:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
-            opacity: 0.6;
-            transform: none;
-            box-shadow: none;
-        }
-
-        button:disabled:hover {
-            background: #95a5a6;
-            transform: none;
-            box-shadow: none;
-        }
-
         #save-btn {
             background: #20b89e;
         }
@@ -302,10 +288,10 @@
             </div>
             <div class="form-group">
                 <div class="button-group">
-                    <button type="button" id="create-user-btn" disabled>👤 Neuen User erstellen</button>
-                    <button type="button" id="save-btn" disabled>💾 Speichern</button>
+                    <button type="button" id="create-user-btn">👤 Neuen User erstellen</button>
+                    <button type="button" id="save-btn">💾 Speichern</button>
                     <button type="button" id="change-password-btn">🔑 Passwort ändern</button>
-                    <button type="button" id="delete-btn" disabled>🗑️ User löschen</button>
+                    <button type="button" id="delete-btn">🗑️ User löschen</button>
                 </div>
             </div>
             <div style="margin-top: 20px;">
@@ -323,29 +309,28 @@
 </body>
 <script>
     let sessionId = '';
-    let adminAgentUser = '';
-    let adminAgentRole = '';
-    let adminAgentData = {};
+    let adminUser = '';
+    let adminagentData = {};
 
     // Session-Daten aus localStorage laden
     function loadSessionData() {
-        adminAgentUser = localStorage.getItem('loginmonitor-username') || '';
+        adminUser = localStorage.getItem('loginmonitor-username') || '';
         sessionId = localStorage.getItem('loginmonitor-sessionid') || '';
 
-        if (!sessionId || !adminAgentUser) {
+        if (!sessionId || !adminUser) {
             alert('Warnung: Session ID oder Admin/Agent User konnte nicht aus localStorage geladen werden.');
         }
     }
 
     // Persona-Liste laden
     async function loadPersonaList() {
-        if (!sessionId || !adminAgentUser) {
+        if (!sessionId || !adminUser) {
             console.error('Session ID oder Admin User fehlt');
             return;
         }
 
         try {
-            const url = `../api/admin.php?cmd=personalist&user=${encodeURIComponent(adminAgentUser)}&sessionId=${encodeURIComponent(sessionId)}`;
+            const url = `../api/admin.php?cmd=personalist&user=${encodeURIComponent(adminUser)}&sessionId=${encodeURIComponent(sessionId)}`;
             const response = await fetch(url);
             const data = await response.json();
 
@@ -373,13 +358,13 @@
 
     // User-Liste laden
     async function loadUserList() {
-        if (!sessionId || !adminAgentUser) {
+        if (!sessionId || !adminUser) {
             console.error('Session ID oder Admin User fehlt');
             return;
         }
 
         try {
-            const url = `../api/admin.php?cmd=userlist&user=${encodeURIComponent(adminAgentUser)}&sessionId=${encodeURIComponent(sessionId)}`;
+            const url = `../api/admin.php?cmd=userlist&user=${encodeURIComponent(adminUser)}&sessionId=${encodeURIComponent(sessionId)}`;
             const response = await fetch(url);
             const data = await response.json();
 
@@ -391,9 +376,6 @@
                     const option = document.createElement('option');
                     option.value = user;
                     option.textContent = user;
-                    if (user === adminAgentUser) {
-                        option.style.backgroundColor = 'skyblue';
-                    }
                     usersList.appendChild(option);
                 });
             } else {
@@ -415,14 +397,14 @@
             return;
         }
 
-        if (!sessionId || !adminAgentUser) {
+        if (!sessionId || !adminUser) {
             userSettings.value = 'Fehler: Session ID oder Admin User fehlt';
             return;
         }
 
         let userJsonData = {};
         try {
-            const url = `../api/admin.php?cmd=getdata&mandant=${encodeURIComponent(selectedUser)}&user=${encodeURIComponent(adminAgentUser)}&sessionId=${encodeURIComponent(sessionId)}`;
+            const url = `../api/admin.php?cmd=getdata&mandant=${encodeURIComponent(selectedUser)}&user=${encodeURIComponent(adminUser)}&sessionId=${encodeURIComponent(sessionId)}`;
             const response = await fetch(url);
             const data = await response.json();
 
@@ -473,7 +455,7 @@
             const postData = {
                 cmd: 'setdata',
                 mandant: username,
-                user: adminAgentUser,
+                user: adminUser,
                 sessionId: sessionId,
                 credentials: JSON.stringify(userData.credentials),
                 credits: JSON.stringify(userData.credits)
@@ -512,7 +494,7 @@
 
         if (confirm(`Möchten Sie den Benutzer "${username}" wirklich löschen?`)) {
             try {
-                const url = `../api/admin.php?cmd=deleteuser&mandant=${encodeURIComponent(username)}&user=${encodeURIComponent(adminAgentUser)}&sessionId=${encodeURIComponent(sessionId)}`;
+                const url = `../api/admin.php?cmd=deleteuser&mandant=${encodeURIComponent(username)}&user=${encodeURIComponent(adminUser)}&sessionId=${encodeURIComponent(sessionId)}`;
                 const response = await fetch(url);
                 const result = await response.json();
 
@@ -546,7 +528,7 @@
         }
 
         try {
-            const url = `../api/admin.php?cmd=setpassword&mandant=${encodeURIComponent(username)}&newpassword=${encodeURIComponent(newPassword)}&user=${encodeURIComponent(adminAgentUser)}&sessionId=${encodeURIComponent(sessionId)}`;
+            const url = `../api/admin.php?cmd=setpassword&mandant=${encodeURIComponent(username)}&newpassword=${encodeURIComponent(newPassword)}&user=${encodeURIComponent(adminUser)}&sessionId=${encodeURIComponent(sessionId)}`;
             const response = await fetch(url);
             const result = await response.json();
 
@@ -586,7 +568,7 @@
 
         try {
             const mandant = '_template_' + selectedPersona;
-            const url = `../api/admin.php?cmd=generateuser&mandant=${encodeURIComponent(mandant)}&newuser=${encodeURIComponent(newUser)}&newpassword=${encodeURIComponent(newPassword)}&user=${encodeURIComponent(adminAgentUser)}&sessionId=${encodeURIComponent(sessionId)}`;
+            const url = `../api/admin.php?cmd=generateuser&mandant=${encodeURIComponent(mandant)}&newuser=${encodeURIComponent(newUser)}&newpassword=${encodeURIComponent(newPassword)}&user=${encodeURIComponent(adminUser)}&sessionId=${encodeURIComponent(sessionId)}`;
             const response = await fetch(url);
             const result = await response.json();
 
@@ -608,25 +590,14 @@
     window.addEventListener('DOMContentLoaded', async function () {
         loadSessionData();
         console.log('Session ID:', sessionId);
-        console.log('Admin User:', adminAgentUser);
+        console.log('Admin User:', adminUser);
 
-        adminAgentData = await fetch_user(adminAgentUser);
-        console.log('Admin/Agent User:', adminAgentData);
+        adminagentData = await fetch_user(adminUser);
+        console.log('Admin/Agent User:', adminagentData);
 
-        adminAgentRole = adminAgentData?.credentials?.role || 'unknown role'
-        const displayedUser = adminAgentUser + ' (' + adminAgentRole + ')';
+        const displayedUser = adminUser + ' (' + (adminagentData?.credentials?.role || 'unknown role') + ')';
         document.getElementById('session-id').value = sessionId;
         document.getElementById('admin-user').value = displayedUser;
-
-        // Enable buttons based on role
-        if (adminAgentRole === 'admin') {
-            document.getElementById('save-btn').disabled = false;
-            document.getElementById('create-user-btn').disabled = false;
-            document.getElementById('delete-btn').disabled = false;
-        } else if (adminAgentRole === 'agent') {
-            document.getElementById('create-user-btn').disabled = false;
-            document.getElementById('delete-btn').disabled = false;
-        }
 
         loadPersonaList();
         loadUserList();
