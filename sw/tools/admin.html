@@ -591,7 +591,11 @@
             const result = await response.json();
 
             if (result.success) {
-                userSettings.value = result.message || 'Benutzer erfolgreich erstellt';
+                let answer = result.message || 'Benutzer erfolgreich erstellt';
+                if(result.user) {
+                    answer += `\nNeuer Benutzer: '${result.user}'`;
+                }
+                userSettings.value = answer;
                 // Felder leeren und Listen neu laden
                 document.getElementById('newuser').value = '';
                 document.getElementById('userpass').value = '';

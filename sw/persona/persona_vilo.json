@@ -8,7 +8,7 @@
     "model": "gpt-4.1-mini",
     "input": "***MESSAGES-Array-of-Objects***",
     "temperature": 0.6,
-    "max_output_tokens": 450,
+    "max_output_tokens": 600,
     "store": false,
     "text": {
       "format": {

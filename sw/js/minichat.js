@@ -18,7 +18,7 @@
 //--------- globals ------ 
 export const VERSION = 'V0.04 / 12.01.2026';
 export const COPYRIGHT = '(C)JoEmbedded.de';
-let dbgLevel = 2;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
+let dbgLevel = 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
 
 // Session Credentials
 let apiSessionId = null; // 32 Zeichen SessionID
@@ -64,11 +64,11 @@ function dbgPrint(txt) {
 const dbgInfo = document.getElementById('dbginfo');
 const dbgAudioStatus = document.getElementById('audioStatus');
 
-const dbgCredits = document.getElementById('credits-value');
+// const dbgCredits = document.getElementById('credits-value');
 const dbgTokens = document.getElementById('tokens-value');
 
 function setCreditsDisplay() {
-    dbgCredits.textContent = userCredits;
+    //dbgCredits.textContent = userCredits;
     dbgTokens.textContent = tokensUsed;
 }
 
@@ -1164,7 +1164,7 @@ function saveCredentialsToLocalStorage(username = '', sessionId = '') {
 function getCredentialsFromLocalStorage() {
     const username = localStorage.getItem('loginmonitor-username') || '';
     const sessionId = localStorage.getItem('loginmonitor-sessionid') || '';
-    return { username, sessionId };
+    return { username, sessionId, password: '' };
 }
 
 async function mainLogin(cred) {
@@ -1172,6 +1172,10 @@ async function mainLogin(cred) {
     if (cred.username.length > 0 && cred.sessionId.length > 0) {
         res = await login('logrem', cred.username, '', cred.sessionId, null); // Test-Login: true: ALles OK
     }
+    if (cred.username.length > 0 && cred.password.length > 0) {
+        res = await login('login', cred.username, cred.password, '', null); // Login mit Passwort
+    }
+
     if (res !== true) {
         credentialsDialog.showModal();
         while (!isLoggedIn) {
@@ -1182,11 +1186,24 @@ async function mainLogin(cred) {
     //addMessage(`Verfügbare Credits: ${userCredits<0?'0':userCredits}`, 'bot info');
     if (introText) addMessage(introText, 'bot info');
 }
-
+// I.d.R: Session gespeichert
 const cred = getCredentialsFromLocalStorage();
-document.getElementById('input-user').value = cred.username;
 
+// Alternativ URL-AUfruf
+// http://localhost/wrk/ai/playground/sw/minichat.html?user=jack_CHuSDByqKPFzVrlf&password=xxotdur8
+
+const urlParams = new URLSearchParams(window.location.search);
+const urlUser = urlParams.get('user') || '';
+const urlPassword = urlParams.get('password') || '';
+if(urlUser.length > 0 && urlPassword.length > 0){
+    console.log('Login via URL-Parameter:', urlUser, '******');
+    console.log('Login via URL-Parameter:', urlUser, urlPassword);
+    cred.username =urlUser;
+    cred.sessionId ='';
+    cred.password = urlPassword;
+}
 mainLogin(cred);
+
 // === ENDE MODLogin ===
 
 console.log('MiniChat:', VERSION);

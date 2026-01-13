@@ -1,7 +1,12 @@
 <?php
+
 /**
  * admin.php - (C) JoEmbedded - 11.01.2026
  * Benutzerverwaltung für Admin- und Agent-Benutzer
+ *
+ * http://localhost/wrk/ai/playground/sw/api/admin.php
+ * Bsp.: http://localhost/wrk/ai/playground/sw/api/admin.php?user=agent_jo&sessionId=069028c3cf275e4c2b150964f2f629b1&cmd=generateuser&mandant=_template_vilo&newuser=test_****************&newpassword=geheimnix
+
  * 
  * Verfügbare Commands:
  * - userlist: Liste aller Benutzer
@@ -10,6 +15,8 @@
  * - setpassword: Passwort eines Benutzers ändern (admin/agent)
  * - setdata: Credentials und Credits setzen (nur admin)
  * - generateuser: Neuen Benutzer erstellen (admin/agent)
+ *   Als besondere Funktion kann im 'newuser' Parameter '****************' (16 *) verwendet werden,
+ *   um einen zufälligen 8-stelligen alphanumerischen String zu generieren
  * - deleteuser: Benutzer löschen (nur admin)
  * 
  * Hinweise:
@@ -20,7 +27,7 @@
 declare(strict_types=1);
 
 // Configuration
-$log = 1; // 0: Silent, 1: Logfile schreiben
+$log = 1; // 0: Silent, 1: Logfile schreiben 2: mit Passwords
 $xlog = 'admin.php';
 include_once __DIR__ . '/../php_tools/logfile.php';
 
@@ -201,6 +208,7 @@ try {
             file_put_contents($targetUserCredentialsFile, json_encode($targetUserCredentials, JSON_PRETTY_PRINT));
             $response['message'] = "Password updated for user '$targetUser'";
             $xlog .= " SetPassword_for_user:'$targetUser'";
+            if ($log >= 2) $xlog .= " NewPassword:'$newPassword'"; // ***DEV***!!!
             break;
 
         case 'deleteuser':
@@ -218,7 +226,7 @@ try {
             }
 
             // Recursively delete directory
-            $deleteDirectory = function($dir) use (&$deleteDirectory) {
+            $deleteDirectory = function ($dir) use (&$deleteDirectory) {
                 if (is_dir($dir)) {
                     $objects = scandir($dir);
                     foreach ($objects as $object) {
@@ -293,18 +301,32 @@ try {
 
             // Validate new user parameters
             $newUsername = $_REQUEST['newuser'] ?? '';
+
+            // Replace '****************' with random 8-character alphanumeric string
+            if (strpos($newUsername, '****************') !== false) {
+                for (;;) {
+                    $randomChars = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 16);
+                    $newUsername = str_replace('****************', $randomChars, $newUsername);
+                    if (!is_dir($usersBaseDir . '/' . $newUsername)) {
+                        break;
+                    }
+                    $newUsername = $_REQUEST['newuser'] ?? '';
+                }
+            }
+
             if (!preg_match('/^[a-zA-Z0-9_-]{' . MIN_USER_LENGTH . ',' . MAX_USER_LENGTH . '}$/', $newUsername)) {
                 throw new Exception('Invalid new user format');
             }
 
-            if((str_starts_with($newUsername, 'admin') || str_starts_with($newUsername, 'agent')) && $userRole !== 'admin') {
+            if ((str_starts_with($newUsername, 'admin') || str_starts_with($newUsername, 'agent')) && $userRole !== 'admin') {
                 throw new Exception("Only admin can create users with 'admin' or 'agent' prefix");
-            }   
+            }
 
             $newPassword = $_REQUEST['newpassword'] ?? '';
             if (!preg_match('/^.{' . MIN_PASSWORD_LENGTH . ',' . MAX_PASSWORD_LENGTH . '}$/', $newPassword)) {
                 throw new Exception('Password must be ' . MIN_PASSWORD_LENGTH . '-' . MAX_PASSWORD_LENGTH . ' characters');
             }
+            if ($log >= 2) $xlog .= " NewPassword:'$newPassword'"; // ***DEV***!!!
 
             $newUserDir = $usersBaseDir . '/' . $newUsername;
             if (is_dir($newUserDir)) {
@@ -320,7 +342,7 @@ try {
             // Deduct credits from requesting user
             $requestingUserCredits['chat'] -= $requiredCredits;
             file_put_contents($requestingUserCreditsFile, json_encode($requestingUserCredits, JSON_PRETTY_PRINT));
-
+            $response['user'] = $newUsername;
             $response['message'] = "User '$newUsername' created from template '$targetUser', credits left: " . $requestingUserCredits['chat'];
             $xlog .= " User '$newUsername' created from template '$targetUser', credits left: " . $requestingUserCredits['chat'];
 
@@ -333,7 +355,6 @@ try {
 
     http_response_code(200);
     echo json_encode($response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-
 } catch (Exception $e) {
     $currentCode = http_response_code();
     if ($currentCode === 200 || $currentCode === false) {
@@ -346,7 +367,6 @@ try {
 
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     $xlog = "IP:$ip ERROR:'" . $e->getMessage() . "' " . $xlog;
-
 } finally {
     log2file($xlog);
 }

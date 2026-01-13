@@ -15,7 +15,7 @@
 declare(strict_types=1);
 
 // Configuration - Loglevel
-$log = 3; // 0: Silent, 1: Logfile schreiben 2:Alles cachen 3: Mit Instructions
+$log = 1; // 0: Silent, 1: Logfile schreiben 2:Alles cachen 3: Mit Instructions
 $xlog = "oai_tts"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
 

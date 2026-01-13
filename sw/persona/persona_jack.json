@@ -13,7 +13,7 @@
       }
     ],
     "temperature": 1,
-    "max_output_tokens": 450,
+    "max_output_tokens": 600,
     "store": false,
     "text": {
       "format": {

@@ -7,7 +7,7 @@
     "model": "gpt-5-mini",
     "input": "***MESSAGES-Array-of-Objects***",
     "temperature": 1,
-    "max_output_tokens": 1000,
+    "max_output_tokens": 2000,
     "store": false,
     "text": {
       "format": {

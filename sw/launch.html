@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="de">
+<!-- http://localhost/wrk/ai/playground/sw/launch.html -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniChat - KI-Voicechat - Launcher</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #e8eaf0;
+            min-height: 100vh;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 15px 20px;
+            background: #2c3e50;
+            color: white;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .main-content {
+            padding: 18px 20px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .button-grid {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .button-grid.primary {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .persona-card {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .button-grid.secondary {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .test-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .persona-button {
+            padding: 20px 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .persona-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .persona-button:active {
+            transform: translateY(-1px);
+        }
+
+        .persona-button.jack {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+
+        .persona-button.jack:hover {
+            box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4);
+        }
+
+        .persona-button.vilo {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .persona-button.vilo:hover {
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.4);
+        }
+
+        .persona-button.jana {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            box-shadow: 0 4px 15px rgba(67, 233, 123, 0.3);
+        }
+
+        .persona-button.jana:hover {
+            box-shadow: 0 8px 25px rgba(67, 233, 123, 0.4);
+        }
+
+        .model-button {
+            padding: 12px 15px;
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        .model-button:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+            transform: translateY(-2px);
+        }
+
+        .model-button:active {
+            transform: translateY(0);
+        }
+
+        .button-icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .button-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .button-description {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .model-button .button-icon {
+            font-size: 28px;
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 0;
+            vertical-align: middle;
+        }
+
+        .model-button .button-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: inline;
+        }
+
+        .model-button .button-description {
+            font-size: 13px;
+            opacity: 0.7;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .voice-sample-btn {
+            padding: 8px 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            color: #495057;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+        }
+
+        .voice-sample-btn:hover {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            border-color: #007bff;
+            color: #007bff;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0, 123, 255, 0.25);
+        }
+
+        footer {
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            font-size: 11px;
+            color: #6c757d;
+        }
+
+        .info-button {
+            padding: 10px 20px;
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(23, 162, 184, 0.3);
+        }
+
+        .info-button:hover {
+            background: #138496;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(23, 162, 184, 0.4);
+        }
+
+        .info-button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🎤⌨🔉 MiniChat KI-Voicechat - Launcher</h1>
+            <div class="subtitle">Wähle einen Charakter (Persona) oder ein Test-Modell zum Starten</div>
+        </header>
+
+        <div class="main-content">
+            <!-- Haupt-Personas -->
+            <div class="section-title">Hauptcharaktere (spezifische KI-Modelle mit Persönlichkeit)</div>
+
+            <div class="button-grid primary">
+                <div class="persona-card">
+                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/jack.opus')">🔊 Stimmprobe
+                        Jack</button>
+                    <button class="persona-button jack" onclick="launchPersona('jack')">
+                        <span class="button-icon">👨‍🔧</span> <b>KI-Voicechat</b>
+                        <div class="button-title">🎤⌨🔉 mit <b>Jack</b></div>
+                        <div class="button-description">Der genervte Autoverkäufer</div>
+                    </button>
+                </div>
+
+                <div class="persona-card">
+                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/vilo.opus')">🔊 Stimmprobe
+                        Vilo</button>
+                    <button class="persona-button vilo" onclick="launchPersona('vilo')">
+                        <span class="button-icon">🧙‍♂️ </span> <b>KI-Voicechat</b>
+                        <div class="button-title">🎤⌨🔉 mit <b>Vilo</b></div>
+                        <div class="button-description">Der Waldwichtel vom Sandsee</div>
+                    </button>
+                </div>
+
+                <div class="persona-card">
+                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/jana.opus')">🔊 Stimmprobe
+                        Jana</button>
+                    <button class="persona-button jana" onclick="launchPersona('janalm')">
+                        <span class="button-icon">👩‍🦰 </span> <b>KI-Voicechat</b>
+                        <div class="button-title">🎤⌨🔉 mit <b>Jana</b></div>
+                        <div class="button-description">Die Almwirtin</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Test-Modelle (ungefiltert) -->
+            <div class="section-title" style="margin-top: 20px;">Test-Modelle (KI-Voicechat ohne Persönlichkeit)</div>
+            <div class="test-section">
+                <button class="voice-sample-btn" onclick="playVoiceSample('./assets/fabi.opus')">🔊 Stimmprobe
+                    Fabi</button>
+                <div class="button-grid secondary">
+                    <button class="model-button" onclick="launchPersona('fable41nano')">
+                        <span class="button-icon">⚡</span>
+                        <span class="button-title">GPT-4.1 Nano</span>
+                        <div class="button-description">Kostengünstig & schnell<br>Stimme: Fabi 👨</div>
+                    </button>
+                    <button class="model-button" onclick="launchPersona('fable41mini')">
+                        <span class="button-icon">🎯</span>
+                        <span class="button-title">GPT-4.1 Mini</span>
+                        <div class="button-description">Wortgewandt, höherer Verbrauch<br>Stimme: Fabi 👨</div>
+                    </button>
+
+
+                    <button class="model-button" onclick="launchPersona('fable5nano')">
+                        <span class="button-icon">💫</span>
+                        <span class="button-title">GPT-5 Nano</span>
+                        <div class="button-description">GPT-5 Version, Nano<br>Stimme: Fabi 👨</div>
+                    </button>
+                    <button class="model-button" onclick="launchPersona('fable5mini')">
+                        <span class="button-icon">🚀</span>
+                        <span class="button-title">GPT-5 Mini</span>
+                        <div class="button-description">GPT-5 Version, Mini<br>Stimme: Fabi 👨</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Info Button -->
+            <div style="margin-top: 30px; text-align: center;">
+                <button class="info-button" onclick="openHelp()">
+                    ℹ️ Info & Hilfe
+                </button>
+            </div>
+        </div>
+
+        <footer>
+            (C) JoEmbedded.de | AI Playground
+        </footer>
+    </div>
+
+    <script>
+        /**
+         * Öffnet die Hilfe-Seite in einem neuen Fenster
+         */
+        function openHelp() {
+            window.open('readme.html', '_blank');
+        }
+
+        /**
+         * Spielt eine Stimmprobe ab
+         * @param {string} audioFile - Pfad zur Audio-Datei
+         */
+        function playVoiceSample(audioFile) {
+            const audio = new Audio(audioFile);
+            audio.play().catch(err => {
+                console.error('Fehler beim Abspielen der Stimmprobe:', err);
+                alert('Stimmprobe konnte nicht abgespielt werden.');
+            });
+        }
+
+        /**
+         * Launch-Funktion für Personas
+         * @param {string} persona - Der Name der zu startenden Persona
+         */
+        function launchPersona(persona) {
+            console.log('Launching persona:', persona);
+
+            // Der Agent launcht eine Session mit der gewählten Persona
+            // Er verfügt über ein gewisses Budget. 'agent_jo' ist für hier zuständig...
+            const agent = "agent_jo";
+            const sessionId = "069028c3cf275e4c2b150964f2f629b1"; // dynamisch, Key mit limitertem Budget
+
+            const mandant = `_template_${persona}`;
+            const newUser = `${persona}_****************`; // 
+            const newPassword = Array.from({ length: 8 }, () =>
+                'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]
+            ).join('');
+            const apiUrl = `./api/admin.php?user=${agent}&sessionId=${sessionId}&cmd=generateuser&mandant=${mandant}&newuser=${newUser}&newpassword=${newPassword}`;
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        //console.log(`Neuer Benutzer: ${data.user}\nPasswort: ${newPassword}`);
+
+                        // Öffne die MiniChat-Seite in einem neuen Tab/Fenster
+                        const nloc = `minichat.html?user=${data.user}&password=${newPassword}`
+                        //console.log('Öffne neue Session:', nloc);
+                        window.open(nloc, '_blank');
+                    } else {
+                        console.error('Fehler beim Erstellen des Benutzers:', data.message);
+                        alert('Fehler beim Erstellen des Benutzers: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Netzwerkfehler:', error);
+                    alert('Netzwerkfehler beim Erstellen des Benutzers.');
+                });
+        }
+
+        // Optional: Keyboard-Shortcuts
+        document.addEventListener('keydown', function (event) {
+            // J für Jack
+            if (event.key === 'j' || event.key === 'J') {
+                launchPersona('jack');
+            }
+            // V für Vilo
+            else if (event.key === 'v' || event.key === 'V') {
+                launchPersona('vilo');
+            }
+            // A für Jana (Almwirtin)
+            else if (event.key === 'a' || event.key === 'A') {
+                launchPersona('janalm');
+            }
+        });
+    </script>
+</body>
+
+</html>
