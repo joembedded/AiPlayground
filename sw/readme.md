@@ -120,6 +120,8 @@ Vilo erzählt kindgerechte Geschichten und moderiert sensibel. Fragt ein Kind na
 
 Fabi zeigt die "ungefilterten" GPT-4.1/5-Modelle ohne Meta-Anweisungen – perfekt zum Testen und Vergleichen.
 
+Fabi spricht mehrere Sprachen! Sprich mit ihm auf auf 🇩🇪 Deutsch, 🇬🇧 Englisch, 🇮🇹 Italienisch oder einer anderen Sprache.
+
 ---
 
 ## ⚙️ Technologie

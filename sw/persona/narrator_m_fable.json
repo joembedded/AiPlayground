@@ -2,7 +2,7 @@
   "model": "gpt-4o-mini-tts",
   "voice": "fable",
   "input": "USER",
-  "instructions": "Sprache: Deutsch. Du erzählst eine spannende Geschichte.",
+  "instructions": "Du erzählst eine spannende Geschichte.",
   "speed": 1,
   "response_format": "FORMAT"
 }
