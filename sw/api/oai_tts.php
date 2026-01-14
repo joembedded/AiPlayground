@@ -215,26 +215,35 @@ try {
     $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $err  = curl_error($ch);
 
-    if (!$stream) {
-        // Nur wenn nicht gestreamt wird
-        if ($audioBytes === false || $http < 200 || $http >= 300) {
-            http_response_code(502);
-            throw new Exception($err ?: "TTS fehlgeschlagen (HTTP: $http)");
+    $audiolen = $stream ? strlen($audioStreamed) : (is_string($audioBytes) ? strlen($audioBytes) : 0);
+
+    // ERROR abfangen - Wir haben hier das Problem, dass evzl. auch bei Fehlernn
+    // bessere Audio-Daten zurückkommen (TTS-Engines) als (interne) Fehlermeldung.
+    if($audiolen === 0) {   
+        $xlog .= " ERROR:AudioLen:0";
+        if ( $http < 200 || $http >= 300)  $xlog .= " HTTP:$http";
+        // Nur wenn nicht gestreamt wird, header
+        $erroAudio = file_get_contents(__DIR__ . '/../static/soundfx/error_tts1.' . $format);
+        if (!$stream) {
+            // MP3/OPUS an den Browser ausliefern
+            header("Content-Type: $audioContent");
+            header("Content-Length: " . strlen($erroAudio));
         }
+        echo $erroAudio;
 
-
-        // MP3/OPUS an den Browser ausliefern
+    }else  if (!$stream) {
+        // regulaer MP3/OPUS an den Browser ausliefern
         header("Content-Type: $audioContent");
-        header("Content-Length: " . strlen($audioBytes));
+        header("Content-Length: " . $audiolen);
         echo $audioBytes;
     }
 
     // Aufschreiben, entweder gestreamt oder normal
     if ($cache) {
         file_put_contents($diskPath, $stream ? $audioStreamed : $audioBytes);
-        $xlog .= " File[" . strlen($stream ? $audioStreamed : $audioBytes) . "]:$diskFname " . ($stream ? "(Stream-CREATED)" : "(CREATED)");
+        $xlog .= " File[" . $audiolen . "]:$diskFname " . ($stream ? "(Stream-CREATED)" : "(CREATED)");
     } else {
-        $xlog .= " Blob[" . strlen($stream ? $audioStreamed : $audioBytes) . "] " . ($stream ? "(Stream)" : "");
+        $xlog .= " Blob[" . $audiolen . "] " . ($stream ? "(Stream)" : "");
     }
 
     // Credits abziehen (erst nach erfolgreichem API-Call)

@@ -1,5 +1,5 @@
 ﻿# 🎤 MiniChat - KI Sprachassistent mit Extras
-### Dein persönlicher Voice-Chat-Assistent mit Charakter!
+### Dein persönlicher und interaktiver Voice-Chat-Assistent mit Charakter!
 
 > **💪 Volle Kontrolle • 🔒 DSGVO-konform • 💰 Low-Budget**
 
@@ -9,10 +9,10 @@ Sprich mit KI-Charakteren, die Persönlichkeit haben! 🎭 Vom Waldwichtel 🧙�
 
 > # Über dieses Projekt 🙂💭
 >
-> Ich bin **Jo** 🙂, im Hauptberuf Entwickler für Embedded Software.  
+> Ich bin **Jo** 🙂, im Hauptberuf Entwickler für Embedded Elektronik.  
 > Beeindruckt von der Leistung moderner Real-Time-Sprachassistenten der „ganz Großen“, habe ich hier als Hobby-Projekt eine **Low-Budget-Lösung** umgesetzt: **MiniChat**.
 >
-> **MiniChat** ist ein einfacher, asynchroner Sprachassistent mit Chat-Charakter. Als echter Chat benötigt er pro Antwort etwa **2–5 Sekunden**, dafür erhält man ein **sehr flexibel einsetzbares Helferlein**, das:
+> **MiniChat** ist ein einfacher, asynchroner Sprachassistent mit Chat-Charakter. Als echter Chat ist er zwar nicht Real-Time und benötigt pro Antwort etwa **2–5 Sekunden**, dafür erhält man ein **sehr flexibel einsetzbares Helferlein**, das:
 >
 > - frei programmierbar ist  
 > - unter eigener voller Kontrolle steht  
@@ -27,9 +27,9 @@ Sprich mit KI-Charakteren, die Persönlichkeit haben! 🎭 Vom Waldwichtel 🧙�
 >
 > ### Technik
 >
-> **MiniChat** ist vollständig in **HTML / JavaScript** umgesetzt und läuft in nahezu jedem modernen Browser.
+> **MiniChat** ist vollständig in **HTML5 / JavaScript / PHP 8.x** umgesetzt und läuft in nahezu jedem modernen Browser.
 >
-> Serverseitig gibt es eine kleine **PHP-API**, die:
+> Serverseitig gibt es eine kleine **API**, die:
 >
 > - mit der KI kommuniziert  
 > - das Modell steuert (z. B. Kommandos, Verhaltensänderungen)
@@ -37,8 +37,8 @@ Sprich mit KI-Charakteren, die Persönlichkeit haben! 🎭 Vom Waldwichtel 🧙�
 > Die drei Demos basieren alle auf denselben PHP-Skripten.  
 > Die gesamte Personalisierung erfolgt über wenige **Setup-Dateien (Text / JSON)**.
 >
-> Wenn jemand Lust hat, sich zu beteiligen oder eine sinnvolle Idee einzubringen,  
-> freue ich mich jederzeit über **Feedback und/oder Kooperationen** 🚀
+> Wenn jemand Lust hat, sich zu beteiligen oder eine sinnvolle Idee einzubringen:
+> **Feedback & Kooperation sind willkommen!** 💬👍
 
 
 ---
@@ -51,7 +51,7 @@ Sprich mit KI-Charakteren, die Persönlichkeit haben! 🎭 Vom Waldwichtel 🧙�
 
 ✨ **Charaktere mit Persönlichkeit** – Nicht nur Frage-Antwort, sondern echte Gespräche  
 🎯 **Voice-First** – Komplett freihändig sprechen und zuhören  
-🔐 **Deine Daten bleiben bei dir** – DSGVO-konform auf deinem Server  
+🔐 **Deine Daten bleiben bei dir** – DSGVO-konform auf eigenen/deinem Server  
 💸 **Kostenoptimiert** – OpenAI GPT-4.1/5 nano/mini – günstig und gut  
 🛠️ **Individuell anpassbar** – Erstelle deine eigenen Charaktere und Personas
 
@@ -59,7 +59,15 @@ Sprich mit KI-Charakteren, die Persönlichkeit haben! 🎭 Vom Waldwichtel 🧙�
 
 ## 🎯 Coole Anwendungen
 
-🧒 **Storyteller für Kinder** – Interaktive Geschichten zum Mitsprechen. "Erzähl mir vom Waldwichtel!" und schon geht's los!
+🧒 **Storyteller (und nicht nur) für Kinder** - Sag z. B. einfach: „Erzähl mir vom Waldwichtel!“ – und die Geschichte erwacht zum Leben!
+Die KI erzählt interaktive Abenteuer und bezieht dabei die reale Umgebung ein:
+- 📍 GPS-Position
+- 🕒 Uhrzeit
+- 🔍 QR-Codes, etc ⚙️ ...
+
+    So entsteht ein virtuelles Story-Layer über der echten Welt.
+    Perfekt für Escape Games, Abenteuer-Apps und kreative Lernformate – mit einer KI, die jederzeit als sicherer Dungeon-Master durch das Erlebnis führt.
+
 
 🍳 **Hands-Free-Assistent** – In der Küche, Werkstatt oder unterwegs: "Was ist die nächste Zutat?" "Drucke das Etikett!" Einfach sprechen, fertig.
 
@@ -80,7 +88,7 @@ Sprich mit KI-Charakteren, die Persönlichkeit haben! 🎭 Vom Waldwichtel 🧙�
 
 ## 🎪 Lerne die Charaktere kennen
 
-🎤 **[Live-Version ausprobieren](https://joembedded.de/x3/minichat/sw/launch.html)** 🎤
+🎤📱🧏🔈👍 **[Live-Version ausprobieren](https://joembedded.de/x3/minichat/sw/launch.html)**
 
 ### 👨‍🔧 Jack – Der genervte Autoverkäufer
 🔊 [Hörprobe](./assets/jack.opus)
@@ -120,12 +128,9 @@ Fabi zeigt die "ungefilterten" GPT-4.1/5-Modelle ohne Meta-Anweisungen – perfe
 Browser (WebRTC) → PHP API → OpenAI GPT-4.1/5
 ```
 
-- **Frontend:** HTML5, JavaScript (ES6+)  
+- **Frontend:** HTML5, JavaScript 
 - **Backend:** PHP 8.x  
 - **KI:** OpenAI GPT-4.1 / GPT-5 (nano/mini)  
-- **Speicher:** Lokal (JSONL)
-
-> ⚡ Latenz: 2-5 Sek. – günstiger als Realtime-API, perfekt für Voice-Chat!
 
 ---
 
@@ -136,11 +141,12 @@ Ein **privates Open-Source-Projekt** von **JoEmbedded** 🚀
 
 **Ziel:** Flexible, sichere und kostengünstige Voice-Chat-Lösung – ohne Vendor-Lock-in, mit voller Kontrolle! 🎯
 
-**Feedback & Kooperation willkommen!** 💬
+ℹ️ _**Disclaimer**: Dies ist ein privates Proof-of-Concept-Projekt in Entwicklung. Nutzung von localStorage und technischen Logs zu Diagnosezwecken. Da die Zielgruppe u. a. auch Kinder sein können, werden in der Testphase auch bewusst unzulässige oder datenschutzrelevante Eingaben getestet, um diese später zuverlässig zu blockieren. Für die Produktivversion ist  DSGVO-Konformität Pflicht. **Feedback & Kooperation sind willkommen!** 💬👍_
 
-# Docu (/sw):
+
+# Internes 
+- Docu (/sw):
 cd sw
-
 pandoc readme.md -o readme.html --standalone --css=assets/style.css
 
 
