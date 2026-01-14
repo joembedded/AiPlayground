@@ -21,11 +21,12 @@ export const COPYRIGHT = '(C)JoEmbedded.de';
 let dbgLevel = 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
 
 // Session Credentials
-let apiSessionId = null; // 32 Zeichen SessionID
-let apiUser = null; // z.B. 'testuser'
+let apiSessionId = ''; // 32 Zeichen SessionID
+let apiUser = ''; // z.B. 'testuser'
+let apiTempPassword = ''; // Nur temporär im Login
 
 let userCredits = 0; // Verfügbare Credits
-let tokensUsed = 0; // Verwendete Tokens
+let userCredits0 = 0; // Initiale Credits
 
 let userLanguage = null; // de-DE
 let speakVoice = null; // z.B 'narrator_f_jane'; 
@@ -64,19 +65,16 @@ function dbgPrint(txt) {
 const dbgInfo = document.getElementById('dbginfo');
 const dbgAudioStatus = document.getElementById('audioStatus');
 
-// const dbgCredits = document.getElementById('credits-value');
 const dbgTokens = document.getElementById('tokens-value');
 
 function setCreditsDisplay() {
-    //dbgCredits.textContent = userCredits;
-    dbgTokens.textContent = tokensUsed;
+    dbgTokens.textContent = userCredits0 - userCredits; // Zaehlt alle
 }
-
-
 // Nuetzliches sleep in async functions
 async function jsSleepMs(ms = 1) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
 //=== ENDE MODMinitools ===
 
 // === MODMainChat - START===
@@ -351,10 +349,6 @@ async function fetchAudioForSentence(sentence, voice, cache = false) {
     }
     try {
         if (!isLoggedIn) throw new Error("Not logged in!");
-        if(!cache) {
-            const costs = (1 + sentence.length * 0.25); // Wie TTS API
-            tokensUsed += parseInt(costs);
-        }
         if (methodGET) {
             dbgPrint(`Lade Audio via GET/src...`);
             audioPlayer.src = url;
@@ -427,7 +421,7 @@ async function talkWithServer(text, persona, concerningMessage = null) {
     // Quasi Global für interne Verwendung
     lastServerText = null;
     lastServerMeta = null;
-    
+
     const payload = {
         sessionId: apiSessionId,
         user: apiUser,
@@ -463,16 +457,14 @@ async function talkWithServer(text, persona, concerningMessage = null) {
                 if (data.credits !== undefined) {
                     userCredits = data.credits; // Update Credits
                 }
-                if (data.costs !== undefined) {
-                    tokensUsed += data.costs; // Update Tokens Used
-                }
                 setCreditsDisplay();
             } catch (e) { }
 
             if (concerningMessage) {
                 let plopText = answerText;
                 if (dbgLevel && lastServerMeta) {
-                    const metaString = JSON.stringify(lastServerMeta, null, 2);
+                    // JSON etwas kompakt formatieren
+                    const metaString = JSON.stringify(lastServerMeta, null, 2).replace(/,\s*(?:\r?\n)/g, ", ").replace(/ {2,}/g, " ");
                     plopText += '<br><small><pre style="color: #00A; white-space: pre-wrap;">' + metaString + '</pre></small>';
                 }
                 updateMessage(concerningMessage, plopText, 'bot ok');
@@ -541,9 +533,6 @@ async function postAudio() {
 
         if (text.credits !== undefined) {
             userCredits = text.credits; // Update Credits
-        }
-        if (text.costs !== undefined) {
-            tokensUsed += text.costs; // Update Tokens Used
         }
         setCreditsDisplay();
 
@@ -1073,8 +1062,28 @@ document.getElementById('loginInfoLink').addEventListener('click', (e) => {
 
 document.getElementById('menuLogout').addEventListener('click', async () => {
     await login('logout', apiUser, '', apiSessionId); // Logout
+    removeCredentials();
     location.reload(); // Seite neu laden
 });
+
+function removeCredentials() {
+    localStorage.removeItem('minichat-username');
+    localStorage.removeItem('minichat-sessionid');
+    sessionStorage.removeItem('minichat-temp-password');
+}
+
+function saveCredentialsToLocalStorage() {
+    localStorage.setItem('minichat-username', apiUser);
+    localStorage.setItem('minichat-sessionid', apiSessionId);
+}
+function getCredentialsFromLocalStorage() {
+    const username = (localStorage.getItem('minichat-username') || '').trim();
+    const sessionId = (localStorage.getItem('minichat-sessionid') || '').trim();
+    if (username.length > 5) apiUser = username; // Mind 6 Zeichen USER
+    if (sessionId.length === 32) apiSessionId = sessionId; // SesssionID 16 Bytes
+    const password = (sessionStorage.getItem('minichat-temp-password') || '').trim();
+    if(password.length >=8) apiTempPassword = password; // Mind 8 Zeichen PASS
+}
 
 async function login(cmd = '', luser = '', lpassword = '', lsessionId = '', statusElement = null) {
     const payload = {
@@ -1104,7 +1113,7 @@ async function login(cmd = '', luser = '', lpassword = '', lsessionId = '', stat
                 return false;
             }
             apiSessionId = data.sessionId;
-            apiUser = data.user;
+            if (apiUser !== data.user) { throw new Error('apiUser/data.user'); }
             userNameDisplay.textContent = apiUser;
             userLanguage = data.userLang;
             speakVoice = data.speakVoice;
@@ -1113,7 +1122,8 @@ async function login(cmd = '', luser = '', lpassword = '', lsessionId = '', stat
             persona = data.persona;
             if (data.intro?.length) introText = data.intro;
             userCredits = data.creditsAvailable;
-            tokensUsed = 0;
+            userCredits0 = userCredits;
+
             setCreditsDisplay();
             // OK
             isLoggedIn = true;
@@ -1128,81 +1138,57 @@ async function login(cmd = '', luser = '', lpassword = '', lsessionId = '', stat
     return false;
 }
 
+let try2Login = false;
+const loginStatus = document.getElementById('login-error');
 const credentialsDialog = document.getElementById('credentials');
 document.getElementById('btn-login').addEventListener('click', async (e) => {
     e.preventDefault();
-    const user = document.getElementById('input-user').value.trim();
-    const password = document.getElementById('input-password').value.trim();
-    const loginStatus = document.getElementById('login-error');
-    if (user.length < 6 || password.length < 8) {
+    const hApiUser = document.getElementById('input-user').value.trim();
+    const hApiTempPassword = document.getElementById('input-password').value.trim();
+    if (hApiUser.length < 6 || hApiTempPassword.length < 8) {
         loginStatus.textContent = 'Benutzername mindestens 6 Zeichen,Passwort mindestens 8 Zeichen!';
-        // ERROR -frq_ping(220, 0.5, 0.2);
         return;
     }
-    loginStatus.textContent = 'Anmeldung läuft...';
-    const logres = await login('login', user, password, '', loginStatus);
-    if (logres === true) { // Full Login
-        loginStatus.textContent = 'Anmeldung OK!';
-        saveCredentialsToLocalStorage(user, apiSessionId);
-        // OK -frq_ping(880, 0.1, 0.07); // Kurzer HPing
-        await jsSleepMs(300);
-        credentialsDialog.close();
-    } else {
-        loginStatus.textContent = 'Anmeldung fehlgeschlagen!';
-        // ERROR - frq_ping(220, 0.5, 0.2);
-    }
+    apiUser = hApiUser;
+    apiTempPassword = hApiTempPassword;
+    try2Login = true;
 });
-// Never Password
-function deleteCredentialsFromLocalStorage() {
-    localStorage.removeItem('loginmonitor-username');
-    localStorage.removeItem('loginmonitor-sessionid');
-}
-function saveCredentialsToLocalStorage(username = '', sessionId = '') {
-    if (username.length) localStorage.setItem('loginmonitor-username', username);
-    if (sessionId.length) localStorage.setItem('loginmonitor-sessionid', sessionId);
-}
-function getCredentialsFromLocalStorage() {
-    const username = localStorage.getItem('loginmonitor-username') || '';
-    const sessionId = localStorage.getItem('loginmonitor-sessionid') || '';
-    return { username, sessionId, password: '' };
-}
 
-async function mainLogin(cred) {
+async function mainLogin() {
+    let logcnt = 0;
     let res = false;
-    if (cred.username.length > 0 && cred.sessionId.length > 0) {
-        res = await login('logrem', cred.username, '', cred.sessionId, null); // Test-Login: true: ALles OK
+    if (apiUser.length >= 6 && apiSessionId.length === 32) {
+        res = await login('logrem', apiUser, '', apiSessionId, null); // Test-Login: true: ALles OK
     }
-    if (cred.username.length > 0 && cred.password.length > 0) {
-        res = await login('login', cred.username, cred.password, '', null); // Login mit Passwort
-    }
-
-    if (res !== true) {
+    if (res === false) {
+        // Input-Werte setzen
+        document.getElementById('input-user').value = apiUser;
+        document.getElementById('input-password').value = apiTempPassword;
+        if(apiTempPassword.length>=6) try2Login=true;
         credentialsDialog.showModal();
-        while (!isLoggedIn) {
+        // Warten bis Login erfolgreich
+        for (; ;) {
+            if (try2Login === true && apiUser.length >= 6 && apiTempPassword.length >= 8) {
+                loginStatus.textContent = 'Anmeldung läuft...';
+                res = await login('login', apiUser, apiTempPassword, '', null); // Voller Login
+                if (res === true) break;
+                loginStatus.textContent = `Login fehlgeschlagen! (${++logcnt})`;
+                try2Login = false; // Zurücksetzen für erneuten Versuch
+            }
             await jsSleepMs(100);
         }
+        credentialsDialog.close();
     }
+    saveCredentialsToLocalStorage();
     requestWakeLock(); // Screen ON
     //addMessage(`Verfügbare Credits: ${userCredits<0?'0':userCredits}`, 'bot info');
     if (introText) addMessage(introText, 'bot info');
 }
+
+
 // I.d.R: Session gespeichert
-const cred = getCredentialsFromLocalStorage();
-
-// Alternativ URL-AUfruf
-// http://localhost/wrk/ai/playground/sw/minichat.html?user=jack_CHuSDByqKPFzVrlf&password=xxotdur8
-
-const urlParams = new URLSearchParams(window.location.search);
-const urlUser = urlParams.get('user') || '';
-const urlPassword = urlParams.get('password') || '';
-if(urlUser.length > 0 && urlPassword.length > 0){
-    console.log('Login via URL-Parameter:', urlUser, '******');
-    console.log('Login via URL-Parameter:', urlUser, urlPassword);
-    cred.username =urlUser;
-    cred.sessionId ='';
-    cred.password = urlPassword;
-}
-mainLogin(cred);
+getCredentialsFromLocalStorage();
+mainLogin();
 
 // === ENDE MODLogin ===
 

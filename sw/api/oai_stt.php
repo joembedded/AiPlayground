@@ -36,6 +36,13 @@ $uploadDir = __DIR__ . '/../../' . USERDIR . '/audio/uploads';
 $dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 
 try {
+
+    if ($log > 1) { // ***DEV***
+        $xlog .= " (***DEV*** sessionid:" . ($_REQUEST['sessionId'] ?? '');
+        $xlog .= " username:'" . ($_REQUEST['user'] ?? '') . "'***DEV***)";
+    }
+
+
     // Validate and sanitize user
     $user = preg_replace('/[^a-zA-Z0-9_-]/', '_', $_REQUEST['user'] ?? '_unknown');
     if (strlen($user) < 6 || strlen($user) > 32) {
@@ -54,7 +61,8 @@ try {
         http_response_code(401);
         throw new Exception('Access denied'); // Nix preisgeben!
     }
-    // $xlog .= " SessionID:'$sessionId'";
+
+    $xlog .= " SessionID:'$sessionId'";
 
     // Validate language
     $lang = $_REQUEST['lang'] ?? 'de-DE';

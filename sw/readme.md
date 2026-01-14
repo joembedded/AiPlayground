@@ -1,147 +1,149 @@
-﻿#  AI Playground  MiniChat
-### Dein persönlicher Voice-Chat-Assistent mit OpenAI-Power
+﻿# 🎤 MiniChat - KI Sprachassistent mit Extras
+### Dein persönlicher Voice-Chat-Assistent mit Charakter!
 
-> **Vollständige Kontrolle. DSGVO-konform. Low-Budget**
+> **💪 Volle Kontrolle • 🔒 DSGVO-konform • 💰 Low-Budget**
 
-Eine flexible Plattform für intelligente Sprachassistenten  von Storytelling über Hands-Free-Support bis hin zu Experten-Beratung.
+Sprich mit KI-Charakteren, die Persönlichkeit haben! 🎭 Vom Waldwichtel 🧙‍♂️ über den genervten Autoverkäufer 👨‍🔧 bis zur gesprächigen Almwirtin 👩‍🦰 – alles auf deinem Server, hands-free und kostengünstig.
 
----
+![Demo-Modell wählen](./assets/selectmodel.png)
 
-##  Warum AI Playground?
+> # Über dieses Projekt 🙂💭
+>
+> Ich bin **Jo** 🙂, im Hauptberuf Entwickler für Embedded Software.  
+> Beeindruckt von der Leistung moderner Real-Time-Sprachassistenten der „ganz Großen“, habe ich hier als Hobby-Projekt eine **Low-Budget-Lösung** umgesetzt: **MiniChat**.
+>
+> **MiniChat** ist ein einfacher, asynchroner Sprachassistent mit Chat-Charakter. Als echter Chat benötigt er pro Antwort etwa **2–5 Sekunden**, dafür erhält man ein **sehr flexibel einsetzbares Helferlein**, das:
+>
+> - frei programmierbar ist  
+> - unter eigener voller Kontrolle steht  
+> - und im Vergleich zu Real-Time-Modellen **deutlich kostengünstiger** im Betrieb ist
+>
+> Dank der **WebRTC-API** moderner Browser lässt sich sogar ein echtes **Hands-Free-Szenario** umsetzen: Solange der Chat geöffnet ist, kann MiniChat zuhören, interagieren, reagieren, moderieren und helfen.
+>
+> Dies ist aktuell nur der **erste Entwurf** – ein klassischer **Proof of Concept**.  
+> Nun liegt es natürlich auch an euch, was sich daraus entwickeln kann. Ich freue mich jederzeit über Feedback oder 'Collaborateuren'!
+>
+> ---
+>
+> ### Technik
+>
+> **MiniChat** ist vollständig in **HTML / JavaScript** umgesetzt und läuft in nahezu jedem modernen Browser.
+>
+> Serverseitig gibt es eine kleine **PHP-API**, die:
+>
+> - mit der KI kommuniziert  
+> - das Modell steuert (z. B. Kommandos, Verhaltensänderungen)
+>
+> Die drei Demos basieren alle auf denselben PHP-Skripten.  
+> Die gesamte Personalisierung erfolgt über wenige **Setup-Dateien (Text / JSON)**.
+>
+> Wenn jemand Lust hat, sich zu beteiligen oder eine sinnvolle Idee einzubringen,  
+> freue ich mich jederzeit über **Feedback und/oder Kooperationen** 🚀
 
-Große Anbieter sind toll  aber was, wenn du **volle Kontrolle** über deine KI-Anwendung brauchst? Wenn Datenschutz wichtig ist? Wenn du die Kosten im Griff behalten willst?
-
-**AI Playground / MiniChat** bietet dir genau das:
-
- **DSGVO-konform**  Deine Daten bleiben auf deinem Server  
- **Kostentransparenz**  Absolute Transparenz bei Deinen OpenAI-Tokens, das KI Modell kann passend zum Budget/Anforderung gewählt werden. Für viele Anwendungen sind die kleineren Modelle wesentlich günstiger.
- **Freie Programmierung**  Passe Personas, Logik und Features individuell an  
- **Voice-First**  WebRTC-basierte Sprachsteuerung für echtes Hands-Free-Erlebnis  
- **Professionell & sicher**  Hash-Login, Session-Management, API-Sicherheit
-
----
-
-##  Einsatz-Szenarien
-
-###  **Storyteller für Kinder**
-Erzähle dynamische, interaktive Geschichten  vollständig kontrollierbar und kindgerecht. Der Bot kennt jedes Detail der Story, kann Fragen beantworten und vorlesen stundenlang, und alles mit derselben Stimme.
-
-**Beispiel:** "Erzähl mir eine Geschichte aus dem Wald": Vilo, der Waldwichtel, moderiert kindgerecht und passt sich dem Gespräch an.
-
-###  **Hands-Free-Assistent**
-Perfekt für Werkstatt, Küche oder Labor: "Was kommt als nächste Zutat in den Teig?", "Drucke das Etikett aus", "Lass das Rollo hoch", ...  Immer verfügbar, ohne die Hände zu benutzen.
-
-###  **Experten-Beratung im Intranet**
-Verbinde deinen Assistenten mit Vector Stores (Handbücher, Datenblätter, FAQs). Er kennt jedes Detail  schneller und präziser als jeder Mitarbeiter.
-
-**Beispiel:** Jack, der Autoverkäufer, kennt das komplette Verkaufshandbuch von Roll-Bonz  und antwortet auch bei kritischen Fragen immer passend, wenn auch durchweg schlecht gelaunt. Das ist Absicht.
-
----
-
-##  Features & Highlights
-
-###  Voice-Chat mit WebRTC
-- Kontinuierliche Sprachsteuerung (Hands-Free)
-- Speech-to-Text (STT) und Text-to-Speech (TTS) via OpenAI
-- Anpassbare Rauschunterdrückung
-
-###  Personas  Charaktere mit Persönlichkeit
-Definiere deine eigenen Charaktere mit:
-- **Individuellem Sprachstil** (z. B. Jana rollt das 'R', Vilo spricht langsam)
-- **Meta-Logik** zur Gesprächssteuerung (z. B. Freundlichkeits-Level bei Jack)
-- **Vector Stores** für Wissensanbindung
-
-###  Sicherheit & Datenschutz
-- Session-basiertes Login mit Hash-Passwörtern
-- Lokale N-Turn-Speicherung auf deinem Server (DSGVO-konform)
-- Keine gespeicherten Daten auf externen Servern
-
-###  Kostenoptimiert
-- Wahlweise GPT-4.1-nano/mini oder GPT-5-nano/mini
-- Asynchrone Response API (wesentlich kostengünstiger als Realtime)
-- Token-Tracking in Echtzeit
-
-###  Admin-Tools inklusive
-- User-Verwaltung
-- Persona-Templates
-- Debugging-Tools (Express-Chat, Login-Monitor, Voice-Tests)
 
 ---
 
-##  Live-Demo & Charaktere
-
- 🎤⌨🔉 **[Live-Version ausprobieren](https://joembedded.de/x3/xxxx/sw/minichat.html)**
-
-### Vordefinierte Demo-Personas
-
-####  **👨‍🔧 Jack  Der genervte Autoverkäufer**
-🔊 [Sprechprobe anhören](./assets/jack.opus)
-
-Jack  verkauft Roll-Bonz-Autos  mal freundlich, mal genervt (steuerbar via Sprache oder `.pcmd`). Er nutzt einen Vector Store für sein Verkaufshandbuch und kann auch bei unpassenden Fragen passend reagieren.
-
-**Highlights:**
-- Freundlichkeits-Level  😠 0-10 🥰 steuerbar, kann per Sprache („Freundlichkeits-Level 10" oder „Sei unfreundlich" oder „Sei nett") oder per `.pcmd` gezielt beeinflusst werden
-- Meta-Logik für Dialogsteuerung
-
--  _Challenge: Frag Jack nach Details zum Auto genauso wie nach extrem illegalen Inhalten (Drogen, Hass, Gewalt, ...). Er sollte immer einigermaßen passend und genervt antworten._
+![Demo-Chat MiniChat](./assets/vilochat.png)
 
 ---
 
-####  **👩‍🦰 Jana – Die Almwirtin 🐄🐮🐂**
-🔊 [Sprechprobe anhören](./assets/jana.opus)
+## 🚀 Das Besondere
 
-Jana betreibt einen Alm-Kiosk und liebt Smalltalk. Sie rollt das 'R' und stellt viele Fragen, weil ihr oft langweilig ist.
-
-**Highlights:**
-- Viel Gesprächsbereitschaft
-
----
-
-####  **🧙‍♂️ Vilo – Der Waldwichtel vom Sandsee🌲🌳🌲**
-🔊 [Sprechprobe anhören](./assets/vilo.opus)
-
-Vilo wohnt am Sandsee bei Baden-Baden und erzählt kindgerecht Geschichten. Er analysiert im Hintergrund das Gespräch und moderiert bei kritischen Themen.
-
-**Highlights:**
-- Meta-Logik (exemplarische Topics: wichtel, technik, natur, geschichten, essen, unpassend)
-- PII-Filterung (personenbezogene Daten werden kindgerecht abgewiesen)
-- Lore-Books für komplette Story-Universen
-
-- _Challenge: Vilo darf niemals das Antwortschema für Kinder verlassen und bei 'kritischen' Fragen (z. B. illegale Inhalte oder PII-Daten) moderierend antworten_
+✨ **Charaktere mit Persönlichkeit** – Nicht nur Frage-Antwort, sondern echte Gespräche  
+🎯 **Voice-First** – Komplett freihändig sprechen und zuhören  
+🔐 **Deine Daten bleiben bei dir** – DSGVO-konform auf deinem Server  
+💸 **Kostenoptimiert** – OpenAI GPT-4.1/5 nano/mini – günstig und gut  
+🛠️ **Individuell anpassbar** – Erstelle deine eigenen Charaktere und Personas
 
 ---
 
-####  **👨 Fabi - Die neutrale Teststimme**
-🔊 [Sprechprobe anhören](./assets/fabi.opus)
+## 🎯 Coole Anwendungen
 
-Fabi testet die unfiltrierten" Modelle GPT-4.1/5-nano/mini ohne Meta-Anweisungen  ideal, um Modellverhalten und Token-Verbrauch zu vergleichen.
+🧒 **Storyteller für Kinder** – Interaktive Geschichten zum Mitsprechen. "Erzähl mir vom Waldwichtel!" und schon geht's los!
+
+🍳 **Hands-Free-Assistent** – In der Küche, Werkstatt oder unterwegs: "Was ist die nächste Zutat?" "Drucke das Etikett!" Einfach sprechen, fertig.
+
+🚗 **Experten-Beratung** – Verbinde Handbücher und FAQs. Jack kennt jedes Detail der Roll-Bonz-Autos... auch wenn er mal genervt ist 😤
 
 ---
 
-##  Technologie-Stack
+## ✨ Highlights
+
+🎙️ **Voice-First** – Komplett freihändig via WebRTC  
+🎭 **Personas mit Charakter** – Individuelle Sprachstile, Meta-Logik und Stimmungen  
+📚 **Vector Stores** – Anbindung von Wissensdatenbanken  
+🔐 **Sicher** – Session-Login, alles auf deinem Server  
+💰 **Kostengünstig** – Token-Tracking, asynchrone API statt teurer Realtime  
+🛠️ **Admin-Tools** – User-Verwaltung, Templates, Debugging
+
+---
+
+## 🎪 Lerne die Charaktere kennen
+
+🎤 **[Live-Version ausprobieren](https://joembedded.de/x3/minichat/sw/launch.html)** 🎤
+
+### 👨‍🔧 Jack – Der genervte Autoverkäufer
+🔊 [Hörprobe](./assets/jack.opus)
+
+Jack verkauft Roll-Bonz-Autos... mal freundlich 🥰, mal genervt 😤 – du steuerst seine Laune! Z. B.: "Freundlichkeitslevel 1", "Sei freundlich" oder "Sei unfreundlich" – er reagiert sofort. Kennt das komplette Verkaufshandbuch 100% genau (denn es steht der KI im **Vector Store** zur Verfügung).
+
+💡 **Challenge:** Frag Jack nach den schrägsten Dingen – er bleibt professionell... auf seine Art 😏
+
+---
+
+### 👩‍🦰 Jana – Die gesprächige Almwirtin 🐄
+🔊 [Hörprobe](./assets/jana.opus)
+
+Jana liebt Smalltalk, rollt das 'R' und stellt gerne Fragen. Ihr Alm-Kiosk ist offen für jeden Plausch!
+
+---
+
+### 🧙‍♂️ Vilo – Der Waldwichtel vom Sandsee 🌲
+🔊 [Hörprobe](./assets/vilo.opus)
+
+Vilo erzählt kindgerechte Geschichten und moderiert sensibel. Fragt ein Kind nach persönlichen Daten oder unangebrachten Dingen? Vilo lenkt freundlich ab – immer sicher! 🛡️
+
+💡 **Challenge:** Versuch Vilo aus der Rolle zu bringen – er bleibt kindgerecht! 😊
+
+---
+
+### 👨 Fabi – Die neutrale Teststimme
+🔊 [Hörprobe](./assets/fabi.opus)
+
+Fabi zeigt die "ungefilterten" GPT-4.1/5-Modelle ohne Meta-Anweisungen – perfekt zum Testen und Vergleichen.
+
+---
+
+## ⚙️ Technologie
 
 ```
-Browser (HTML/JS)  PHP API  OpenAI
+Browser (WebRTC) → PHP API → OpenAI GPT-4.1/5
 ```
 
-- **Frontend:** Responsive HTML5, WebRTC, moderne JS (ES6+)
-- **Backend:** PHP 8.x 
-- **KI:** OpenAI GPT-4.1 / GPT-5 (nano/mini)
-- **Speicherung:** Lokaler Server JSONL-Dateien (N-Turns)
+- **Frontend:** HTML5, JavaScript (ES6+)  
+- **Backend:** PHP 8.x  
+- **KI:** OpenAI GPT-4.1 / GPT-5 (nano/mini)  
+- **Speicher:** Lokal (JSONL)
 
-> **Hinweis:** Latenz ca. 2 - 5 Sekunden (asynchron)  perfekt für Voice-Chat, günstiger als Realtime-API.
-
----
-
-
-##  Organisatorisches
-
-Dies ist ein **privates Open-Source-Projekt** von **JoEmbedded** (Kontakt: [joembedded@gmail.com](mailto:joembedded@gmail.com)).
-
-**Ziel:** Eine flexible, sichere und kostengünstige Alternative zu kommerziellen Voice-Chat-Lösungen  ohne Vendor-Lock-in, mit voller Kontrolle.
-
-**Feedback & Kooperation willkommen!** 
+> ⚡ Latenz: 2-5 Sek. – günstiger als Realtime-API, perfekt für Voice-Chat!
 
 ---
 
-** (C) JoEmbedded.de ** | [Live-Demo](https://joembedded.de/x3/minichat/sw/launch.html) | [Installation](install_readme.md) | [GitHub](https://github.com/joembedded)
+## 📬 Projekt & Kontakt
+
+Ein **privates Open-Source-Projekt** von **JoEmbedded** 🚀  
+📧 [joembedded@gmail.com](mailto:joembedded@gmail.com)
+
+**Ziel:** Flexible, sichere und kostengünstige Voice-Chat-Lösung – ohne Vendor-Lock-in, mit voller Kontrolle! 🎯
+
+**Feedback & Kooperation willkommen!** 💬
+
+# Docu (/sw):
+cd sw
+
+pandoc readme.md -o readme.html --standalone --css=assets/style.css
+
+
+---
+
+**⭐ (C) JoEmbedded.de** | [Live-Demo](https://joembedded.de/x3/minichat/sw/launch.html) | [GitHub](https://github.com/joembedded)

@@ -51,7 +51,7 @@
         }
 
         .main-content {
-            padding: 18px 20px;
+            padding: 18px 10px;
         }
 
         .section-title {
@@ -66,7 +66,7 @@
         .button-grid {
             display: grid;
             gap: 10px;
-            margin-bottom: 18px;
+            margin-bottom: 10px;
         }
 
         .button-grid.primary {
@@ -90,7 +90,7 @@
         }
 
         .persona-button {
-            padding: 20px 18px;
+            padding: 10px 15px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
@@ -258,6 +258,7 @@
         <header>
             <h1>🎤⌨🔉 MiniChat KI-Voicechat - Launcher</h1>
             <div class="subtitle">Wähle einen Charakter (Persona) oder ein Test-Modell zum Starten</div>
+            <span class="subtitle" id="infofield"></span>
         </header>
 
         <div class="main-content">
@@ -336,7 +337,7 @@
         </div>
 
         <footer>
-            (C) JoEmbedded.de | AI Playground
+            (C) JoEmbedded.de | MiniChat KI-Voicechat Launcher
         </footer>
     </div>
 
@@ -370,7 +371,7 @@
             // Der Agent launcht eine Session mit der gewählten Persona
             // Er verfügt über ein gewisses Budget. 'agent_jo' ist für hier zuständig...
             const agent = "agent_jo";
-            const sessionId = "069028c3cf275e4c2b150964f2f629b1"; // dynamisch, Key mit limitertem Budget
+            const sessionId = "069028c3cf275e4c2b150964f2f629b1"; // dynamisch, Key des Agenten mit limitertem Budget
 
             const mandant = `_template_${persona}`;
             const newUser = `${persona}_****************`; // 
@@ -383,11 +384,13 @@
                 .then(data => {
                     if (data.success) {
                         //console.log(`Neuer Benutzer: ${data.user}\nPasswort: ${newPassword}`);
-
-                        // Öffne die MiniChat-Seite in einem neuen Tab/Fenster
-                        const nloc = `minichat.html?user=${data.user}&password=${newPassword}`
-                        //console.log('Öffne neue Session:', nloc);
-                        window.open(nloc, '_blank');
+                        // Neue Anmeldedaten generieren
+                        localStorage.setItem('minichat-username', data.user);
+                        localStorage.removeItem('minichat-sessionid');
+                        sessionStorage.setItem('minichat-temp-password', newPassword);
+                        const info = "Generierter Benutzer:   " + data.user + "   |   Passwort:   " + newPassword;
+                        document.getElementById('infofield').textContent = info;
+                        window.open('minichat.html', '_blank');
                     } else {
                         console.error('Fehler beim Erstellen des Benutzers:', data.message);
                         alert('Fehler beim Erstellen des Benutzers: ' + data.message);

@@ -467,6 +467,7 @@ dialog {
     box-shadow: var(--shadow-lg);
     max-width: 400px;
     width: 90%;
+    z-index: 1001;
     animation: dialogFadeIn 0.3s ease;
 }
 
