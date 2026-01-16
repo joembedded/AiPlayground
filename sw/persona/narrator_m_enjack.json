@@ -1,0 +1,8 @@
+{
+  "model": "gpt-4o-mini-tts",
+  "voice": "alloy",
+  "input": "USER",
+  "instructions": "Speaking style: annoyed. Pace: very fast. Pauses: almost none.",
+  "speed": 1,
+  "response_format": "FORMAT"
+}

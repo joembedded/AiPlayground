@@ -1,8 +1,8 @@
 {
-	"lang": "de-DE",
+	"lang": "en-GB",
 	"name": "MicroChat",
 	"short_name": "MicroChat",
-	"description": "AI Playground MicroChat App - (C)JoEmbedded.de",
+	"description": "AI MicroChat App - (C) JoEmbedded.de",
 	"background_color": "#808080",
 	"theme_color": "#347936",
 	"display": "standalone",

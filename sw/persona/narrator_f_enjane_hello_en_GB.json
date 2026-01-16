@@ -1,0 +1,15 @@
+{
+  "hello": {
+    "helpTxts": [
+      "Hi there. How can I help?",
+      "Can I help you with something?",
+      "What can I help you with?",
+      "Hello! What can I do for you?",
+      "May I help you?",
+      "Do you have a question? I’m happy to help!",
+      "What can I do?",
+      "What’s it about?"
+    ],
+    "intro": "Hi there! I’m Jana 👩‍🦰 from the Alps 🐄🐮🐂. Tell me, how can I help you?<br><small style='color: #F00;'>I roll my R’s and I’m curious. Other than that, I don’t have any special traits.</small>"
+  }
+}

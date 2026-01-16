@@ -1,0 +1,8 @@
+{
+  "model": "gpt-4o-mini-tts",
+  "voice": "verse",
+  "input": "USER",
+  "instructions": "Voice: English with a gentle, clearly noticeable German accent. Speak softly and warmly, never loud. Calm pace, like telling a bedtime story. Tone: fairy-tale narrator, friendly and peaceful.",
+  "speed": 1,
+  "response_format": "FORMAT"
+}

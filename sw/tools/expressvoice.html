@@ -244,7 +244,7 @@
             </div>
             <div class="form-group">
                 <label for="user-sessionid">🎫 Session ID</label>
-                <input type="text" id="user-sessionid" name="sessionId" readonly placeholder="Session ID">
+                <input type="text" id="user-sessionid" name="sessionId"  placeholder="Session ID">
             </div>
             <div class="form-group">
                 <label for="voice-name">🎭 Voice ('narrator')</label>
@@ -312,6 +312,8 @@
             if (document.getElementById('use-cache').checked) {
                 payload.cache = '1';
             }
+
+            payload.stream = '1';
 
             const api = '../api/oai_tts.php';
             responseOutput.value = `'${api}':\n` + JSON.stringify(payload, null, 2) + '\n\nAntwort:\n';

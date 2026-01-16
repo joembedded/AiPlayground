@@ -18,9 +18,9 @@
 //--------- globals ------ 
 import * as I18 from './intmain_i18n.js'
 
-export const VERSION = 'V0.04 / 12.01.2026';
+export const VERSION = 'V0.05 / 17.01.2026';
 export const COPYRIGHT = '(C) JoEmbedded.de';
-let dbgLevel = 2;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
+let dbgLevel = 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
 
 // Session Credentials
 let apiSessionId = ''; // 32 Zeichen SessionID
@@ -145,14 +145,14 @@ async function sendeNachricht() {
     }
 
     if (userCredits <= 0) {
-        addMessage('Keine Credits mehr!', 'bot error');
+        addMessage(ll('No more credits!'), 'bot error');
         chatStateVar = 5; // Warte auf sendeNachricht
         textEingabe.value = '';
         return;
     }
 
     addMessage(text, 'user'); // User-Meldung anzeigen
-    theNewMessage = addMessage(' Warte...', 'bot spinner');
+    theNewMessage = addMessage(` ${ll('Wait')}...`, 'bot spinner');
     chatStateVar = 4; // Warte auf Server-Antwort
     talkWithServer(text, persona, theNewMessage); // async
     textEingabe.value = '';
@@ -167,13 +167,13 @@ function periodical() {
             break;
         case 1: // Audio-Input im stdPlayer vorhanden - Start Transcribe!
             chatStateVar = 2;
-            setChatStatus('Ich verstehe...', 'yellow');
+            setChatStatus(ll('Understand...'), 'yellow');
             postAudio();
             break;
         case 2: // idle warten waehrend transcribiert
             break;
         case 3: // 
-            setChatStatus('Verstanden!', 'yellow');
+            setChatStatus(ll('Understood!'), 'yellow');
             if (autoPostChk.checked) {
                 sendeNachricht(); // impl setzt chatStateVar=4
             } else {
@@ -193,7 +193,7 @@ function periodical() {
             break;
 
         case 9: // Alles Abbrechen während sendeNachricht
-            setChatStatus('Stop...', 'orange');
+            setChatStatus(ll('Stop...'), 'orange');
             audioPlayer.pause();
             audioCache = [];
             chatStateVar = 10; // Gleich weiter
@@ -204,7 +204,7 @@ function periodical() {
         case 10: // **Erwarte sendeNachricht**
             safePlay(audioFxClick);
             setSendButtonGlyph('ready');
-            setChatStatus('Hab alles gesagt', 'yellow');
+            setChatStatus(ll('I have said all.'), 'yellow');
             chatStateVar = 0; // Zuruecksetzen
             microStatus = 1; // Micro wieder bereit
             break;
@@ -398,7 +398,7 @@ async function speakText(inputText, cache = false) {
         return;
     }
     isProcessing = true;
-    setChatStatus('Ich rede...', 'skyblue');
+    setChatStatus(ll("I am talking"), 'skyblue');
 
     try {
         // Text normalisieren: Newlines und Tabs in Leerzeichen umwandeln
@@ -478,7 +478,7 @@ async function talkWithServer(text, persona, concerningMessage = null) {
                 updateMessage(concerningMessage, plopText, 'bot ok');
             }
             if (userCredits <= 0) {
-                addMessage('Keine Credits mehr!', 'bot error');
+                addMessage(ll('No more credits!'), 'bot error');
                 concerningMessage = null;
                 chatStateVar = -993;
             } else {
@@ -501,7 +501,7 @@ async function talkWithServer(text, persona, concerningMessage = null) {
 async function postAudio() {
     try {
         if (userCredits <= 0) {
-            addMessage("Keine Credits mehr!", 'bot error');
+            addMessage(ll('No more credits!'), 'bot error');
             chatStateVar = -992;
             return;
         }
@@ -625,7 +625,7 @@ stdPlayer.addEventListener('ended', () => {
     if (microStatus === 7) { // 7: Replay
         microStatus = 8;
     }
-    setChatStatus('Replay Ende', 'skyblue');
+    setChatStatus('Replay End', 'skyblue');
 });
 
 function addAudioChunk(data) {
@@ -711,22 +711,22 @@ function microBtnCLick() {
         microOnOff.hidden = true;
         isMicroOn = true;
         isRecording = false;
-        textEingabe.placeholder = 'Sprich oder tippe deine Nachricht...'; // Micro einschalten oder tippe deine Nachricht...
+        textEingabe.placeholder = ll('Speak or type your message...'); // Micro einschalten oder tippe deine Nachricht...
         microButtonGlyph.classList.remove('bi-mic-mute-fill');
         microButtonGlyph.classList.add('bi-mic-fill');
         microButtonGlyph.classList.add('jo-icon-ani-beat');
-        setChatStatus('Mikro AN...', 'yellow');
+        setChatStatus(ll('Micro ON...'), 'yellow');
     } else {
         microOnOff.hidden = false;
         isMicroOn = false;
         canvas.hidden = true;
 
         stopMicro();
-        textEingabe.placeholder = 'Micro einschalten oder tippe deine Nachricht...'; // 'Sprich oder tippe deine Nachricht...';
+        textEingabe.placeholder = ll('Switch Micro on or type your message...'); // 'Sprich oder tippe deine Nachricht...';
         microButtonGlyph.classList.remove('jo-icon-ani-beat');
         microButtonGlyph.classList.remove('bi-mic-fill');
         microButtonGlyph.classList.add('bi-mic-mute-fill');
-        setChatStatus('Mikro AUS', 'lime');
+        setChatStatus(ll('Micro OFF'), 'lime');
         bloomMicroButton(0);
     }
 }
@@ -769,7 +769,7 @@ function updateSpeechState(frameRms) {
             isRecording = false;
         }
         microStatus = 1;
-        setChatStatus('Menue...', 'yellow');
+        setChatStatus(ll('Menu...'), 'yellow');
         return;
     }
 
@@ -777,7 +777,7 @@ function updateSpeechState(frameRms) {
         case 1: // Zustand 1: MICRO_INIT msec lang AVG anlernen
             if (dur > MICRO_INIT_MS) {
                 microStatus = 2;
-                setChatStatus('Ich höre...', 'yellow');
+                setChatStatus(ll('I am listening...'), 'yellow');
             }
             break;
 
@@ -792,7 +792,7 @@ function updateSpeechState(frameRms) {
                 microStatus = 3;
                 speechStateTime0 = performance.now();
                 speechStartTime = speechStateTime0; // Fuer Alles und Pausen
-                setChatStatus('Ich höre zu!', 'lime');
+                setChatStatus(ll('I am listening...'), 'lime');
             }
             break;
 
@@ -836,7 +836,7 @@ function updateSpeechState(frameRms) {
                 } else {
                     dbgPrint(`Speech End (${speechTotalDur} msec)`);
                 }
-                setChatStatus('Sprache beendet', 'yellow');
+                setChatStatus(ll('I have said all.'), 'yellow');
                 dbgPrint(`Stats: Frames:${frameCount}/${speechTotalDur} ms, T.RMS:${totalRms.toFixed(4)}, Avg RMS:${(totalRms / frameCount).toFixed(4)}, T./RMS:${(totalRms / thresholdRms).toFixed(4)}`);
                 if (dbgLevel > 2) { // OPtional immer abspielen zum Testen
                     microStatus = 7;
@@ -936,10 +936,12 @@ navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } })
         thresholdSlider.disabled = false;
         maxpauseSlider.disabled = false;
         autoThreshChk.disabled = false;
-        setChatStatus('Mikro bereit', 'lime');
+        setChatStatus(ll('Micro ready'), 'lime');
+        textEingabe.placeholder = ll('Switch Micro on or type your message...'); // 'Sprich oder tippe deine Nachricht...';
+
     })
     .catch(() => {
-        setChatStatus('Mikro gesperrt', 'red');
+        setChatStatus(ll('Micro locked'), 'red');
         microStatus = 0;
     });
 // === ENDE MODMicofone ====
@@ -963,7 +965,7 @@ async function requestWakeLock() {
     try {
       /*const wakeLock =*/ await navigator.wakeLock.request("screen");
     } catch (err) {
-        addMessage(`Fehler: Bildschirm-Lock: ${err.message}`, 'bot error');
+        addMessage(`WARNING: Screen-Lock: ${err.message}`, 'bot error');
     }
 }
 
@@ -1156,7 +1158,7 @@ document.getElementById('btn-login').addEventListener('click', async (e) => {
     const hApiUser = document.getElementById('input-user').value.trim();
     const hApiTempPassword = document.getElementById('input-password').value.trim();
     if (hApiUser.length < 6 || hApiTempPassword.length < 8) {
-        loginStatus.textContent = 'Benutzername mindestens 6 Zeichen,Passwort mindestens 8 Zeichen!';
+        loginStatus.textContent = 'Benutzername mindestens 6 Zeichen, Passwort mindestens 8 Zeichen!';
         return;
     }
     apiUser = hApiUser;
@@ -1197,6 +1199,7 @@ async function mainLogin() {
     saveCredentialsToLocalStorage();
     requestWakeLock(); // Screen ON
     //addMessage(`Verfügbare Credits: ${userCredits<0?'0':userCredits}`, 'bot info');
+    I18.i18localize(userLanguage);  
     if (introText) addMessage(introText, 'bot info');
 }
 

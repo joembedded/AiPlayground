@@ -210,9 +210,16 @@ try {
         // Und Header vor cURL
         header("Content-Type: $audioContent");
         header('Cache-Control: no-cache');
+        flush(); // Output-Buffer vor cURL leeren
     }
 
     $audioBytes = curl_exec($ch);
+    
+    // Finaler Flush nach cURL, um letzte Fragmente zu senden?
+    if ($stream) {
+        flush();
+    }
+    
     $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $err  = curl_error($ch);
 

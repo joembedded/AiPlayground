@@ -1,0 +1,14 @@
+{
+  "hello": {
+    "helpTxts": [
+      "Hello, I'm Jack.",
+      "How can I help?",
+      "What's up?",
+      "What's this about?",
+      "Hello?",
+      "What now?",
+      "Get to the point!"
+    ],
+    "intro": "Hello, I'm Jack 👨‍🔧, your contact person for all questions about Roll-Bonz vehicles. Ask me for the details!<br><small style='color: #F00;'>My friendliness level is 😠 0-10 🥰. It can be set via voice (e.g. 'Friendliness level 10' or 'Be unfriendly' or 'Be nice', or via '.pcmd..').</small>"
+  }
+}

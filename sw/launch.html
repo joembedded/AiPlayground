@@ -257,17 +257,54 @@
     <div class="container">
         <header>
             <h1>🎤⌨🔉 MiniChat KI-Voicechat - Launcher</h1>
-            <div class="subtitle">Wähle einen Charakter (Persona) oder ein Test-Modell zum Starten</div>
+            <div class="subtitle">🇬🇧 Select a Character / 🇩🇪 Wähle einen Charakter (Persona) oder ein Test-Modell zum Starten</div>
             <span class="subtitle" id="infofield"></span>
         </header>
 
         <div class="main-content">
             <!-- Haupt-Personas -->
-            <div class="section-title">Hauptcharaktere (spezifische KI-Modelle mit Persönlichkeit)</div>
+            <div class="section-title">🇬🇧 Main Characters (specific AI models with personality)</div>
 
             <div class="button-grid primary">
                 <div class="persona-card">
-                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/jack.opus')">🔊 Stimmprobe
+                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/enjack.opus')">🇬🇧🔊 Voice sample
+                        Jack</button>
+                    <button class="persona-button jack" onclick="launchPersona('enjack')">
+                        <span class="button-icon">👨‍🔧</span> <b>KI-Voicechat</b>
+                        <div class="button-title">🎤⌨🔉 with <b>Jack</b></div>
+                        <div class="button-description">The grumpy car salesman</div>
+                    </button>
+                </div>
+
+                <div class="persona-card">
+                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/envilo.opus')">🇬🇧🔊 Voice sample
+                        Vilo</button>
+                    <button class="persona-button vilo" onclick="launchPersona('envilo')">
+                        <span class="button-icon">🧙‍♂️ </span> <b>KI-Voicechat</b>
+                        <div class="button-title">🎤⌨🔉 with <b>Vilo</b></div>
+                        <div class="button-description">The forest elf from Lake Sandsee</div>
+                    </button>
+                </div>
+
+                <div class="persona-card">
+                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/enjana.opus')"> 🇬🇧🔊 Voice sample
+                        Jana</button>
+                    <button class="persona-button jana" onclick="launchPersona('enjana')">
+                        <span class="button-icon">👩‍🦰 </span> <b>KI-Voicechat</b>
+                        <div class="button-title">🎤⌨🔉 with <b>Jana</b></div>
+                        <div class="button-description">The Alpine landlady</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Haupt-Personas Deutsch -->
+            <div class="section-title">🇩🇪 Hauptcharaktere (spezifische KI-Modelle mit Persönlichkeit)</div>
+
+            <div class="button-grid primary">
+                <div class="persona-card">
+                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/jack.opus')">🇩🇪🔊 Stimmprobe
                         Jack</button>
                     <button class="persona-button jack" onclick="launchPersona('jack')">
                         <span class="button-icon">👨‍🔧</span> <b>KI-Voicechat</b>
@@ -277,7 +314,7 @@
                 </div>
 
                 <div class="persona-card">
-                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/vilo.opus')">🔊 Stimmprobe
+                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/vilo.opus')">🇩🇪🔊 Stimmprobe
                         Vilo</button>
                     <button class="persona-button vilo" onclick="launchPersona('vilo')">
                         <span class="button-icon">🧙‍♂️ </span> <b>KI-Voicechat</b>
@@ -287,7 +324,7 @@
                 </div>
 
                 <div class="persona-card">
-                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/jana.opus')">🔊 Stimmprobe
+                    <button class="voice-sample-btn" onclick="playVoiceSample('./assets/jana.opus')">🇩🇪🔊 Stimmprobe
                         Jana</button>
                     <button class="persona-button jana" onclick="launchPersona('janalm')">
                         <span class="button-icon">👩‍🦰 </span> <b>KI-Voicechat</b>
@@ -297,10 +334,11 @@
                 </div>
             </div>
 
+
             <!-- Test-Modelle (ungefiltert) -->
-            <div class="section-title" style="margin-top: 20px;">Test-Modelle (KI-Voicechat ohne Persönlichkeit)</div>
+            <div class="section-title" style="margin-top: 20px;">🇩🇪 Test-Modelle (KI-Voicechat ohne Persönlichkeit)</div>
             <div class="test-section">
-                <button class="voice-sample-btn" onclick="playVoiceSample('./assets/fabi.opus')">🔊 Stimmprobe
+                <button class="voice-sample-btn" onclick="playVoiceSample('./assets/fabi.opus')">🇩🇪🔊 Stimmprobe
                     Fabi</button>
                 <div class="button-grid secondary">
                     <button class="model-button" onclick="launchPersona('fable41nano')">

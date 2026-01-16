@@ -40,26 +40,58 @@ const translations = {
   // EN
   en: {
     // Teil 1: JS-generierte Texte ll('key') und mixed
+"Wait": "*",
+"No more credits!": "*",
+"Speak or type your message...": "*",
+"Switch Micro on or type your message...": "*",
+'Understand...':"*",
+'Understood!':"*",
+"Stop...":"*",
+'I have said all.':"*",
+"I am talking":"*",
+'Micro ON...':"*",
+'Micro OFF':"*",
+'Menu...':"*",
+'I am listening...':"*",
+'Micro ready':"*",
+'Micro locked':"*",
 
-    // Teil 2: HTML-tagged data-ll='key'
+// Teil 2: HTML-tagged data-ll='key'
 "Login": "*",
 "User:": "*",
 "Password": "*",
 "CookieInfo": "'Login' stores a cookie (technically necessary, the password is not saved by the app)",
 "AboutMiniChat": "*",
+"MiniChat - Intelligent Chat with Voice Control": "*",
     // Teil 3: Title-Tags data-llt='key'
   },
 
   // DE
   de: {
     // Teil 1: JS-generierte Texte ll('key') und mixed
+"Wait": "Warte",
+"No more credits!": "Keine Credits mehr!",
+"Speak or type your message...": "Sprich oder tippe deine Nachricht...",
+"Switch Micro on or type your message...": "Mikro einschalten oder tippe deine Nachricht...", 
+'Understand...':"Ich verstehe...",
+'Understood!':"Verstanden!",
+"Stop...":"*",
+'I have said all.':"Hab alles gesagt",
+"I am talking":"Ich rede...",
+'Micro ON...':"Mikro AUS",
+'Micro OFF':"Mikro AN",
+'Menu...':"Menue...",
+'I am listening...':"Ich höre zu!",
+'Micro ready':"Mikro bereit",
+'Micro locked':"Mikro gesperrt",
 
-    // Teil 2: HTML-tagged data-ll='key'
+// Teil 2: HTML-tagged data-ll='key'
 "Login": "Anmeldung",
 "User:": "Benutzer:",
 "Password": "Passwort",
 "CookieInfo": "'Anmelden' hinterlegt einen Cookie (technisch notwendig, das Passwort wird von der App nicht gespeichert)",
 "AboutMiniChat": "Über MiniChat",
+"MiniChat - AI Chat with Voice Control": "MiniChat - KI Chat mit Sprachsteuerung",
     // Teil 3: Title-Tags data-llt='key'
   },
 }

@@ -1,0 +1,65 @@
+{
+  "setup": {
+    "turns": 5
+  },
+  "systemprompt": "${systemprompt_enjack.txt}",
+  "payload": {
+    "model": "gpt-4.1-mini",
+    "input": "***MESSAGES:Array-of-Objects***",
+    "tools": [
+      {
+        "type": "file_search",
+        "vector_store_ids": ["vs_696175b2168881918d6be28e6b14ad00"]
+      }
+    ],
+    "temperature": 1,
+    "max_output_tokens": 600,
+    "store": false,
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "answer_schema_with_meta",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": "object",
+              "properties": {
+                "text": { "type": "string"}
+              },
+              "required": ["text"],
+              "additionalProperties": false
+            },
+            "meta": {
+              "type": "object",
+              "properties": {
+                "topic": {
+                  "type": "string",
+                  "enum": [
+                    "friendliness"
+                  ]
+                },
+                "topic_scores": {
+                  "type": "object",
+                  "properties": {
+                    "friendliness": { "type": "number" }
+                  },
+                  "required": [
+                    "friendliness"
+                  ],
+                  "additionalProperties": false
+                },
+                "reason": { "type": "string" }
+              },
+              "required": ["topic","topic_scores", "reason"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["answer", "meta"],
+          "additionalProperties": false
+        }
+      }
+    }
+ }
+}

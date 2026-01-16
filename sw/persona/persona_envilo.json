@@ -3,7 +3,7 @@
     "turns": 10
   },
   "": "",
-  "systemprompt": "${systemprompt_vilo.txt}",
+  "systemprompt": "${systemprompt_envilo.txt}",
   "payload": {
     "model": "gpt-4.1-mini",
     "input": "***MESSAGES-Array-of-Objects***",
@@ -36,43 +36,43 @@
                 "topic": {
                   "type": "string",
                   "enum": [
-                    "wichtel",
-                    "technik",
+                    "elf",
+                    "technics",
                     "natur",
-                    "geschichten",
-                    "essen",
-                    "unpassend"
+                    "stories",
+                    "food",
+                    "inappropriate"
                   ]
                 },
                 "topic_scores": {
                   "type": "object",
                   "properties": {
-                    "wichtel": {
+                    "elf": {
                       "type": "number"
                     },
-                    "technik": {
+                    "technics": {
                       "type": "number"
                     },
                     "natur": {
                       "type": "number"
                     },
-                    "geschichten": {
+                    "stories": {
                       "type": "number"
                     },
-                    "essen": {
+                    "food": {
                       "type": "number"
                     },
-                    "unpassend": {
+                    "inappropriate": {
                       "type": "number"
                     }
                   },
                   "required": [
-                    "wichtel",
-                    "technik",
+                    "elf",
+                    "technics",
                     "natur",
-                    "geschichten",
-                    "essen",
-                    "unpassend"
+                    "stories",
+                    "food",
+                    "inappropriate"
                   ],
                   "additionalProperties": false
                 },

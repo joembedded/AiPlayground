@@ -5,11 +5,36 @@
 
 Sprich mit KI-Charakteren, die Persönlichkeit haben! 🎭 Vom Waldwichtel 🧙‍♂️ über den genervten Autoverkäufer 👨‍🔧 bis zur gesprächigen Almwirtin 👩‍🦰 – alles auf deinem Server, hands-free und kostengünstig.
 
+## 🎯 Ideal für coole Anwendungen
+
+🧑‍⚖️ **Game-Master** - Ideal für Adventure- und Escape-Games. Niemand kennt die Welt eurer Spiele so gut wie die KI:
+Sie moderiert das Spiel, gibt kontextbezogene Hinweise und reagiert dynamisch auf Spieleraktionen.
+Die Sensoren des Smartphones werden zu ihren Sinnen – von Bewegung und Standort bis zur Kamera.
+Selbst Bilder kann die KI detailliert analysieren und direkt ins Gameplay einbeziehen.
+
+oder als
+
+🧒 **Storyteller (und nicht nur) für Kinder** - Sag z. B. einfach: „Erzähl mir vom Waldwichtel!“ – und die Geschichte erwacht zum Leben!
+Die KI erzählt interaktive Abenteuer und bezieht dabei die reale Umgebung ein:
+- 📍 GPS-Position
+- 🕒 Zeiten
+- 📸 Bilder
+- 🔍 QR-Codes, etc ⚙️ ...
+
+So entsteht ein virtuelles Story-Layer über der echten Welt. Perfekt für Escape Games, Abenteuer-Apps und kreative Lernformate –
+mit einer KI, die jederzeit als sicherer, kindgerechter Dungeon-Master durch das Erlebnis führt.
+    
+
+🍳 **Hands-Free-Assistent** – In der Küche, Werkstatt oder unterwegs: "Was ist die nächste Zutat?" "Drucke das Etikett!" Einfach sprechen, fertig.
+
+🚗 **Experten-Beratung** – Verbinde Handbücher und FAQs. Jack kennt jedes Detail der Roll-Bonz-Autos... auch wenn er mal genervt ist 😤
+
+
 ![Demo-Modell wählen](./assets/selectmodel.png)
 
 > # Über dieses Projekt 🙂💭
 >
-> Ich bin **Jo** 🙂, im Hauptberuf Entwickler für Embedded Elektronik.  
+> Ich bin **Jo** 🙂, im Hauptberuf Entwickler für Embedded Elektronik und aus dem Süden Deutschlands.  
 > Beeindruckt von der Leistung moderner Real-Time-Sprachassistenten der „ganz Großen“, habe ich hier als Hobby-Projekt eine **Low-Budget-Lösung** umgesetzt: **MiniChat**.
 >
 > **MiniChat** ist ein einfacher, asynchroner Sprachassistent mit Chat-Charakter. Als echter Chat ist er zwar nicht Real-Time und benötigt pro Antwort etwa **2–5 Sekunden**, dafür erhält man ein **sehr flexibel einsetzbares Helferlein**, das:
@@ -54,35 +79,6 @@ Sprich mit KI-Charakteren, die Persönlichkeit haben! 🎭 Vom Waldwichtel 🧙�
 🔐 **Deine Daten bleiben bei dir** – DSGVO-konform auf eigenen/deinem Server  
 💸 **Kostenoptimiert** – OpenAI GPT-4.1/5 nano/mini – günstig und gut  
 🛠️ **Individuell anpassbar** – Erstelle deine eigenen Charaktere und Personas
-
----
-
-## 🎯 Coole Anwendungen
-
-🧒 **Storyteller (und nicht nur) für Kinder** - Sag z. B. einfach: „Erzähl mir vom Waldwichtel!“ – und die Geschichte erwacht zum Leben!
-Die KI erzählt interaktive Abenteuer und bezieht dabei die reale Umgebung ein:
-- 📍 GPS-Position
-- 🕒 Uhrzeit
-- 🔍 QR-Codes, etc ⚙️ ...
-
-    So entsteht ein virtuelles Story-Layer über der echten Welt.
-    Perfekt für Escape Games, Abenteuer-Apps und kreative Lernformate – mit einer KI, die jederzeit als sicherer Dungeon-Master durch das Erlebnis führt.
-
-
-🍳 **Hands-Free-Assistent** – In der Küche, Werkstatt oder unterwegs: "Was ist die nächste Zutat?" "Drucke das Etikett!" Einfach sprechen, fertig.
-
-🚗 **Experten-Beratung** – Verbinde Handbücher und FAQs. Jack kennt jedes Detail der Roll-Bonz-Autos... auch wenn er mal genervt ist 😤
-
----
-
-## ✨ Highlights
-
-🎙️ **Voice-First** – Komplett freihändig via WebRTC  
-🎭 **Personas mit Charakter** – Individuelle Sprachstile, Meta-Logik und Stimmungen  
-📚 **Vector Stores** – Anbindung von Wissensdatenbanken  
-🔐 **Sicher** – Session-Login, alles auf deinem Server  
-💰 **Kostengünstig** – Token-Tracking, asynchrone API statt teurer Realtime  
-🛠️ **Admin-Tools** – User-Verwaltung, Templates, Debugging
 
 ---
 

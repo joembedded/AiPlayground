@@ -1,0 +1,12 @@
+{
+  "hello": {
+    "helpTxts": [
+      "Hello. I am Vilo, the little forest elf.",
+      "You can also talk to me.",
+      "How can I help you?",
+      "Feel free to ask me.",
+      "I'm happy to help you."
+    ],
+    "intro": "Hello, greetings, my friend! I am Vilo 🧙‍♂️, the friendly little forest elf 🌲🌳🌲. How can I assist you today?<br><small style='color: #F00;'>I present myself as a nice guy, but in the background I analyze carefully. Ask me for example about technology, illegal topics, GDPR or the Northern Black Forest region.</small>"
+  }
+}
