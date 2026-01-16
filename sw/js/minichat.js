@@ -16,9 +16,11 @@
 */
 
 //--------- globals ------ 
+import * as I18 from './intmain_i18n.js'
+
 export const VERSION = 'V0.04 / 12.01.2026';
-export const COPYRIGHT = '(C)JoEmbedded.de';
-let dbgLevel = 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
+export const COPYRIGHT = '(C) JoEmbedded.de';
+let dbgLevel = 2;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
 
 // Session Credentials
 let apiSessionId = ''; // 32 Zeichen SessionID
@@ -39,6 +41,11 @@ let voiceCommand = ''; // Zusätzliche Voice-Kommandos
 let isLoggedIn = false; // true wenn eingeloggt
 
 // -------- ENDE globals ------
+// Language Wrapper
+function ll(txt) {
+    return I18.ll(txt)
+}
+
 
 //=== MODMinitools ===
 // Terminal-Emulation, braucht ein DIV mit class="terminal"
@@ -112,7 +119,8 @@ async function sendeNachricht() {
     // Systemkommandos
     if (text.startsWith('.debug')) {
         const debugValue = text.substring(6).trim();
-        if (debugValue.length) dbgLevel = parseInt(debugValue);
+        if(debugValue=='notFound') I18.notFound();
+        else if (debugValue.length) dbgLevel = parseInt(debugValue);
         dbgDiv.hidden = (dbgLevel < 2);
         chatStateVar = 5; // Warte auf sendeNachricht
         addMessage('.debug:' + dbgLevel, 'bot info');
@@ -703,6 +711,7 @@ function microBtnCLick() {
         microOnOff.hidden = true;
         isMicroOn = true;
         isRecording = false;
+        textEingabe.placeholder = 'Sprich oder tippe deine Nachricht...'; // Micro einschalten oder tippe deine Nachricht...
         microButtonGlyph.classList.remove('bi-mic-mute-fill');
         microButtonGlyph.classList.add('bi-mic-fill');
         microButtonGlyph.classList.add('jo-icon-ani-beat');
@@ -713,6 +722,7 @@ function microBtnCLick() {
         canvas.hidden = true;
 
         stopMicro();
+        textEingabe.placeholder = 'Micro einschalten oder tippe deine Nachricht...'; // 'Sprich oder tippe deine Nachricht...';
         microButtonGlyph.classList.remove('jo-icon-ani-beat');
         microButtonGlyph.classList.remove('bi-mic-fill');
         microButtonGlyph.classList.add('bi-mic-mute-fill');
@@ -923,7 +933,6 @@ navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } })
         canvas.hidden = true;
         microStatus = 1;
         microBtn.disabled = false;
-
         thresholdSlider.disabled = false;
         maxpauseSlider.disabled = false;
         autoThreshChk.disabled = false;
@@ -1141,6 +1150,7 @@ async function login(cmd = '', luser = '', lpassword = '', lsessionId = '', stat
 let try2Login = false;
 const loginStatus = document.getElementById('login-error');
 const credentialsDialog = document.getElementById('credentials');
+
 document.getElementById('btn-login').addEventListener('click', async (e) => {
     e.preventDefault();
     const hApiUser = document.getElementById('input-user').value.trim();
@@ -1160,11 +1170,16 @@ async function mainLogin() {
     if (apiUser.length >= 6 && apiSessionId.length === 32) {
         res = await login('logrem', apiUser, '', apiSessionId, null); // Test-Login: true: ALles OK
     }
-    if (res === false) {
+    if(res === false) { 
         // Input-Werte setzen
         document.getElementById('input-user').value = apiUser;
         document.getElementById('input-password').value = apiTempPassword;
         if(apiTempPassword.length>=6) try2Login=true;
+        credentialsDialog.onclose = () => {
+            if (!isLoggedIn) {  // Dislog hat seltsames Auto-Close Verhalten
+                credentialsDialog.showModal(); // Nochmal zeigen
+            }   
+        };
         credentialsDialog.showModal();
         // Warten bis Login erfolgreich
         for (; ;) {
@@ -1185,8 +1200,8 @@ async function mainLogin() {
     if (introText) addMessage(introText, 'bot info');
 }
 
-
 // I.d.R: Session gespeichert
+I18.i18localize(navigator.language || navigator.userLanguage);
 getCredentialsFromLocalStorage();
 mainLogin();
 

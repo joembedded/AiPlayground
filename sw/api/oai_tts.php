@@ -133,8 +133,9 @@ try {
     }
     $diskPath .= $diskFname;
     $slen = strlen($text);
-    $xlog .= " Voice:$voice Text[$slen]:'" . (substr($text, 0, 120)) . ($slen > 120 ? "...'" : "'");
-
+    $xtext = substr($text, 0, 120);
+    if($slen > 120) $xtext .= "..." . substr($text, -min($slen -120, 40));
+    $xlog .= " Voice:$voice Text[$slen]:'" . $xtext . "'";
 
     if (strlen($voiceCommand) > 0) {
         $xlog .= " VCmd:'" . substr($voiceCommand, 0, 50) . (strlen($voiceCommand) > 50 ? "...'" : "'");

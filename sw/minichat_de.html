@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="de-DE">
 
 <head>
     <!-- WICHTIG: http://localhost/wrk/ai/playground/sw/minichat.html  -->
     <!-- WICHTIG: IconListe: https://icons.getbootstrap.com/#icons -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MiniChat - Modern Chat with AI and Voice Support">
+    <meta name="description" content="MiniChat - Moderner Chat mit KI und Sprachunterstützung">
     <meta name="author" content="JoEmbedded.de">
     <meta name="theme-color" content="#4CAF50">
     
@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="./static/icons/bootstrap-icons.min.css">
     <link rel="stylesheet" href="./css/minichat.css">
 
-    <title>MiniChat - Intelligent Chat with Voice Control</title>
+    <title>MiniChat - Intelligenter Chat mit Sprachsteuerung</title>
 
     <!-- Scripts -->
     <script src="./js/minichat.js" type="module" defer></script>
@@ -35,27 +35,27 @@
 <body>
     <!-- Login Dialog -->
     <dialog id="credentials">
-        <h2 id="credentials-title" data-ll="Login">Login</h2>
+        <h2 id="credentials-title" >Anmeldung</h2>
         <form id="login-form" novalidate>
-            <label for="input-user" data-ll="User:">User:</label>
-            <input type="text" id="input-user" name="username" placeholder="Username"  minlength="6"
+            <label for="input-user">Benutzer:</label>
+            <input type="text" id="input-user" name="username" placeholder="Benutzername"  minlength="6"
                 maxlength="32" autocomplete="username" required />
 
             <label for="input-password">
                 <input type="checkbox" id="show-password"
                     onchange="document.getElementById('input-password').type = this.checked ? 'text' : 'password'" />
-                <span data-ll="Password">Password</span>:
+                Passwort:
             </label>
-            <input type="password" id="input-password" name="password" placeholder="Password" 
+            <input type="password" id="input-password" name="password" placeholder="Passwort" 
                 minlength="8" maxlength="32" autocomplete="current-password" required />
 
             <div id="login-error" role="alert"></div>
             <button type="submit" id="btn-login">
-                <i class="bi bi-box-arrow-in-right"></i> <span data-ll="Login">Login</span>
+                <i class="bi bi-box-arrow-in-right"></i> Anmelden
             </button>
-            <p><small><i class="bi bi-cookie"></i>&nbsp; <span data-ll="CookieInfo">'Login' stores a cookie...</span></small></p>
+            <p><small><i class="bi bi-cookie"></i>&nbsp; 'Anmelden' hinterlegt einen Cookie (technisch notwendig, das Passwort wird von der App nicht gespeichert)</small></p>
             <a href="#" id="loginInfoLink" class="dialog-info-link" role="button">
-                <i class="bi bi-info-circle-fill"></i> <span data-ll="AboutMiniChat">About MiniChat</span>
+                <i class="bi bi-info-circle-fill"></i> Über MiniChat
             </a>
         </form>
     </dialog>
@@ -65,32 +65,32 @@
         <div id="infoContent">
             <p>
                 <strong>MiniChat</strong> - 
-                Chat client framework for AI with audio voice support in HTML/JS
-                with underlying PHP engine (for OpenAI, etc...).
+                Chat-Client-Framework für KI mit Audio-Voice-Unterstützung in HTML/JS
+                mit darunterligendem PHP-Engine (für OpenAI, etc...).
             </p>
             <ul>
-                <li>Secure login</li>
-                <li>GDPR compliant (PII only on server)</li>
-                <li>Easy to use as a comfortable bot</li>
+                <li>Sicheres Login</li>
+                <li>DSGVO konform (PII nur auf Server)</li>
+                <li>Leicht als komfortabler Bot einsetzbar</li>
             </ul>
             <p>Version: <span id="infoVersion">V0.0x / xx.xx.2026</span></p>
             <p><small>&copy; JoEmbedded.de</small></p>
         </div>
         <button id="infoCloseBtn">
-            <i class="bi bi-x-circle"></i> Close
+            <i class="bi bi-x-circle"></i> Schließen
         </button>
     </dialog>
-    <!-- Overlay for Sidebar -->
+    <!-- Overlay für Sidebar -->
     <div id="overlay"></div>
 
     <!-- Navigation Sidebar -->
     <nav id="sidebar" role="navigation">
         <header>
             <h2>
-                <button id="sidebar-close" title="Close menu">
+                <button id="sidebar-close" title="Menü schließen">
                     <i class="bi bi-x-circle"></i>
                 </button>
-                Main Menu
+                Hauptmenü
             </h2>
         </header>
 
@@ -104,16 +104,16 @@
             <li>
                 <a href="#" id="menuLogout" role="button">
                     <i class="bi bi-box-arrow-right"></i>
-                    <span>Logout user '<strong id="userName">USER</strong>'</span>
+                    <span>User '<strong id="userName">USER</strong>' abmelden</span>
                 </a>
             </li>
             <li>
                 <fieldset>
                     <legend>
                         <i class="bi bi-mic-fill"></i>
-                        Noise Suppression
+                        Rauschunterdrückung
                     </legend>
-                    <i id="microOnOff">Microphone is OFF</i>
+                    <i id="microOnOff">Mikro ist AUS</i>
                     <label for="threshold">
                         Threshold: <span id="thresholdFeedback">2.0</span>
                     </label>
@@ -131,7 +131,7 @@
                 <fieldset>
                     <legend>
                         <i class="bi bi-activity"></i>
-                        Pause Detection
+                        Pausenerkennung
                     </legend>
                     <label for="maxpause">
                         Max Pause (ms): <span id="maxpauseFeedback">1000</span>
@@ -143,25 +143,25 @@
                 <fieldset>
                     <legend>
                         <i class="bi bi-soundwave"></i>
-                        Audio Options
+                        Audio-Optionen
                     </legend>
                     <label for="autoPostChk">
                         <input id="autoPostChk" type="checkbox" role="switch" checked/>
-                        Auto send
+                        Automatisch senden
                     </label>
                     <label for="autoPlayChk">
                         <input id="autoPlayChk" type="checkbox" role="switch" checked />
-                        Keep microphone ON
+                        Mikrofon AN lassen
                     </label>
                 </fieldset>
             </li>
-            <!-- More <li></li>... -->
+            <!-- Weitere <li></li>... -->
         </ul>
     </nav>
 
     <!-- App Header -->
     <header role="banner">
-        <button id="menu-toggle" title="Open menu">
+        <button id="menu-toggle" title="Menü öffnen">
             <i class="bi bi-list"></i>
         </button>
         <h1>MiniChat </h1>
@@ -171,10 +171,10 @@
         </div>
     </header>
 
-    <!-- Chat History -->
+    <!-- Chat Verlauf -->
     <main id="chat-verlauf" role="main"></main>
 
-    <!-- Debug Area (optional) -->
+    <!-- Debug Bereich (optional) -->
     <aside class="dbg" hidden>
         <div class="dbgInfoDiv">
             <span id="dbginfo">Idle</span> -
@@ -187,19 +187,19 @@
         <div class="terminal" id="dbgTerminal" role="log"></div>
     </aside>
 
-    <!-- Input Area -->
+    <!-- Eingabebereich -->
     <section id="eingabe-bereich" role="region">
-        <label for="text-eingabe" class="visually-hidden">Your message</label>
-        <textarea id="text-eingabe" rows="3" placeholder="Turn on microphone or type your message..."></textarea>
+        <label for="text-eingabe" class="visually-hidden">Ihre Nachricht</label>
+        <textarea id="text-eingabe" rows="3" placeholder="Micro einschalten oder tippe deine Nachricht..."></textarea>
         <span id="eingabe-hinweis" class="visually-hidden">
-            Press Enter to send or use the Send button
+            Drücken Sie Enter zum Senden oder nutzen Sie den Senden-Button
         </span>
 
         <div class="button-group">
-            <button id="btn-senden" type="button" title="Send message (Enter)" disabled="disabled">
+            <button id="btn-senden" type="button" title="Nachricht senden (Enter)" disabled="disabled">
                 <i id="senden-button-glyph" class="bi bi-send-fill"></i>
             </button>
-            <button id="btn-micro" type="button" class="micro" title="Microphone on/off" disabled="disabled">
+            <button id="btn-micro" type="button" class="micro" title="Mikrofon ein/aus" disabled="disabled">
                 <i id="micro-button-glyph" class="bi bi-mic-mute-fill"></i>
             </button>
         </div>
@@ -207,7 +207,7 @@
 
     <!-- Footer -->
     <footer role="contentinfo">
-        <span id="chat-status" role="status">Ready</span>
+        <span id="chat-status" role="status">Bereit</span>
         <small>(C) JoEmbedded.de</small>
     </footer>
 </body>

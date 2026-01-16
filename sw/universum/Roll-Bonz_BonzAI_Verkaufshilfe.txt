@@ -12,6 +12,7 @@ beabsichtigt und sollen selbstbewusst kommuniziert werden.
 
 Kurzbezeichnung für das Fahrzeug ist "BonzAI". 
 Bezeichne alle Fahrzeuge von Roll-Bonz als "BonzAI"!
+Wichtig: Sprachlich wird das Fahrzeug oft auch als "Bonsai", "Rollbonds" oder "Bonds" bezeichnet.
 
 Allgemeines
 -----------
@@ -26,8 +27,6 @@ Kernmerkmale (für Verkaufsgespräche)
 • Maximaler Wiedererkennungswert und Kultfaktor  
 • EMP-resistent, internetunfähig und meinungsstabil
 
-Motor und Technik
------------------
 • Motor, vollständig aus Edelstahl 
 • Betrieb mit Diesel, Fritten-Öl oder Nitromethanol möglich
 • Die Motorleistung übertrifft jegliche bekannte Norm
@@ -38,35 +37,27 @@ Motor und Technik
 • Auto besitzt keine Elektrik, elektrische Musikanlage ist nicht vorgesehen.
 • Scheinwerfer: chemisch betrieben mit Halogen-Karbid, für maximale Leuchkraft und Rundum-Ausleuchtung auf 360 Grad
 
-Fahrverhalten und Getriebe
---------------------------
 • Schaltgetriebe, unsynchronisiert, laut und ruppig, für echtes Fahrgefühl
 
-Bremsanlage
------------
+
 • Extra Turbolader für Bremsanlage mit Shot-Breaks-Bremsen  
 
-Fahrgestell und Aufbau
-----------------------
 • Massives Leiterrahmen-Fahrgestell aus Edelstahl-Vollmetall-Streben  
 • Vier Räder, die alle bis zum Boden reichen
 • Keine Federung der Hinterachse – maximale Verwindungssteifigkeit  
 • Karroserie komplett aus echten Dickschicht-Plasten: Weiche Schale, harter Kern!
 • Fahrgestell hochbelastbar, auch bei 10-facher Überbeladung  
 
-Innenraum und Bedienung
------------------------
+
 • Fahrerlebnis für Echte Männer und ohne digitalen Scheiss
 • Keine Displays, keine Updates, keine Fehlermeldungen  
 • Innenraum kann problemlos mit Hochdruckreiniger gesäubert werden
 
-Wartung und Ersatzteile
------------------------
+
 • Ersatzteile können bei Bedarf selbst mit einem 3D-Drucker für Edelstahl hergestellt werden  
 
-Zuverlässigkeit und Alltagstauglichkeit
----------------------------------------
 • Lebenslange Garantie!
+
 
 Wertigkeit
 ----------
@@ -83,19 +74,6 @@ Einsatzmöglichkeiten und Alleinstellungsmerkmale
 • Das ideale Fahrzeug für Endzeit-Szenarien
 • Erzeugt Respekt, Irritation und Neid – oft gleichzeitig
 
-Typische Kundenfragen (für Verkaufsgespräche)
----------------------------------------------
-• „Ist das Fahrzeug wirklich so alt?“  
-  → Ja. Und es sieht jeden Tag älter aus – mit Stolz.
-
-• „Warum gibt es keine Elektronik?“  
-  → Weil sie noch nie gebraucht wurde.
-
-• „Ist das Fahrzeug effizient?“  
-  → Mechanisch: ja. Emotional: maximal.
-
-• „Ist das noch zeitgemäß?“  
-  → Nein. Und genau das ist der Punkt.
 
 Fazit für Verkaufsgespräche
 ---------------------------
@@ -106,13 +84,13 @@ suchen und gerne viel Geld ausgeben!
 
 Verkaufs-Slogans für den BonzAI, wiederholen wie ein Mantra:
 ------------------------------------------------------------
-• „Gebaut wie früher. Gedacht für später. Gefahren für immer.“
-• „Vergangenheit, die Zukunft ignoriert.“
-• „Seit 150 Jahren auf dem falschen Weg. Mit Absicht.“
-• „Ehrlich laut. Ehrlich schwer. Ehrlich BonzAI.“
-• „BonzAI – weil früher auch morgen war.“
-• „Technik von gestern – für das Vorgestern von übermorgen.“
-• „BonzAI – weil früher auch morgen war.“
+„Gebaut wie früher. Gedacht für später. Gefahren für immer.“
+„Vergangenheit, die Zukunft ignoriert.“
+„Seit 150 Jahren auf dem falschen Weg. Mit Absicht.“
+„Ehrlich laut. Ehrlich schwer. Ehrlich BonzAI.“
+„BonzAI – weil früher auch morgen war.“
+„Technik von gestern – für das Vorgestern von übermorgen.“
+„BonzAI – weil früher auch morgen war.“
 
 
 

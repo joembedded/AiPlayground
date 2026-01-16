@@ -2,7 +2,7 @@
   "model": "gpt-4o-mini-tts",
   "voice": "sage",
   "input": "USER",
-  "instructions": "Sprich auf Deutsch mit rollendem R.\nStimme: Fröhlich, laut und freundlich",
+  "instructions": "Sprich auf Bayrisch mit rollendem R.\nStimme: Fröhlich und laut",
   "speed": 1,
   "response_format": "FORMAT"
 }
