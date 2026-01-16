@@ -1,5 +1,6 @@
 ﻿# 🎤 MiniChat - KI Sprachassistent mit Extras
 ### Dein persönlicher und interaktiver Voice-Chat-Assistent mit Charakter!
+🇬🇧 [Link zur Version in Englisch](./readme_en.html)
 
 > **💪 Volle Kontrolle • 🔒 DSGVO-konform • 💰 Low-Budget**
 
@@ -27,7 +28,8 @@ mit einer KI, die jederzeit als sicherer, kindgerechter Dungeon-Master durch das
 
 🍳 **Hands-Free-Assistent** – In der Küche, Werkstatt oder unterwegs: "Was ist die nächste Zutat?" "Drucke das Etikett!" Einfach sprechen, fertig.
 
-🚗 **Experten-Beratung** – Verbinde Handbücher und FAQs. Jack kennt jedes Detail der Roll-Bonz-Autos... auch wenn er mal genervt ist 😤
+🚗 **Experten-Beratung** – Verbinde Handbücher, Datenblätter und FAQs. Jack kennt jedes Detail der Roll-Bonz-Autos... auch wenn er mal genervt ist 😤
+Das Schöne ist: Die Sprache der Dokumente ist völlig unabhängig von der Sprache des KI-Experten! 
 
 
 ![Demo-Modell wählen](./assets/selectmodel.png)
@@ -68,7 +70,7 @@ mit einer KI, die jederzeit als sicherer, kindgerechter Dungeon-Master durch das
 
 ---
 
-![Demo-Chat MiniChat](./assets/vilochat.png)
+![Demo-Chat MiniChat mit Vilo 🇩🇪](./assets/vilochat.png)
 
 ---
 
@@ -146,6 +148,7 @@ Ein **privates Open-Source-Projekt** von **JoEmbedded** 🚀
 - Docu (/sw):
 cd sw
 pandoc readme.md -o readme.html --standalone --css=assets/style.css
+pandoc readme_en.md -o readme_en.html --standalone --css=assets/style.css
 
 
 ---
