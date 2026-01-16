@@ -407,7 +407,7 @@
             // Der Agent launcht eine Session mit der gewählten Persona
             // Er verfügt über ein gewisses Budget. 'agent_jo' ist für hier zuständig...
             const agent = "agent_jo";
-            const sessionId = "069028c3cf275e4c2b150964f2f629b1"; // dynamisch, Key des Agenten mit limitertem Budget
+            const sessionId = "9947a955a2198dd4a93572d86df2b3a4"; // dynamisch, Key des Agenten mit limitertem Budget
 
             const mandant = `_template_${persona}`;
             const newUser = `${persona}_****************`; // 
@@ -424,17 +424,17 @@
                         localStorage.setItem('minichat-username', data.user);
                         localStorage.removeItem('minichat-sessionid');
                         sessionStorage.setItem('minichat-temp-password', newPassword);
-                        const info = "Generierter Benutzer:   " + data.user + "   |   Passwort:   " + newPassword;
+                        const info = "New User:   " + data.user + "   |   Password:   " + newPassword;
                         document.getElementById('infofield').textContent = info;
                         window.open('minichat.html', '_blank');
                     } else {
-                        console.error('Fehler beim Erstellen des Benutzers:', data.message);
-                        alert('Fehler beim Erstellen des Benutzers: ' + data.message);
+                        console.error('Error creating user:', data.error);
+                        alert('Error creating user: ' + data.error);
                     }
                 })
                 .catch(error => {
-                    console.error('Netzwerkfehler:', error);
-                    alert('Netzwerkfehler beim Erstellen des Benutzers.');
+                    console.error('Network error:', error);
+                    alert('Network error while creating user.');
                 });
         }
 
