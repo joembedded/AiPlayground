@@ -18,7 +18,7 @@
 //--------- globals ------ 
 import * as I18 from './intmain_i18n.js'
 
-export const VERSION = 'V0.05 / 17.01.2026';
+export const VERSION = 'V0.06 / 17.01.2026';
 export const COPYRIGHT = '(C) JoEmbedded.de';
 let dbgLevel = 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
 
@@ -97,9 +97,10 @@ let lastServerText = null;
 let lastServerMeta = null;
 
 async function sendeNachricht() {
+    microStatus= 9; // Micro aus während blabla
     safePlay(audioFxClick);
 
-    sendenBtnGlyph.classList.add('spinner');
+    setSendButtonGlyph('sending');
     if (chatStateVar >= 4) {
         dbgPrint('sendeNachricht: Abbruch, chatStateVar=' + chatStateVar);
         chatStateVar = 9; // Alles Abbrechen
@@ -706,6 +707,10 @@ function microBtnCLick() {
     safePlay(audioFxClick);
 
     if (!isMicroOn) {
+        audioPlayer.pause();
+        setSendButtonGlyph('ready');
+        isLoading = false;
+
         startMicro();
         canvas.hidden = false;
         microOnOff.hidden = true;
@@ -864,7 +869,11 @@ function updateSpeechState(frameRms) {
             }
             break;
         case 9: // Warten bis quittiert von Periodical
-            break;
+        if (isRecording) {
+            mediaRecorder.stop();
+            isRecording = false;
+        }
+        break;
     }
 }
 
@@ -1200,7 +1209,16 @@ async function mainLogin() {
     requestWakeLock(); // Screen ON
     //addMessage(`Verfügbare Credits: ${userCredits<0?'0':userCredits}`, 'bot info');
     I18.i18localize(userLanguage);  
-    if (introText) addMessage(introText, 'bot info');
+    if (introText) {
+        addMessage(introText, 'bot info');
+        // Remove all emojis, clip at '<', normalize whitespace
+        const pureIntro = introText
+            .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F1E0}-\u{1F1FF}]/gu, '')
+            .split('<')[0]
+            .replace(/\s+/g, ' ')
+            .trim();
+        helpTxts.unshift(pureIntro);
+    }
 }
 
 // I.d.R: Session gespeichert

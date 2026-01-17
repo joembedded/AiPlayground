@@ -392,8 +392,8 @@
         function playVoiceSample(audioFile) {
             const audio = new Audio(audioFile);
             audio.play().catch(err => {
-                console.error('Fehler beim Abspielen der Stimmprobe:', err);
-                alert('Stimmprobe konnte nicht abgespielt werden.');
+                console.error(`Error playing voice sample ${audioFile}:`, err);
+                alert(`Error playing voice sample ${audioFile}:` + err.message);
             });
         }
 

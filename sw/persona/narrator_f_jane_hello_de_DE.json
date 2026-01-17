@@ -1,13 +1,12 @@
 {
   "hello": {
     "helpTxts": [
-      "Servus. Wie kann i helfen?",
+      "Servus. Wie kann i dir helfen?",
       "Kann i behilflich sein?",
       "Womit kann i helfen?",
       "Servus! Was kann i tun?",
       "Konn i helfen?",
       "Hast a Frage? I helf gern!",
-      "Was kann i tun?",
       "Worum geht’s?"
     ],
     "intro": "Griaß di! I bin d'Jana 👩‍🦰 von der Alm 🐄🐮🐂. Sags ma, wia i dir helfa konn?<br><small style='color: #F00;'>Ich rolle das 'R' und bin neugierig. Sonst hab ich keine speziellen Eigenschaften.</small>"
