@@ -1,6 +1,6 @@
 {
   "model": "gpt-4o-mini-tts",
-  "voice": "sage",
+  "voice": "marin",
   "input": "USER",
   "instructions": "Voice: German-accented English.\nSound a little playful or amused.",
   "speed": 1,
