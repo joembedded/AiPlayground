@@ -1,9 +1,11 @@
 <?php
 // Logging functions - tobeincluded - requires USERDIR and loglevel $loglevel global
 // 2-Level logging to file
+
+$mtmain_t0 = microtime(true);         // for Benchmark 
 function log2file(string $line): void
 {
-    global $log; // loglevel
+    global $log, $mtmain_t0; // loglevel
     if ($log > 0) {
         try {
             $logpath = __DIR__ . '/../../' . USERDIR . '/logs';
@@ -18,8 +20,9 @@ function log2file(string $line): void
                 @rename($logfile, $logfileOld);
             }
             $microtime = microtime(true);
+            $mtrun = round(($microtime - $mtmain_t0) * 1000, 0);
             $milliseconds = round(($microtime - floor($microtime)) * 1000);
-            $date = date('Y-m-d H:i:s', (int)$microtime) . '.' . $milliseconds;
+            $date = date('Y-m-d H:i:s', (int)$microtime) . '.' . $milliseconds . ' (' . $mtrun . 'ms)';
             file_put_contents($logfile, "[$date] $line" . PHP_EOL, FILE_APPEND | LOCK_EX);
         } catch (Exception $e) { // Silent
         }
