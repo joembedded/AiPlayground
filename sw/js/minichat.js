@@ -6,6 +6,8 @@
 *
 * Muss als modul (defered oder am Ende des <body>) eingebunden werden. 
 * Daher die beiden "export" Anweisungen (nur in modul-Dateien erlaubt).
+* Dies ist der erste Entwurf und noch mit vielen Baustellen, aber
+* erstmal als PoC funktional. 
 * 
 * Zum Debuggen dbgLevel:
 * Level per '.debug N' Befehl, N: 0-3
@@ -61,6 +63,16 @@ function terminalPrint(txt = '\u2424') { // NL-Symbol
     terminalEl.scrollTop = terminalEl.scrollHeight;
 }
 
+// Remove all emojis, clip at '<', normalize whitespace
+function purifyText(text) {
+    return text
+        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F1E0}-\u{1F1FF}]/gu, '')
+        .split('<')[0]
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+
 function safePlay(audioEl) {
     audioEl?.play?.().catch(() => { });
 }
@@ -97,7 +109,7 @@ let lastServerText = null;
 let lastServerMeta = null;
 
 async function sendeNachricht() {
-    microStatus= 9; // Micro aus während blabla
+    microStatus = 9; // Micro aus während blabla
     safePlay(audioFxClick);
 
     setSendButtonGlyph('sending');
@@ -120,7 +132,7 @@ async function sendeNachricht() {
     // Systemkommandos
     if (text.startsWith('.debug')) {
         const debugValue = text.substring(6).trim();
-        if(debugValue=='notFound') I18.notFound();
+        if (debugValue == 'notFound') I18.notFound();
         else if (debugValue.length) dbgLevel = parseInt(debugValue);
         dbgDiv.hidden = (dbgLevel < 2);
         chatStateVar = 5; // Warte auf sendeNachricht
@@ -205,7 +217,6 @@ function periodical() {
         case 10: // **Erwarte sendeNachricht**
             safePlay(audioFxClick);
             setSendButtonGlyph('ready');
-            setChatStatus(ll('I have said all.'), 'yellow');
             chatStateVar = 0; // Zuruecksetzen
             microStatus = 1; // Micro wieder bereit
             break;
@@ -249,6 +260,7 @@ audioPlayer.onended = function () {
         playAudioUrl = null;
     }
     isLoading = false;
+    setChatStatus(ll('I have said all.'), 'yellow');
 };
 audioPlayer.onerror = function (error) {
     const errorMsg = error?.currentTarget?.error?.message ?? 'Unknown';
@@ -256,6 +268,11 @@ audioPlayer.onerror = function (error) {
     setChatStatus('ERROR(audioPlayerB): ' + errorMsg, 'red');
     isLoading = false;
 }
+audioPlayer.onplay = function (event) {
+    // Nur reagieren wenn explizit auf das Play-Symbol geklickt wurde
+           setChatStatus(ll("I am talking"), 'skyblue');
+    };
+
 
 // Prüfen und Audio abspielen
 function checkAndPlayAudio() {
@@ -390,11 +407,12 @@ async function fetchAudioForSentence(sentence, voice, cache = false) {
 }
 
 // Hauptfunktion zum Verarbeiten des Textes
-async function speakText(inputText, cache = false) {
+async function speakText(rawInputText, cache = false) {
     if (isProcessing) {
         return;
     }
-    if (inputText.length === 0) {
+    const inputTextTrimmed = purifyText(rawInputText.trim());
+    if (inputTextTrimmed.length === 0) {
         dbgPrint('Kein Text eingegeben!');
         return;
     }
@@ -402,10 +420,8 @@ async function speakText(inputText, cache = false) {
     setChatStatus(ll("I am talking"), 'skyblue');
 
     try {
-        // Text normalisieren: Newlines und Tabs in Leerzeichen umwandeln
-        const normalizedText = inputText.replace(/[\n\r\t]+/g, ' ');
         // Text in Sätze zerlegen
-        const sentences = splitIntoSentences(normalizedText);
+        const sentences = splitIntoSentences(inputTextTrimmed);
         dbgPrint(`Text in ${sentences.length} Sätze zerlegt`);
 
         // Jeden Satz verarbeiten
@@ -869,11 +885,11 @@ function updateSpeechState(frameRms) {
             }
             break;
         case 9: // Warten bis quittiert von Periodical
-        if (isRecording) {
-            mediaRecorder.stop();
-            isRecording = false;
-        }
-        break;
+            if (isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+            }
+            break;
     }
 }
 
@@ -1102,7 +1118,7 @@ function getCredentialsFromLocalStorage() {
     if (username.length > 5) apiUser = username; // Mind 6 Zeichen USER
     if (sessionId.length === 32) apiSessionId = sessionId; // SesssionID 16 Bytes
     const password = (sessionStorage.getItem('minichat-temp-password') || '').trim();
-    if(password.length >=8) apiTempPassword = password; // Mind 8 Zeichen PASS
+    if (password.length >= 8) apiTempPassword = password; // Mind 8 Zeichen PASS
 }
 
 async function login(cmd = '', luser = '', lpassword = '', lsessionId = '', statusElement = null) {
@@ -1181,15 +1197,15 @@ async function mainLogin() {
     if (apiUser.length >= 6 && apiSessionId.length === 32) {
         res = await login('logrem', apiUser, '', apiSessionId, null); // Test-Login: true: ALles OK
     }
-    if(res === false) { 
+    if (res === false) {
         // Input-Werte setzen
         document.getElementById('input-user').value = apiUser;
         document.getElementById('input-password').value = apiTempPassword;
-        if(apiTempPassword.length>=6) try2Login=true;
+        if (apiTempPassword.length >= 6) try2Login = true;
         credentialsDialog.onclose = () => {
             if (!isLoggedIn) {  // Dislog hat seltsames Auto-Close Verhalten
                 credentialsDialog.showModal(); // Nochmal zeigen
-            }   
+            }
         };
         credentialsDialog.showModal();
         // Warten bis Login erfolgreich
@@ -1208,16 +1224,11 @@ async function mainLogin() {
     saveCredentialsToLocalStorage();
     requestWakeLock(); // Screen ON
     //addMessage(`Verfügbare Credits: ${userCredits<0?'0':userCredits}`, 'bot info');
-    I18.i18localize(userLanguage);  
+    I18.i18localize(userLanguage);
     if (introText) {
         addMessage(introText, 'bot info');
         // Remove all emojis, clip at '<', normalize whitespace
-        const pureIntro = introText
-            .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F1E0}-\u{1F1FF}]/gu, '')
-            .split('<')[0]
-            .replace(/\s+/g, ' ')
-            .trim();
-        helpTxts.unshift(pureIntro);
+        helpTxts.unshift(purifyText(introText));
     }
 }
 

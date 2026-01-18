@@ -17,7 +17,9 @@ function log2file(string $line): void
                 }
                 @rename($logfile, $logfileOld);
             }
-            $date = date('Y-m-d H:i:s');
+            $microtime = microtime(true);
+            $milliseconds = round(($microtime - floor($microtime)) * 1000);
+            $date = date('Y-m-d H:i:s', (int)$microtime) . '.' . $milliseconds;
             file_put_contents($logfile, "[$date] $line" . PHP_EOL, FILE_APPEND | LOCK_EX);
         } catch (Exception $e) { // Silent
         }

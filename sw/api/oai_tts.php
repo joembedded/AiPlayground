@@ -198,13 +198,15 @@ try {
     ]);
 
     $audioStreamed = "";
+    $streamCnt = 0;
     if ($stream) {
         // Das ist der entscheidende Teil für Streaming:
         // Wir schreiben die Antwort direkt in den PHP-Ausgabepuffer
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$audioStreamed) {
+            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$audioStreamed, &$streamCnt) {
             echo $data;
             flush(); // Schickt die Daten sofort zum Browser
             $audioStreamed .= $data;
+            $streamCnt++;
             return strlen($data);
         });
         // Und Header vor cURL
@@ -214,11 +216,6 @@ try {
     }
 
     $audioBytes = curl_exec($ch);
-    
-    // Finaler Flush nach cURL, um letzte Fragmente zu senden?
-    if ($stream) {
-        flush();
-    }
     
     $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $err  = curl_error($ch);
@@ -249,9 +246,9 @@ try {
     // Aufschreiben, entweder gestreamt oder normal
     if ($cache) {
         file_put_contents($diskPath, $stream ? $audioStreamed : $audioBytes);
-        $xlog .= " File[" . $audiolen . "]:$diskFname " . ($stream ? "(Stream-CREATED)" : "(CREATED)");
+        $xlog .= " File[" . $audiolen . "]:$diskFname " . ($stream ? "(Stream-CREATED:$streamCnt)" : "(CREATED)");
     } else {
-        $xlog .= " Blob[" . $audiolen . "] " . ($stream ? "(Stream)" : "");
+        $xlog .= " Blob[" . $audiolen . "] " . ($stream ? "(Stream:$streamCnt)" : "");
     }
 
     // Credits abziehen (erst nach erfolgreichem API-Call)

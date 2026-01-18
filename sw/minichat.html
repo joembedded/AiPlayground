@@ -9,7 +9,7 @@
     <meta name="description" content="MiniChat - Modern Chat with AI and Voice Support">
     <meta name="author" content="JoEmbedded.de">
     <meta name="theme-color" content="#4CAF50">
-    
+
     <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="MiniChat" />
     <meta property="og:description" content="AI Playground MiniChat App - (C)JoEmbedded.de" />
@@ -38,22 +38,23 @@
         <h2 id="credentials-title" data-ll="Login">Login</h2>
         <form id="login-form" novalidate>
             <label for="input-user" data-ll="User:">User:</label>
-            <input type="text" id="input-user" name="username" placeholder="Username"  minlength="6"
-                maxlength="32" autocomplete="username" required />
+            <input type="text" id="input-user" name="username" placeholder="Username" minlength="6" maxlength="32"
+                autocomplete="username" required />
 
             <label for="input-password">
                 <input type="checkbox" id="show-password"
                     onchange="document.getElementById('input-password').type = this.checked ? 'text' : 'password'" />
                 <span data-ll="Password">Password</span>:
             </label>
-            <input type="password" id="input-password" name="password" placeholder="Password" 
-                minlength="8" maxlength="32" autocomplete="current-password" required />
+            <input type="password" id="input-password" name="password" placeholder="Password" minlength="8"
+                maxlength="32" autocomplete="current-password" required />
 
             <div id="login-error" role="alert"></div>
             <button type="submit" id="btn-login">
                 <i class="bi bi-box-arrow-in-right"></i> <span data-ll="Login">Login</span>
             </button>
-            <p><small><i class="bi bi-cookie"></i>&nbsp; <span data-ll="CookieInfo">'Login' stores a cookie...</span></small></p>
+            <p><small><i class="bi bi-cookie"></i>&nbsp; <span data-ll="CookieInfo">'Login' stores a
+                        cookie...</span></small></p>
             <a href="#" id="loginInfoLink" class="dialog-info-link" role="button">
                 <i class="bi bi-info-circle-fill"></i> <span data-ll="AboutMiniChat">About MiniChat</span>
             </a>
@@ -64,7 +65,7 @@
         <h2 id="info-title">Info</h2>
         <div id="infoContent">
             <p>
-                <strong>MiniChat</strong> - 
+                <strong>MiniChat</strong> -
                 Chat client framework for AI with audio voice support in HTML/JS
                 with underlying PHP engine (for OpenAI, etc...).
             </p>
@@ -146,7 +147,7 @@
                         Audio Options
                     </legend>
                     <label for="autoPostChk">
-                        <input id="autoPostChk" type="checkbox" role="switch" checked/>
+                        <input id="autoPostChk" type="checkbox" role="switch" checked />
                         Auto send
                     </label>
                     <label for="autoPlayChk">
@@ -160,14 +161,16 @@
     </nav>
 
     <!-- App Header -->
-    <header role="banner">
+    <header role="banner" style="justify-content: flex-start;">
         <button id="menu-toggle" title="Open menu">
             <i class="bi bi-list"></i>
         </button>
         <h1>MiniChat </h1>
-        <div class="header-stats">
-            <!-- <div class="stat-line">Credits: <span id="credits-value">0</span></div> -->
-            <div class="stat-line">Used Tokens:<div id="tokens-value">0</div></div>
+
+        <div class="header-stats" style="display: flex; flex-direction: column; align-items: center;">
+            <audio class="stat-line" id="audioPlayer" controls style="height: 30px; max-width: 250px;"></audio>
+            <div class="stat-line">Used Tokens: <span id="tokens-value">0</span>
+            </div>
         </div>
     </header>
 
@@ -182,7 +185,7 @@
         </div>
         <div class="audio-controls">
             <audio class="stdplayer" controls></audio>
-            <audio id="audioPlayer" controls></audio>
+            <!-- <audio id="audioPlayer" controls></audio> -->
         </div>
         <div class="terminal" id="dbgTerminal" role="log"></div>
     </aside>
@@ -190,7 +193,7 @@
     <!-- Input Area -->
     <section id="eingabe-bereich" role="region">
         <label for="text-eingabe" class="visually-hidden">Your message</label>
-        <textarea id="text-eingabe" rows="3" ></textarea>
+        <textarea id="text-eingabe" rows="3"></textarea>
         <span id="eingabe-hinweis" class="visually-hidden">
             Press Enter to send or use the Send button
         </span>
