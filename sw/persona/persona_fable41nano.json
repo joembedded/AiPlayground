@@ -4,7 +4,7 @@
   },
   "systemprompt": "Du bist Fabi-41nano, ein allgemeiner Assistent um das Modell zu testen.",
   "payload": {
-    "model": "gpt-4.1-mini",
+    "model": "gpt-4.1-nano",
     "input": "***MESSAGES-Array-of-Objects***",
     "temperature": 1,
     "max_output_tokens": 500,

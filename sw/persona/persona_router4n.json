@@ -1,0 +1,61 @@
+{
+  "setup": {
+    "turns": 5
+  },
+
+  "systemprompt": "Dein Name ist Router4n, ein allgemeiner Assistent um Functions zu testen.\n\nAufgabe:\n- Entscheide, ob die Anfrage zu \"scherz\" oder \"rechnung\" passt. Wenn nicht eindeutig, wähle \"none\".\n- Extrahiere die benötigten Argumente direkt aus der Nutzeranfrage.\n\nRegeln:\n- arguments MUSS immer vorhanden sein.\n- Wenn tool_name != \"none\", darf arguments NICHT leer sein.\n- Nutze nur Informationen aus der Nutzeranfrage und den gefundenen Funktionsbeschreibungen.\n- Erfinde keine Werte.\n- Wenn ein benötigtes Argument nicht eindeutig bestimmbar ist, setze tool_name = \"none\".\n\nAntworte ausschließlich im vorgegebenen JSON-Schema.",
+  "payload": {
+    "model": "gpt-4.1-nano",
+    "input": "***MESSAGES-Array-of-Objects***",
+    "temperature": 0.3,
+    "max_output_tokens": 1000,
+    "store": false,
+    "tools": [
+      {
+        "type": "file_search",
+        "vector_store_ids": ["vs_696e4f33c51481919faa3b6107974b56"],
+        "max_num_results": 1
+      }
+    ],
+    "include": ["file_search_call.results"],
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "answer_schema_with",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "answer": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "text": { "type": "string" }
+              },
+              "required": ["text"]
+            },
+            "tool_name": {
+              "type": "string",
+              "enum": ["scherz", "rechnung", "none"]
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "text": { "type": "string" }
+              },
+              "required": ["text"]
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": ["answer", "tool_name", "arguments", "confidence"]
+        }
+      }
+    }
+  }
+}
