@@ -478,8 +478,9 @@ async function talkWithServer(text, persona, concerningMessage = null) {
             try {
                 answerText = (data?.result?.answer?.text ?? '(Keine Antwort)');
                 lastServerText = answerText;
-                if (data.result?.meta) {
-                    lastServerMeta = data.result.meta;
+                if (data.result) {
+                    lastServerMeta = {...data.result};
+                    delete lastServerMeta.answer;
                 }
                 if (data.credits !== undefined) {
                     userCredits = data.credits; // Update Credits
