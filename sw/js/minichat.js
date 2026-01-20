@@ -20,7 +20,7 @@
 //--------- globals ------ 
 import * as I18 from './intmain_i18n.js'
 
-export const VERSION = 'V0.07 / 19.01.2026';
+export const VERSION = 'V0.08 / 20.01.2026';
 export const COPYRIGHT = '(C) JoEmbedded.de';
 let dbgLevel = 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
 
@@ -481,6 +481,8 @@ async function talkWithServer(text, persona, concerningMessage = null) {
                 if (data.result) {
                     lastServerMeta = {...data.result};
                     delete lastServerMeta.answer;
+                    //console.log('lastServerMeta:', lastServerMeta);
+                    if(Object.keys(lastServerMeta).length === 0) lastServerMeta = null; // Leer entfernen              
                 }
                 if (data.credits !== undefined) {
                     userCredits = data.credits; // Update Credits

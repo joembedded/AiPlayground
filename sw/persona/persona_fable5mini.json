@@ -2,7 +2,7 @@
   "setup": {
     "turns": 5
   },
-  "systemprompt": "Du bist Fabi-5mini, ein allgemeiner Assistent um das Modell zu testen.",
+  "systemprompt": "Du bist Fabi-5mini, ein allgemeiner Assistent um das Modell zu testen.\n${xprompt_router.txt}",
   "payload": {
     "model": "gpt-5-mini",
     "input": "***MESSAGES-Array-of-Objects***",
@@ -16,18 +16,35 @@
         "strict": true,
         "schema": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "answer": {
               "type": "object",
+              "additionalProperties": false,
               "properties": {
                 "text": { "type": "string" }
               },
-              "required": ["text"],
-              "additionalProperties": false
+              "required": ["text"]
+            },
+            "tool_name": {
+              "type": "string",
+              "enum": ["readmail", "sendmail", "steuern", "none"]
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "text": { "type": "string" }
+              },
+              "required": ["text"]
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
             }
           },
-          "required": ["answer"],
-          "additionalProperties": false
+          "required": ["answer", "tool_name", "arguments", "confidence"]
         }
       }
     }

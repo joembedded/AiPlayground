@@ -29,7 +29,7 @@
             },
             "tool_name": {
               "type": "string",
-              "enum": ["scherz", "steuern", "none"]
+              "enum": ["readmail", "sendmail", "steuern", "none"]
             },
             "arguments": {
               "type": "object",
