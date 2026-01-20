@@ -123,8 +123,10 @@ Fabi showcases the "unfiltered" GPT-4.1/5 models without meta instructions - per
 Fabi speaks multiple languages! Talk to him in 🇩🇪 German, 🇬🇧 English, 🇮🇹 Italian, or any other language.
 
 🦸‍♂️ **Superskills**: Fabi can execute 'functions' (he doesn't actually do it here, he only shows the call (arguments in German, the base language of Fabi)):
+
   - Control devices: Say: e.g. "Dim the light in the bathroom to fifty percent" or "Turn off the light in the basement" 👍
     Fabi generates JSON objects like
+
     ```JSON
         {
             "tool_name": "steuern", "arguments": {

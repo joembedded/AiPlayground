@@ -238,21 +238,27 @@ instructions - perfect for testing and comparing.</p>
 🇮🇹 Italian, or any other language.</p>
 <p>🦸‍♂️ <strong>Superskills</strong>: Fabi can execute ‘functions’ (he
 doesn’t actually do it here, he only shows the call (arguments in
-German, the base language of Fabi)): - Control devices: Say: e.g. “Dim
-the light in the bathroom to fifty percent” or “Turn off the light in
-the basement” 👍 Fabi generates JSON objects like
-<code>JSON         {             "tool_name": "steuern", "arguments": {                 "text": "geraet=Keller; aktion=ausschalten"             }, "confidence": 0.95         }</code></p>
+German, the base language of Fabi)):</p>
 <ul>
+<li><p>Control devices: Say: e.g. “Dim the light in the bathroom to
+fifty percent” or “Turn off the light in the basement” 👍 Fabi generates
+JSON objects like</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;tool_name&quot;</span><span class="fu">:</span> <span class="st">&quot;steuern&quot;</span><span class="fu">,</span> <span class="dt">&quot;arguments&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;text&quot;</span><span class="fu">:</span> <span class="st">&quot;geraet=Keller; aktion=ausschalten&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">},</span> <span class="dt">&quot;confidence&quot;</span><span class="fu">:</span> <span class="fl">0.95</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span></code></pre></div></li>
 <li><p>Send and read emails: e.g. “Send email to nie@abc.de regarding
 appointment and content When are you coming” 👍<br> This even works
 across multiple turns (currently max. 4), meaning Fabi will even ask
 follow-up questions if needed!</p>
-<div class="sourceCode" id="cb1"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>         <span class="dt">&quot;tool_name&quot;</span><span class="fu">:</span> <span class="st">&quot;sendmail&quot;</span><span class="fu">,</span> <span class="dt">&quot;arguments&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;text&quot;</span><span class="fu">:</span> <span class="st">&quot;empfaenger=nie@abc.de; thema=Termin; inhalt=Wann kommst du?&quot;</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>         <span class="fu">},</span> <span class="dt">&quot;confidence&quot;</span><span class="fu">:</span> <span class="fl">0.9</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span></code></pre></div></li>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>         <span class="dt">&quot;tool_name&quot;</span><span class="fu">:</span> <span class="st">&quot;sendmail&quot;</span><span class="fu">,</span> <span class="dt">&quot;arguments&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;text&quot;</span><span class="fu">:</span> <span class="st">&quot;empfaenger=nie@abc.de; thema=Termin; inhalt=Wann kommst du?&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>         <span class="fu">},</span> <span class="dt">&quot;confidence&quot;</span><span class="fu">:</span> <span class="fl">0.9</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span></code></pre></div></li>
 </ul>
 <hr />
 <h2 id="technology-1">⚙️ Technology</h2>

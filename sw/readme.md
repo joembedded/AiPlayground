@@ -121,25 +121,27 @@ Fabi zeigt die "ungefilterten" GPT-4.1/5-Modelle ohne Meta-Anweisungen – perfe
 Fabi spricht mehrere Sprachen! Sprich mit ihm auf auf 🇩🇪 Deutsch, 🇬🇧 Englisch, 🇮🇹 Italienisch oder einer anderen Sprache.
 
 🦸‍♂️ **Superskills**: Fabi kann 'functions' ausführen (er macht das hier nicht wirklich, er zeigt nur den Aufruf an):
+
   - Geräte steuern: Sag: z.B. "Dim the light in the bathroom to fifty percent" oder "Licht im Keller aus" 👍
     Fabi erzeugt daraus JSON-Objekte wie
+
     ```JSON
-        {
-            "tool_name": "steuern", "arguments": {
-                "text": "geraet=Keller; aktion=ausschalten"
-            }, "confidence": 0.95
-        }
+    {
+        "tool_name": "steuern", "arguments": {
+            "text": "geraet=Keller; aktion=ausschalten"
+        }, "confidence": 0.95
+    }
     ```
 
   - Mails senden und Lesen: z.B. "Sende Mail an nie@abc.de betreffs Termina und inhalt Wann kommst du" 👍<br>
     Das funktioniert sogar über mehrere Turn (aktuell max. 4), d.h. Fabi frägt gegebenenfalls sogar nach!
 
     ```JSON
-        {
-             "tool_name": "sendmail", "arguments": {
-                "text": "empfaenger=nie@abc.de; thema=Termin; inhalt=Wann kommst du?"
-             }, "confidence": 0.9
-        }
+    {
+         "tool_name": "sendmail", "arguments": {
+            "text": "empfaenger=nie@abc.de; thema=Termin; inhalt=Wann kommst du?"
+         }, "confidence": 0.9
+    }
     ```
 
 ---
