@@ -13,6 +13,7 @@ $log = 1; // 0: Silent, 1: Logfile schreiben 2:Upload speichern
 
 $xlog = "oas_stt"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
+include_once __DIR__ . '/../php_tools/db.php';
 
 $maxFileSize = 1024 * 1024; // 1 MB
 $allowedMimeTypes = ['audio/webm', 'audio/ogg', 'audio/mpeg'];
@@ -32,10 +33,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Load API keys
 include_once __DIR__ . '/../secret/keys.inc.php';
 $apiKey = OPENAI_API_KEY;
-$uploadDir = __DIR__ . '/../../' . USERDIR . '/audio/uploads';
-$dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 
 try {
+    $pdo = getDbConnection();
+    ensureDbSchema($pdo);
 
     if ($log > 1) { // ***DEV***
         $xlog .= " (***DEV*** sessionid:" . ($_REQUEST['sessionId'] ?? '');
@@ -49,15 +50,10 @@ try {
         http_response_code(401);
         throw new Exception('Access denied'); // Nix preisgeben!
     }
-    $userDir = $dataDir . '/' . $user;
     $xlog .= " User:'$user'";
 
     $sessionId = $_REQUEST['sessionId'] ?? '';
-    $accessFile = $userDir . '/access.json.php';
-    if (strlen($sessionId) == 32 && file_exists($accessFile)) {
-        $access = json_decode(file_get_contents($accessFile), true);
-    }
-    if (! !empty($access) || (@$access['sessionId'] !== $sessionId)) {
+    if (strlen($sessionId) !== 32 || !validateUserSession($pdo, $user, $sessionId)) {
         http_response_code(401);
         throw new Exception('Access denied'); // Nix preisgeben!
     }
@@ -120,29 +116,26 @@ try {
         throw new Exception('Invalid upload file');
     }
 
+    $extension = match ($file['type']) {
+        'audio/webm' => 'opus', // Im Prinzip wäre .webm 'korrekter', aber Audacity meckert .webm an
+        'audio/ogg' => 'ogg',
+        'audio/mpeg' => 'mp3',
+        default => 'dat'
+    };
+    $timestamp = date('Ymd_His');
+    $filename = 'audio_' . $timestamp . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+    if ($dbgpost > 0) {
+        $filename = 'dbg_' . $filename;
+    }
+
     // Save file for logging - Problem: OGG / WEBM / OPUS, immer das selbe...
-    if ($log > 1) {
-        $extension = match ($file['type']) {
-            'audio/webm' => 'opus', // Im Prinzip wäre .webm 'korrekter', aber Audacity meckert .webm an
-            'audio/ogg' => 'ogg',
-            'audio/mpeg' => 'mp3',
-            default => 'dat'
-        };
-        $timestamp = date('Ymd_His');
-        $filename = 'audio_' . $timestamp . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
-        if ($dbgpost > 0) $filename = 'dbg_' . $filename;
-        $filepath = $uploadDir . '/' . $filename;
-
-        // Create upload directory
-        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+    if ($log > 1 || $dbgpost > 0) {
+        $audioBlob = file_get_contents($file['tmp_name']);
+        if ($audioBlob === false) {
             http_response_code(500);
-            throw new Exception('Failed to create upload directory');
+            throw new Exception('Failed to read upload');
         }
-
-        if (!copy($file['tmp_name'], $filepath)) {
-            http_response_code(500);
-            throw new Exception('Failed to save file');
-        }
+        $uploadId = saveSttUpload($pdo, $user, $filename, $file['type'], $audioBlob, $dbgpost > 0);
     }
 
     // Debug mode: only save file
@@ -159,12 +152,13 @@ try {
     }
 
     // Guthaben prüfen (aber noch nicht abziehen)
-    $creditsFile = $userDir . '/credits.json.php';
-    $creditsAvailable = 0;
-    if (file_exists($creditsFile)) {
-        $credits = json_decode(file_get_contents($creditsFile), true);
-        $creditsAvailable = (int)($credits['chat'] ?? 0);
+    $userData = fetchUserData($pdo, $user);
+    if ($userData === null) {
+        http_response_code(401);
+        throw new Exception('Access denied');
     }
+    $credits = $userData['credits'];
+    $creditsAvailable = (int)($credits['chat'] ?? 0);
     if ($creditsAvailable <= 0) {
         http_response_code(402);
         throw new Exception('No Credits');
@@ -196,7 +190,9 @@ try {
 
     // Log response
     if ($log > 1 && isset($filename)) {
-        file_put_contents($uploadDir . '/stt_' . $filename . '.json', $response);
+        if (isset($uploadId)) {
+            updateSttResponse($pdo, $uploadId, $response);
+        }
     }
 
     // Extract transcription text
@@ -209,7 +205,7 @@ try {
     $tokenUsage = $data['usage']['total_tokens'] ?? 10; // Mindestens xx Token
     $creditsAvailable -= $tokenUsage;
     $credits['chat'] = $creditsAvailable;
-    @file_put_contents($creditsFile, json_encode($credits, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+    updateUserCredits($pdo, $user, $credits);
     $xlog .= " Cost:" . $tokenUsage;
 
     http_response_code(201); // Success - Was Neues

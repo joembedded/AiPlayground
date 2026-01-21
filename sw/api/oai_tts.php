@@ -18,6 +18,7 @@ declare(strict_types=1);
 $log = 1; // 0: Silent, 1: Logfile schreiben 2:Alles cachen 3: Mit Instructions
 $xlog = "oai_tts"; // Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
+include_once __DIR__ . '/../php_tools/db.php';
 
 //$cache = true; // Cache fuer audiofiles aktivieren . spaeter
 $format = 'opus'; // opus oder mp3 / Ogg kennt er nicht
@@ -36,11 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Load API keys
 include_once __DIR__ . '/../secret/keys.inc.php';
 $apiKey = OPENAI_API_KEY;
-$speechDir = __DIR__ . '/../../' . USERDIR . '/audio/speech';
-$dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 $voicesDir = __DIR__ . '/../persona';
 
 try {
+    $pdo = getDbConnection();
+    ensureDbSchema($pdo);
 
     if ($log > 1) { // ***DEV***
         $xlog .= " (***DEV*** sessionid:" . ($_REQUEST['sessionId'] ?? '');
@@ -54,16 +55,10 @@ try {
         http_response_code(401);
         throw new Exception('Access denied'); // Nix preisgeben!
     }
-    $userDir = $dataDir . '/' . $user;
     $xlog .= " User:'$user'";
 
     $sessionId = $_REQUEST['sessionId'] ?? '';
-    $accessFile = $userDir . '/access.json.php';
-    if (strlen($sessionId) == 32 && file_exists($accessFile)) {
-        $access = json_decode(file_get_contents($accessFile), true);
-    }
-
-    if (! !empty($access) || (@$access['sessionId'] !== $sessionId)) {
+    if (strlen($sessionId) !== 32 || !validateUserSession($pdo, $user, $sessionId)) {
         http_response_code(401);
         throw new Exception('Access denied'); // Nix preisgeben!
     }
@@ -123,15 +118,7 @@ try {
         $hash = hash('md5', $text);
     }
 
-    $diskFname = $hash . '.' . $format;
-    $diskPath = $speechDir . '/' . $voice . '/';
-
-    // Create upload directory for voice
-    if (!is_dir($diskPath) && !mkdir($diskPath, 0755, true)) {
-        http_response_code(500);
-        throw new Exception('Failed to create upload directory');
-    }
-    $diskPath .= $diskFname;
+    $cacheKey = hash('sha256', $voice . '|' . $format . '|' . $hash);
     $slen = strlen($text);
     $xtext = substr($text, 0, 120);
     if($slen > 120) $xtext .= "..." . substr($text, -min($slen -120, 40));
@@ -141,13 +128,14 @@ try {
         $xlog .= " VCmd:'" . substr($voiceCommand, 0, 50) . (strlen($voiceCommand) > 50 ? "...'" : "'");
     }
     // Wenn schon da, aus CACHE nehmen
-    if (file_exists($diskPath)) {
-        $cachedAudio = file_get_contents($diskPath);
-        @touch($diskPath);
-        header("Content-Type: $audioContent");
+    $cached = fetchTtsCache($pdo, $cacheKey);
+    if ($cached !== null) {
+        $cachedAudio = $cached['audio_blob'];
+        $cachedContentType = $cached['content_type'] ?? $audioContent;
+        header("Content-Type: $cachedContentType");
         header("Content-Length: " . strlen($cachedAudio));
         echo $cachedAudio;
-        $xlog .= " File[" . strlen($cachedAudio) . "]:$diskFname (Cached)";
+        $xlog .= " File[" . strlen($cachedAudio) . "]:" . $hash . ".$format (Cached)";
         log2file($xlog);
         exit;
     }
@@ -173,12 +161,13 @@ try {
     if ($log > 2) $xlog .= " Ins.:'" . str_replace("\n", '\n', $payload['instructions']) . "'";
 
     // Guthaben prüfen (aber noch nicht abziehen)
-    $creditsFile = $userDir . '/credits.json.php';
-    $creditsAvailable = 0;
-    if (file_exists($creditsFile)) {
-        $credits = json_decode(file_get_contents($creditsFile), true);
-        $creditsAvailable = (int)($credits['chat'] ?? 0);
+    $userData = fetchUserData($pdo, $user);
+    if ($userData === null) {
+        http_response_code(401);
+        throw new Exception('Access denied');
     }
+    $credits = $userData['credits'];
+    $creditsAvailable = (int)($credits['chat'] ?? 0);
 
     if ($creditsAvailable <= 0) {
         http_response_code(402);
@@ -245,8 +234,8 @@ try {
 
     // Aufschreiben, entweder gestreamt oder normal
     if ($cache) {
-        file_put_contents($diskPath, $stream ? $audioStreamed : $audioBytes);
-        $xlog .= " File[" . $audiolen . "]:$diskFname " . ($stream ? "(Stream-CREATED:$streamCnt)" : "(CREATED)");
+        saveTtsCache($pdo, $cacheKey, $user, $voice, $format, $audioContent, $stream ? $audioStreamed : $audioBytes);
+        $xlog .= " File[" . $audiolen . "]:" . $hash . ".$format " . ($stream ? "(Stream-CREATED:$streamCnt)" : "(CREATED)");
     } else {
         $xlog .= " Blob[" . $audiolen . "] " . ($stream ? "(Stream:$streamCnt)" : "");
     }
@@ -255,7 +244,7 @@ try {
     $tokenUsage = (int)(1 + strlen($text) * 0.25); // Lt. OpenAI grob ca. 0.25 Tokens/Buchstabe
     $creditsAvailable -= $tokenUsage;
     $credits['chat'] = $creditsAvailable;
-    @file_put_contents($creditsFile, json_encode($credits, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+    updateUserCredits($pdo, $user, $credits);
     $xlog .= " Cost:" . $tokenUsage;
 } catch (Exception $e) {
     header('Content-Type: application/json; charset=UTF-8');

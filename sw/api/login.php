@@ -23,6 +23,7 @@ declare(strict_types=1);
 $log = 2; // 0: Silent, 1: Logfile schreiben 2: Log complete Reply(***DEV***)
 $xlog = "login.php"; // .php damit klarer. Debug-Ausgaben sammeln
 include_once __DIR__ . '/../php_tools/logfile.php';
+include_once __DIR__ . '/../php_tools/db.php';
 
 // CORS headers
 header('Content-Type: application/json; charset=UTF-8');
@@ -45,9 +46,9 @@ define('MAX_USER_LENGTH', 32);
 define('MIN_PASSWORD_LENGTH', 8);
 define('MAX_PASSWORD_LENGTH', 32);
 define('SESSION_ID_BYTES', 16);
-
-$dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 try {
+    $pdo = getDbConnection();
+    ensureDbSchema($pdo);
 
     if ($log > 1) { // ***DEV***
         $xlog .= " (***DEV*** sessionid:" . ($_REQUEST['sessionId'] ?? '');
@@ -67,37 +68,19 @@ try {
     }
     $xlog .= " User:'$user'";
 
-    // Nun alle Dirs
-    $userDir = $dataDir . '/' . $user;
-    $accessFile = $userDir . '/access.json.php';
-
-    // Check user directory (nicht anlegen!) und alle antworten identisch ***
-    if (!is_dir($userDir)) {
+    $userData = fetchUserData($pdo, $user);
+    if ($userData === null) {
         http_response_code(401);
         throw new Exception('Access denied'); // Nix preisgeben!
     }
 
-    // Initialize variables
-    $credentials = [];
+    $credentials = $userData['credentials'];
+    $credits = $userData['credits'];
     $sessionId = '';
 
     // AB jetzt die eigentlichen Kommandos
     if ($cmd === 'login') { // regular login
-        $credentialsFile = $userDir . '/credentials.json.php';
-
-        if (!file_exists($credentialsFile)) {
-            http_response_code(401);
-            throw new Exception('Access denied'); // Nix preisgeben!
-        }
-
-        $credentialsContent = file_get_contents($credentialsFile);
-        if ($credentialsContent === false) {
-            http_response_code(401);
-            throw new Exception('Access denied');
-        }
-
-        $credentials = json_decode($credentialsContent, true);
-        if (!is_array($credentials) || empty($credentials)) {
+        if (empty($credentials)) {
             http_response_code(401);
             throw new Exception('Access denied'); // Nix preisgeben!
         }
@@ -125,57 +108,22 @@ try {
 
         $sessionId = bin2hex(random_bytes(SESSION_ID_BYTES)); // 32 Zeichen Session-ID
 
-        // Save credentials and access time
-        $accessData = [
-            'date' => date('Y-m-d H:i:s'),
-            'sessionId' => $sessionId
-            // Weitere Daten koennen hier gespeichert werden
-        ];
-
-        if (file_put_contents(
-            $accessFile,
-            json_encode($accessData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT),
-            LOCK_EX
-        ) === false) {
-            http_response_code(500);
-            throw new Exception('Failed to save session');
-        }
+        createUserSession($pdo, $user, $sessionId);
 
         $xlog .= " login SessionId:'$sessionId'";
     } else {
         // Fuer logrem und logout wird die SessionId gebraucht
         $sessionId = $_REQUEST['sessionId'] ?? '';
 
-        $access = null;
-        if (strlen($sessionId) === 32 && file_exists($accessFile)) {
-            $accessContent = file_get_contents($accessFile);
-            if ($accessContent !== false) {
-                $access = json_decode($accessContent, true);
-            }
-        }
-
-        if (empty($access) || !isset($access['sessionId']) || $access['sessionId'] !== $sessionId) {
+        if (strlen($sessionId) !== 32 || !validateUserSession($pdo, $user, $sessionId)) {
             http_response_code(401);
             throw new Exception('Access denied'); // Nix preisgeben!
         }
 
         if ($cmd === 'logrem') {            // Load credentials for user preferences
-            $credentialsFile = $userDir . '/credentials.json.php';
-            if (file_exists($credentialsFile)) {
-                $credentialsContent = file_get_contents($credentialsFile);
-                if ($credentialsContent !== false) {
-                    $credentials = json_decode($credentialsContent, true);
-                }
-            }
-            if (empty($credentials)) {
-                $credentials = [];
-            }
             $xlog .= " login(remembered)";
         } else if ($cmd === 'logout') {
-            // Delete session file
-            if (file_exists($accessFile)) {
-                unlink($accessFile);
-            }
+            deleteUserSession($pdo, $user, $sessionId);
             $xlog .= " logout";
             http_response_code(200); // Success (201 ist für Resource Creation)
             echo json_encode(
@@ -190,12 +138,7 @@ try {
     }
 
     // Guthaben prüfen 
-    $creditsFile = $userDir . '/credits.json.php';
-    $creditsAvailable = 0;
-    if (file_exists($creditsFile)) {
-        $credits = json_decode(file_get_contents($creditsFile), true);
-        $creditsAvailable = (int)($credits['chat'] ?? 0);
-    }
+    $creditsAvailable = (int)($credits['chat'] ?? 0);
 
     // Resppnse Basics
     $response = [
