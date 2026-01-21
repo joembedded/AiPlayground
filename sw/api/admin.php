@@ -30,6 +30,7 @@ declare(strict_types=1);
 $log = 1; // 0: Silent, 1: Logfile schreiben 2: mit Passwords
 $xlog = 'admin.php';
 include_once __DIR__ . '/../php_tools/logfile.php';
+include_once __DIR__ . '/../php_tools/db.php';
 
 // CORS headers
 header('Content-Type: application/json; charset=UTF-8');
@@ -51,9 +52,9 @@ define('MAX_USER_LENGTH', 32);
 define('MIN_PASSWORD_LENGTH', 8);
 define('MAX_PASSWORD_LENGTH', 32);
 
-$usersBaseDir = __DIR__ . '/../../' . USERDIR . '/users';
-
 try {
+    $pdo = getDbConnection();
+    ensureDbSchema($pdo);
     // Command validation
     $cmd = $_REQUEST['cmd'] ?? '';
 
@@ -66,48 +67,21 @@ try {
     $logMessageBackup = $xlog;
     $xlog .= " User:'$requestingUser'";
 
-    // User directories
-    $requestingUserDir = $usersBaseDir . '/' . $requestingUser;
-    $accessFile = $requestingUserDir . '/access.json.php';
-
-    // Check user directory exists
-    if (!is_dir($requestingUserDir)) {
-        http_response_code(401);
-        throw new Exception('Access denied');
-    }
-
     // Validate session
     $sessionId = $_REQUEST['sessionId'] ?? '';
-
-    $accessData = null;
-    if (strlen($sessionId) === 32 && file_exists($accessFile)) {
-        $accessContent = file_get_contents($accessFile);
-        if ($accessContent !== false) {
-            $accessData = json_decode($accessContent, true);
-        }
-    }
-
-    if (empty($accessData) || !isset($accessData['sessionId']) || $accessData['sessionId'] !== $sessionId) {
+    if (strlen($sessionId) !== 32 || !validateUserSession($pdo, $requestingUser, $sessionId)) {
         http_response_code(401);
         throw new Exception('Access denied');
     }
 
     // Load and validate credentials
-    $requestingUserCredentialsFile = $requestingUserDir . '/credentials.json.php';
-    if (!file_exists($requestingUserCredentialsFile)) {
+    $requestingUserData = fetchUserData($pdo, $requestingUser);
+    if ($requestingUserData === null || empty($requestingUserData['credentials'])) {
         http_response_code(401);
         throw new Exception('Access denied');
     }
-    $credentialsContent = file_get_contents($requestingUserCredentialsFile);
-    if ($credentialsContent === false) {
-        http_response_code(401);
-        throw new Exception('Access denied');
-    }
-    $requestingUserCredentials = json_decode($credentialsContent, true);
-    if (!is_array($requestingUserCredentials) || empty($requestingUserCredentials)) {
-        http_response_code(401);
-        throw new Exception('Access denied');
-    }
+    $requestingUserCredentials = $requestingUserData['credentials'];
+    $requestingUserCredits = $requestingUserData['credits'];
 
     // Check role (only admin and agent allowed)
     $userRole = $requestingUserCredentials['role'] ?? '';
@@ -132,64 +106,37 @@ try {
             throw new Exception('Invalid mandant format');
         }
 
-        $targetUserDir = $usersBaseDir . '/' . $targetUser;
-        $targetUserCredentialsFile = $targetUserDir . '/credentials.json.php';
-        $targetUserCreditsFile = $targetUserDir . '/credits.json.php';
-
-        // Load credentials
-        if (!is_dir($targetUserDir) || !file_exists($targetUserCredentialsFile)) {
+        $targetUserData = fetchUserData($pdo, $targetUser);
+        if ($targetUserData === null) {
             http_response_code(400);
             throw new Exception('Invalid user for credentials');
         }
-        $credentialsContent = file_get_contents($targetUserCredentialsFile);
-        if ($credentialsContent === false) {
-            http_response_code(400);
-            throw new Exception('Could not read credentials');
-        }
-        $targetUserCredentials = json_decode($credentialsContent, true);
-
-        // Load credits
-        if (!file_exists($targetUserCreditsFile)) {
-            http_response_code(400);
-            throw new Exception('Invalid user for credits');
-        }
-        $creditsContent = file_get_contents($targetUserCreditsFile);
-        if ($creditsContent === false) {
-            http_response_code(400);
-            throw new Exception('Could not read credits');
-        }
-        $targetUserCredits = json_decode($creditsContent, true);
+        $targetUserCredentials = $targetUserData['credentials'];
+        $targetUserCredits = $targetUserData['credits'];
     }
 
     // Command handling
     switch ($cmd) {
         case 'userlist':
             $userList = [];
-            $directories = scandir($usersBaseDir);
-            foreach ($directories as $dir) {
-                // Skip system directories and special entries
-                if ($dir === '.' || $dir === '..' || $dir[0] === '_') {
+            $stmt = $pdo->query("SELECT username FROM user_data WHERE username NOT LIKE '\\_%' ESCAPE '\\' ORDER BY username");
+            $rows = $stmt->fetchAll();
+            foreach ($rows as $row) {
+                $username = $row['username'];
+                if ($userRole !== 'admin' && strpos($username, 'admin') === 0) {
                     continue;
                 }
-                // Agents cannot see admin users
-                if ($userRole !== 'admin' && strpos($dir, 'admin') === 0) {
-                    continue;
-                }
-                if (is_dir($usersBaseDir . '/' . $dir)) {
-                    $userList[] = $dir;
-                }
+                $userList[] = $username;
             }
             $response['users'] = $userList;
             break;
 
         case 'personalist':
             $personaList = [];
-            $directories = scandir($usersBaseDir);
-            foreach ($directories as $dir) {
-                // Only process template directories
-                if (strpos($dir, '_template_') === 0 && is_dir($usersBaseDir . '/' . $dir)) {
-                    $personaList[] = substr($dir, strlen('_template_'));
-                }
+            $stmt = $pdo->query("SELECT username FROM user_data WHERE username LIKE '\\_template\\_%' ESCAPE '\\' ORDER BY username");
+            $rows = $stmt->fetchAll();
+            foreach ($rows as $row) {
+                $personaList[] = substr($row['username'], strlen('_template_'));
             }
             $response['persona'] = $personaList;
             break;
@@ -205,7 +152,7 @@ try {
             }
             // Update password
             $targetUserCredentials['passwordhash'] = password_hash($newPassword, PASSWORD_DEFAULT);
-            file_put_contents($targetUserCredentialsFile, json_encode($targetUserCredentials, JSON_PRETTY_PRINT));
+            saveUserData($pdo, $targetUser, $targetUserCredentials, $targetUserCredits);
             $response['message'] = "Password updated for user '$targetUser'";
             $xlog .= " SetPassword_for_user:'$targetUser'";
             if ($log >= 2) $xlog .= " NewPassword:'$newPassword'"; // ***DEV***!!!
@@ -219,30 +166,12 @@ try {
                 throw new Exception('Mandant is required for deleteuser');
             }
 
-            $targetUserDir = $usersBaseDir . '/' . $targetUser;
-            if (!is_dir($targetUserDir)) {
+            if (fetchUserData($pdo, $targetUser) === null) {
                 http_response_code(400);
                 throw new Exception('Invalid user for deletion');
             }
 
-            // Recursively delete directory
-            $deleteDirectory = function ($dir) use (&$deleteDirectory) {
-                if (is_dir($dir)) {
-                    $objects = scandir($dir);
-                    foreach ($objects as $object) {
-                        if ($object !== '.' && $object !== '..') {
-                            $path = $dir . '/' . $object;
-                            if (is_dir($path) && !is_link($path)) {
-                                $deleteDirectory($path);
-                            } else {
-                                unlink($path);
-                            }
-                        }
-                    }
-                    rmdir($dir);
-                }
-            };
-            $deleteDirectory($targetUserDir);
+            deleteUserData($pdo, $targetUser);
             $response['message'] = "User '$targetUser' deleted successfully";
             $xlog .= " Deleted_user:'$targetUser'";
             break;
@@ -273,8 +202,7 @@ try {
                 throw new Exception('Invalid credits format');
             }
 
-            file_put_contents($targetUserCredentialsFile, json_encode($newCredentials, JSON_PRETTY_PRINT));
-            file_put_contents($targetUserCreditsFile, json_encode($newCredits, JSON_PRETTY_PRINT));
+            saveUserData($pdo, $targetUser, $newCredentials, $newCredits);
             $response['credentials'] = $newCredentials;
             $response['credits'] = $newCredits;
             $response['message'] = "Data updated for user '$targetUser'";
@@ -285,9 +213,6 @@ try {
                 throw new Exception('Mandant is required for generateuser');
             }
             // Load requesting user's credits
-            $requestingUserCreditsFile = $requestingUserDir . '/credits.json.php';
-            $requestingUserCreditsContent = file_get_contents($requestingUserCreditsFile);
-            $requestingUserCredits = json_decode($requestingUserCreditsContent, true);
             if ($requestingUserCredits === null || !is_array($requestingUserCredits)) {
                 throw new Exception('Could not read caller credits');
             }
@@ -307,7 +232,7 @@ try {
                 for (;;) {
                     $randomChars = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 16);
                     $newUsername = str_replace('****************', $randomChars, $newUsername);
-                    if (!is_dir($usersBaseDir . '/' . $newUsername)) {
+                    if (fetchUserData($pdo, $newUsername) === null) {
                         break;
                     }
                     $newUsername = $_REQUEST['newuser'] ?? '';
@@ -328,20 +253,17 @@ try {
             }
             if ($log >= 2) $xlog .= " NewPassword:'$newPassword'"; // ***DEV***!!!
 
-            $newUserDir = $usersBaseDir . '/' . $newUsername;
-            if (is_dir($newUserDir)) {
+            if (fetchUserData($pdo, $newUsername) !== null) {
                 throw new Exception("User '$newUsername' already exists");
             }
 
             // Create new user
-            mkdir($newUserDir, 0755, true);
             $targetUserCredentials['passwordhash'] = password_hash($newPassword, PASSWORD_DEFAULT);
-            file_put_contents($newUserDir . '/credentials.json.php', json_encode($targetUserCredentials, JSON_PRETTY_PRINT));
-            file_put_contents($newUserDir . '/credits.json.php', json_encode($targetUserCredits, JSON_PRETTY_PRINT));
+            saveUserData($pdo, $newUsername, $targetUserCredentials, $targetUserCredits);
 
             // Deduct credits from requesting user
             $requestingUserCredits['chat'] -= $requiredCredits;
-            file_put_contents($requestingUserCreditsFile, json_encode($requestingUserCredits, JSON_PRETTY_PRINT));
+            updateUserCredits($pdo, $requestingUser, $requestingUserCredits);
             $response['user'] = $newUsername;
             $response['message'] = "User '$newUsername' created from template '$targetUser', credits left: " . $requestingUserCredits['chat'];
             $xlog .= " User '$newUsername' created from template '$targetUser', credits left: " . $requestingUserCredits['chat'];

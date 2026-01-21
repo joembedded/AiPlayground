@@ -17,6 +17,7 @@ $log = 2; // 0: Silent, 1: Logfile schreiben, 2: Log complete Reply
 
 $xlog = "oai_chat";
 include_once __DIR__ . '/../php_tools/logfile.php';
+include_once __DIR__ . '/../php_tools/db.php';
 
 // CORS headers
 header('Content-Type: application/json; charset=UTF-8');
@@ -33,44 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Load API keys
 include_once __DIR__ . '/../secret/keys.inc.php';
 $apiKey = OPENAI_API_KEY;
-$dataDir = __DIR__ . '/../../' . USERDIR . '/users';
 $personaDir = __DIR__ . '/../persona';
 
 // ========== Funktionen ==========
-
-/**
- * JSONL-Datei einlesen: Zeilenweise Strings mit JSON-Objekten
- */
-function readJsonl(string $file): array
-{
-  if (!file_exists($file)) {
-    return [];
-  }
-
-  $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-  $msgs = [];
-
-  foreach ($lines as $line) {
-    $obj = json_decode($line, true);
-    if (is_array($obj) && isset($obj["role"], $obj["content"])) {
-      $msgs[] = $obj;
-    }
-  }
-
-  return $msgs;
-}
-
-/**
- * JSONL-Array in einem Rutsch schreiben
- */
-function saveJsonlArr(string $file, array $objs): void
-{
-  $lines = [];
-  foreach ($objs as $obj) {
-    $lines[] = json_encode($obj, JSON_UNESCAPED_UNICODE);
-  }
-  file_put_contents($file, implode("\n", $lines) . "\n", LOCK_EX);
-}
 
 /*
 Antwort-Array zerlegen. 
@@ -146,6 +112,8 @@ function extractAssistantTextFromResponses($result): array|string
 // ========== Hauptprogramm ==========
 
 try {
+  $pdo = getDbConnection();
+  ensureDbSchema($pdo);
 
   // Debug-Logging (DEV)
   if ($log > 2) {
@@ -161,19 +129,11 @@ try {
     http_response_code(401);
     throw new Exception('Access denied');
   }
-  $userDir = $dataDir . '/' . $user;
   $xlog .= " User:'$user'";
 
   // Validate session
   $sessionId = $_REQUEST['sessionId'] ?? '';
-  $accessFile = $userDir . '/access.json.php';
-  $access = null;
-
-  if (strlen($sessionId) == 32 && file_exists($accessFile)) {
-    $access = json_decode(file_get_contents($accessFile), true);
-  }
-
-  if (empty($access) || (@$access['sessionId'] !== $sessionId)) {
+  if (strlen($sessionId) !== 32 || !validateUserSession($pdo, $user, $sessionId)) {
     http_response_code(401);
     throw new Exception('Access denied');
   }
@@ -221,13 +181,6 @@ try {
     $cache = false; // Kein Cache bei pcmd
   }
 
-  // Chat-Verzeichnis erstellen
-  $chatDir = $userDir . '/chat';
-  if (!is_dir($chatDir) && !mkdir($chatDir, 0755, true)) {
-    http_response_code(500);
-    throw new Exception('Failed to create user/chat directory');
-  }
-
   // Prompt zusammenbauen
   $system_prompt = $personaSetting['systemprompt'] ?? "You are an assistant";
   $historyTurns = (int)($personaSetting['setup']['turns'] ?? 0);
@@ -252,9 +205,7 @@ try {
   // Wichtig: Kommentar als Zeile behalten!
   //echo "-------- Systemprompt: -------\n$system_prompt\n--------------\n; exit; 
 
-  $historyFile = $userDir . '/chat/history.jsonl';
-  $all = readJsonl($historyFile);
-  $history = array_slice($all, -$historyTurns * 2);
+  $history = fetchChatHistory($pdo, $user, $historyTurns * 2);
 
   // Request-Nachrichten: System + Verlauf + opt. Developer + aktuelle Frage
   $messages = array_merge(
@@ -280,12 +231,13 @@ try {
   //echo json_encode(($payload), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);  exit;
 
   // Guthaben prüfen (aber noch nicht abziehen)
-  $creditsFile = $userDir . '/credits.json.php';
-  $creditsAvailable = 0;
-  if (file_exists($creditsFile)) {
-    $credits = json_decode(file_get_contents($creditsFile), true);
-    $creditsAvailable = (int)($credits['chat'] ?? 0);
+  $userData = fetchUserData($pdo, $user);
+  if ($userData === null) {
+    http_response_code(401);
+    throw new Exception('Access denied');
   }
+  $credits = $userData['credits'];
+  $creditsAvailable = (int)($credits['chat'] ?? 0);
   if ($creditsAvailable <= 0) {
     http_response_code(402);
     throw new Exception('No Credits');
@@ -296,7 +248,7 @@ try {
 
     if ($log > 1) { // Vorher loggen, falls was schiefgeht
       $txtfname = 'que_' . date('Ymd_His') . '.json';
-      file_put_contents($chatDir . '/' . $txtfname, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+      logChatPayload($pdo, $user, 'request', json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
     }
 
     // Echtaufruf
@@ -340,7 +292,7 @@ try {
     }
   } else {
     // Simulation: Datei statt OpenAI (DEV)
-    $result = json_decode(file_get_contents($chatDir . '/' . $SIMULATION_RESP), true);
+    $result = json_decode($SIMULATION_RESP, true);
     $response = "{}";
   }
 
@@ -383,23 +335,16 @@ try {
 
 
   if (empty($SIMULATION_RESP)) { // Verlauf speichern (JSONL)
-    $messages2save = array_merge(
-      $history,
-      [["role" => "user", "content" => $question]],
-      [["role" => "assistant", "content" => json_encode($obj, JSON_UNESCAPED_UNICODE)]]
-    );
-
-    // Nur die letzten $historyTurns * 2 Zeilen behalten
-    if (count($messages2save) > $historyTurns * 2) {
-      $messages2save = array_slice($messages2save, -$historyTurns * 2);
-    }
-
-    saveJsonlArr($historyFile, $messages2save);
+    $messages2save = [
+      ["role" => "user", "content" => $question],
+      ["role" => "assistant", "content" => json_encode($obj, JSON_UNESCAPED_UNICODE)]
+    ];
+    appendChatHistory($pdo, $user, $messages2save, $historyTurns * 2);
 
     // Request und Response loggen (optional)
     if ($log > 1) {
       $logfname = 'res_' . $antwortDate . '.json';
-      file_put_contents($chatDir . '/' . $logfname, $response);
+      logChatPayload($pdo, $user, 'response', $response);
 
       $xlog .= " Text:$txtfname Response:'$logfname'";
     }
@@ -408,7 +353,7 @@ try {
   $tokenUsage = $result['usage']['total_tokens'] ?? 100; // Mindestens xx Token
   $creditsAvailable -= $tokenUsage;
   $credits['chat'] = $creditsAvailable;
-  @file_put_contents($creditsFile, json_encode($credits, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+  updateUserCredits($pdo, $user, $credits);
   $xlog .= " Cost:" . $tokenUsage;
 
   http_response_code(201);
