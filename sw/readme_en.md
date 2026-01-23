@@ -146,6 +146,21 @@ Fabi speaks multiple languages! Talk to him in 🇩🇪 German, 🇬🇧 English
         }
     ```
 
+    **Note**: For simple control tasks, `GPT-4.1-Nano` is the ideal solution because it is quite fast and uses few tokens. Purely for testing purposes, of course the "larger" models can also be used, some with impressive features. For example, GPT-5 handles the prompt
+
+    _`Create an email to Tom with a poem as the content and the subject Poem. The poem should be about trees.`_
+
+    perfectly clearly:
+
+    _`I will create the email to Tom with the subject 'Poem' and the following content:`_
+    ```JSON
+    {
+      "tool_name": "sendmail", "arguments": {
+      "text": "empfaenger=Tom; thema=Gedicht; inhalt=Im Morgenlicht stehen sie, still und weit,\nWurzeln greifen heimlich in das Erdgeleit.\nBlätterflüstern webt Geschichten in den Wind,\njeder Ring erzählt, was einst begonnen sind.\nSie atmen Zeit, sie halten Sonnenschein,\ntragen Wolken, Schatten, Sehnsucht, auch allein."
+      }, "confidence": 0.95
+    }
+    ```
+
 
 ---
 

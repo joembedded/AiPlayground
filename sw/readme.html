@@ -260,9 +260,23 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>     <span class="dt">&quot;tool_name&quot;</span><span class="fu">:</span> <span class="st">&quot;sendmail&quot;</span><span class="fu">,</span> <span class="dt">&quot;arguments&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;text&quot;</span><span class="fu">:</span> <span class="st">&quot;empfaenger=nie@abc.de; thema=Termin; inhalt=Wann kommst du?&quot;</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>     <span class="fu">},</span> <span class="dt">&quot;confidence&quot;</span><span class="fu">:</span> <span class="fl">0.9</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div></li>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Anmerkung</strong>: Für einfache Steuerungsaufgaben ist
+<code>GPT-4.1-Nano</code> die ideal Lösung, da recht schnell und wenig
+Verbrauch an Tokens. Rein für Testzwecke sind natürlich auch die
+“größeren” Modelle einsetzbar, teilweise mit beeindruckenden Features.
+Z.B. kommt GPT-5 mit der Aufforderung</p>
+<p><em><code>Erstelle mir eine Mail an Tom mit einem Gedicht als Inhalt und Betreff Gedicht. Das Gedicht soll über Bäume sein.</code></em></p>
+<p>perfekt klar:</p>
+<p><em><code>Ich erstelle die Mail an Tom mit dem Betreff 'Gedicht' und folgendem Inhalt:</code></em></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;tool_name&quot;</span><span class="fu">:</span> <span class="st">&quot;sendmail&quot;</span><span class="fu">,</span> <span class="dt">&quot;arguments&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;text&quot;</span><span class="fu">:</span> <span class="st">&quot;empfaenger=Tom; thema=Gedicht; inhalt=Im Morgenlicht stehen sie, still und weit,</span><span class="ch">\n</span><span class="st">Wurzeln greifen heimlich in das Erdgeleit.</span><span class="ch">\n</span><span class="st">Blätterflüstern webt Geschichten in den Wind,</span><span class="ch">\n</span><span class="st">jeder Ring erzählt, was einst begonnen sind.</span><span class="ch">\n</span><span class="st">Sie atmen Zeit, sie halten Sonnenschein,</span><span class="ch">\n</span><span class="st">tragen Wolken, Schatten, Sehnsucht, auch allein.&quot;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span> <span class="dt">&quot;confidence&quot;</span><span class="fu">:</span> <span class="fl">0.95</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<hr /></li>
 </ul>
-<hr />
 <h2 id="technologie">⚙️ Technologie</h2>
 <pre><code>Browser (WebRTC) → PHP API → OpenAI GPT-4.1/5</code></pre>
 <ul>

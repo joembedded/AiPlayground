@@ -258,7 +258,21 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>         <span class="dt">&quot;tool_name&quot;</span><span class="fu">:</span> <span class="st">&quot;sendmail&quot;</span><span class="fu">,</span> <span class="dt">&quot;arguments&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;text&quot;</span><span class="fu">:</span> <span class="st">&quot;empfaenger=nie@abc.de; thema=Termin; inhalt=Wann kommst du?&quot;</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>         <span class="fu">},</span> <span class="dt">&quot;confidence&quot;</span><span class="fu">:</span> <span class="fl">0.9</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span></code></pre></div></li>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span></code></pre></div>
+<p><strong>Note</strong>: For simple control tasks,
+<code>GPT-4.1-Nano</code> is the ideal solution because it is quite fast
+and uses few tokens. Purely for testing purposes, of course the “larger”
+models can also be used, some with impressive features. For example,
+GPT-5 handles the prompt</p>
+<p><em><code>Create an email to Tom with a poem as the content and the subject Poem. The poem should be about trees.</code></em></p>
+<p>perfectly clearly:</p>
+<p><em><code>I will create the email to Tom with the subject 'Poem' and the following content:</code></em></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;tool_name&quot;</span><span class="fu">:</span> <span class="st">&quot;sendmail&quot;</span><span class="fu">,</span> <span class="dt">&quot;arguments&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;text&quot;</span><span class="fu">:</span> <span class="st">&quot;empfaenger=Tom; thema=Gedicht; inhalt=Im Morgenlicht stehen sie, still und weit,</span><span class="ch">\n</span><span class="st">Wurzeln greifen heimlich in das Erdgeleit.</span><span class="ch">\n</span><span class="st">Blätterflüstern webt Geschichten in den Wind,</span><span class="ch">\n</span><span class="st">jeder Ring erzählt, was einst begonnen sind.</span><span class="ch">\n</span><span class="st">Sie atmen Zeit, sie halten Sonnenschein,</span><span class="ch">\n</span><span class="st">tragen Wolken, Schatten, Sehnsucht, auch allein.&quot;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span> <span class="dt">&quot;confidence&quot;</span><span class="fu">:</span> <span class="fl">0.95</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div></li>
 </ul>
 <hr />
 <h2 id="technology-1">⚙️ Technology</h2>

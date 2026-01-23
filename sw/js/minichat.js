@@ -1200,28 +1200,34 @@ async function mainLogin() {
     let logcnt = 0;
     let res = false;
     if (apiUser.length >= 6 && apiSessionId.length === 32) {
-        res = await login('logrem', apiUser, '', apiSessionId, null); // Test-Login: true: ALles OK
+        res = await login('logrem', apiUser, '', apiSessionId, loginStatus); // Test-Login: true: ALles OK
     }
     if (res === false) {
         // Input-Werte setzen
         document.getElementById('input-user').value = apiUser;
         document.getElementById('input-password').value = apiTempPassword;
         if (apiTempPassword.length >= 6) try2Login = true;
+        // Dialog hat seltsames Auto-Close Verhalten, daher onclose
         credentialsDialog.onclose = () => {
-            if (!isLoggedIn) {  // Dislog hat seltsames Auto-Close Verhalten
+            if (!isLoggedIn) {  
                 credentialsDialog.showModal(); // Nochmal zeigen
             }
         };
-        credentialsDialog.showModal();
-        // Warten bis Login erfolgreich
+        // Sollte Schließen durch ESC verhindern, tut es aber nicht immer, ESC schliesst immer. Daher onclose. Das hier nur zur Info.
+        credentialsDialog.oncancel = (e) => {
+          e.preventDefault(); 
+        };
+        let showit = true;  // 1. Versuch evtl. still
         for (; ;) {
             if (try2Login === true && apiUser.length >= 6 && apiTempPassword.length >= 8) {
                 loginStatus.textContent = 'Anmeldung läuft...';
-                res = await login('login', apiUser, apiTempPassword, '', null); // Voller Login
+                res = await login('login', apiUser, apiTempPassword, '', loginStatus); // Voller Login
                 if (res === true) break;
                 loginStatus.textContent = `Login fehlgeschlagen! (${++logcnt})`;
-                try2Login = false; // Zurücksetzen für erneuten Versuch
             }
+            try2Login = false; // Zurücksetzen für erneuten Versuch
+            if(showit) credentialsDialog.showModal();
+            showit = false;
             await jsSleepMs(100);
         }
         credentialsDialog.close();

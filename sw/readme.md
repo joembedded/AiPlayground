@@ -144,6 +144,23 @@ Fabi spricht mehrere Sprachen! Sprich mit ihm auf auf 🇩🇪 Deutsch, 🇬🇧
     }
     ```
 
+    
+    **Anmerkung**: Für einfache Steuerungsaufgaben ist `GPT-4.1-Nano` die ideal Lösung, da recht schnell und wenig Verbrauch an
+    Tokens. Rein für Testzwecke sind natürlich auch die "größeren" Modelle einsetzbar, teilweise mit beeindruckenden Features. Z.B.
+    kommt GPT-5 mit der Aufforderung
+    
+    _`Erstelle mir eine Mail an Tom mit einem Gedicht als Inhalt und Betreff Gedicht. Das Gedicht soll über Bäume sein.`_
+    
+    perfekt klar:
+
+    _`Ich erstelle die Mail an Tom mit dem Betreff 'Gedicht' und folgendem Inhalt:`_
+    ```JSON
+    {
+      "tool_name": "sendmail", "arguments": {
+      "text": "empfaenger=Tom; thema=Gedicht; inhalt=Im Morgenlicht stehen sie, still und weit,\nWurzeln greifen heimlich in das Erdgeleit.\nBlätterflüstern webt Geschichten in den Wind,\njeder Ring erzählt, was einst begonnen sind.\nSie atmen Zeit, sie halten Sonnenschein,\ntragen Wolken, Schatten, Sehnsucht, auch allein."
+      }, "confidence": 0.95
+    }
+    ```
 ---
 
 ## ⚙️ Technologie
