@@ -1,0 +1,8 @@
+{
+  "model": "gpt-4o-mini-tts",
+  "voice": "fable",
+  "input": "USER",
+  "instructions": "Du bist ein freundlicher Berater. Sprich schnell und gleichmäßig, ohne langsamer zu werden.",
+  "speed": 1,
+  "response_format": "FORMAT"
+}

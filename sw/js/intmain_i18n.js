@@ -55,6 +55,7 @@ const translations = {
 'I am listening...':"*",
 'Micro ready':"*",
 'Micro locked':"*",
+'Info: Session will end soon':"*",
 
 // Teil 2: HTML-tagged data-ll='key'
 "Login": "*",
@@ -84,6 +85,8 @@ const translations = {
 'I am listening...':"Ich höre zu!",
 'Micro ready':"Mikro bereit",
 'Micro locked':"Mikro gesperrt",
+'Info: Gesprächsende in Kürze':"*",
+
 
 // Teil 2: HTML-tagged data-ll='key'
 "Login": "Anmeldung",

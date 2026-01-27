@@ -20,9 +20,9 @@
 //--------- globals ------ 
 import * as I18 from './intmain_i18n.js'
 
-export const VERSION = 'V0.08 / 20.01.2026';
+export const VERSION = 'V0.09 / 27.01.2026';
 export const COPYRIGHT = '(C) JoEmbedded.de';
-let dbgLevel = 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
+let dbgLevel = 1; // 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
 
 // Session Credentials
 let apiSessionId = ''; // 32 Zeichen SessionID
@@ -65,13 +65,20 @@ function terminalPrint(txt = '\u2424') { // NL-Symbol
 
 // Remove all emojis, clip at '<', normalize whitespace, Compact Strings
 function purifyText(text) {
-    return text
+    const pure = text
         .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{E0000}-\u{E007F}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FAFF}\u{200D}\u{20E3}\u{FE0E}\u{FE0F}]/gu, '')
         .replace(/[\u{1F1E0}-\u{1F1FF}]{2}/gu, '')
-        .split('<')[0]
+        .replace(/(\r?\n)+/g, '\n')
         .replace(/\s+/g, ' ')
         .replace(/\s+([.,!:])/g, '$1')
         .trim();
+        return pure;
+}
+// Ersetze z.B. https durch externe target links
+function purifyToHTML(text) {
+        // Links als HTML-Links ersetzen (ohne abschließende Klammern und Satzzeichen)
+        const htmlText = text.replace(/(https?:\/\/[^\s()<>]+)/g, '<a href="$1" target="_blank">$1</a>');
+        return htmlText;
 }
 
 
@@ -89,7 +96,12 @@ const dbgAudioStatus = document.getElementById('audioStatus');
 const dbgTokens = document.getElementById('tokens-value');
 
 function setCreditsDisplay() {
-    dbgTokens.textContent = userCredits0 - userCredits; // Zaehlt alle
+    const allUsedCredits = userCredits0 - userCredits;
+    dbgTokens.textContent = allUsedCredits;
+    if (userCredits < 30000 ) {
+        addMessage(ll('Info: Session will end soon'), 'bot info');
+        dbgTokens.style.background = 'darkred';
+    }
 }
 // Nuetzliches sleep in async functions
 async function jsSleepMs(ms = 1) {
@@ -127,7 +139,8 @@ async function sendeNachricht() {
         if (helpTxts.length) hlpIdx = (hlpIdx + 1) % helpTxts.length;
         addMessage(help, 'bot info');
         chatStateVar = 5; // Warte auf sendeNachricht
-        speakText(help, true); // Konserventexte speichern
+        const textBeforeHtml = help.split('<')[0];
+        speakText(textBeforeHtml, true); // Konserventexte speichern - nur bis zum 1. HTML-Tag
         // Keine Eingabe-Keine Zeile
         return;
     }
@@ -272,8 +285,8 @@ audioPlayer.onerror = function (error) {
 }
 audioPlayer.onplay = function (event) {
     // Nur reagieren wenn explizit auf das Play-Symbol geklickt wurde
-           setChatStatus(ll("I am talking"), 'skyblue');
-    };
+    setChatStatus(ll("I am talking"), 'skyblue');
+};
 
 
 // Prüfen und Audio abspielen
@@ -479,10 +492,10 @@ async function talkWithServer(text, persona, concerningMessage = null) {
                 answerText = (data?.result?.answer?.text ?? '(Keine Antwort)');
                 lastServerText = answerText;
                 if (data.result) {
-                    lastServerMeta = {...data.result};
+                    lastServerMeta = { ...data.result };
                     delete lastServerMeta.answer;
                     //console.log('lastServerMeta:', lastServerMeta);
-                    if(Object.keys(lastServerMeta).length === 0) lastServerMeta = null; // Leer entfernen              
+                    if (Object.keys(lastServerMeta).length === 0) lastServerMeta = null; // Leer entfernen              
                 }
                 if (data.credits !== undefined) {
                     userCredits = data.credits; // Update Credits
@@ -1023,7 +1036,7 @@ function setChatStatus(s, color = 'silver') {
 function addMessage(text, type) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}`;
-    messageDiv.innerHTML = text;
+    messageDiv.innerHTML = purifyToHTML(text);
 
     chatVerlauf.appendChild(messageDiv);
     setTimeout(() => {
@@ -1035,7 +1048,7 @@ function addMessage(text, type) {
 // Fuer nachtraegliche Aenderung
 function updateMessage(messageDiv, text, type) {
     messageDiv.className = `message ${type}`;
-    messageDiv.innerHTML = text;
+    messageDiv.innerHTML = purifyToHTML(text);
     setTimeout(() => {
         chatVerlauf.scrollTop = chatVerlauf.scrollHeight;
     }, 100);
@@ -1209,13 +1222,13 @@ async function mainLogin() {
         if (apiTempPassword.length >= 6) try2Login = true;
         // Dialog hat seltsames Auto-Close Verhalten, daher onclose
         credentialsDialog.onclose = () => {
-            if (!isLoggedIn) {  
+            if (!isLoggedIn) {
                 credentialsDialog.showModal(); // Nochmal zeigen
             }
         };
         // Sollte Schließen durch ESC verhindern, tut es aber nicht immer, ESC schliesst immer. Daher onclose. Das hier nur zur Info.
         credentialsDialog.oncancel = (e) => {
-          e.preventDefault(); 
+            e.preventDefault();
         };
         let showit = true;  // 1. Versuch evtl. still
         for (; ;) {
@@ -1226,7 +1239,7 @@ async function mainLogin() {
                 loginStatus.textContent = `Login fehlgeschlagen! (${++logcnt})`;
             }
             try2Login = false; // Zurücksetzen für erneuten Versuch
-            if(showit) credentialsDialog.showModal();
+            if (showit) credentialsDialog.showModal();
             showit = false;
             await jsSleepMs(100);
         }
@@ -1246,6 +1259,14 @@ async function mainLogin() {
 // I.d.R: Session gespeichert
 I18.i18localize(navigator.language || navigator.userLanguage);
 getCredentialsFromLocalStorage();
+
+/*
+const ts = "Das BLX Dashboard ist eine Kommunikations-App als Progressive Web App (PWA), die direkt im Browser auf Android- und Windows-Systemen gestartet werden kann und auch offline funktioniert. Es dient zur lokalen Kommunikation mit Geräten wie dem Aquatos LORA via Bluetooth BLE. Die App basiert auf JavaScript und benötigt keine Installation.\n\nDas BLX Dashboard sowie weitere zugehörige Software finden Sie unter:\nhttps://joembedded.de/x3/blueshell/\n\nQuellcode und weitere Informationen sind auf GitHub verfügbar:\nhttps://github.com/joembedded/JoEm-Dashboard\n\nDas BLX Dashboard wird für die Inbetriebnahme und Kommunikation mit JoEmbedded-Geräten empfohlen und unterstützt Funktionen wie das Senden von Terminal-Kommandos und das Scannen von QR-Codes zur schnellen Einrichtung."
+const pts = purifyText(ts);
+console.log(pts);
+addMessage(pts, 'bot info');
+*/
+
 mainLogin();
 
 // === ENDE MODLogin ===

@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 // Configuration
 $log = 2; // 0: Silent, 1: Logfile schreiben, 2: Log complete Reply
-//$SIMULATION_RESP = "res_20260112_144613.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
+//$SIMULATION_RESP = "res_20260127_175159.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
 
 $xlog = "oai_chat";
 include_once __DIR__ . '/../php_tools/logfile.php';

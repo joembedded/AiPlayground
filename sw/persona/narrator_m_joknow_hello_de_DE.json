@@ -1,0 +1,10 @@
+{
+  "hello": {
+    "helpTxts": [
+      "Wie kann ich dir helfen?",
+      "Was möchtest du wissen?",
+      "Du kannst auch mit mir sprechen."
+    ],
+    "intro": "Hallo, ich bin Joknow 👨 (gesprochen '/juːnəʊ/') von JoEmbedded. Frag mich auf Deutsch, Englisch, Italienisch oder einer anderen Sprache."
+  }
+}
