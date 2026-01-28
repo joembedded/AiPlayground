@@ -501,7 +501,7 @@ async function talkWithServer(text, persona, concerningMessage = null) {
             let answerText = '?';
             // console.log('data:',data); // - Die Antwort der KI kann alles mögliche enthalten...
             try {
-                answerText = (data?.result?.answer?.text ?? '(Keine Antwort)');
+                answerText = purifyText((data?.result?.answer?.text ?? '(Keine Antwort)'));
                 lastServerText = answerText;
                 if (data.result) {
                     lastServerMeta = { ...data.result };
