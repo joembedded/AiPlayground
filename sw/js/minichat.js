@@ -647,7 +647,7 @@ let maxPauseMs = 800; // >200 , msec max. Sprachpause - Ext. via Slider
 
 const MAX_SPEECH_MS = 30000; // msec max. Sprachdauer
 const STREAM_DELAY_SEC = 0.3; // sec Delay, ca. 150 msec Vorlauf mind. 
-const MICRO_INIT_MS = 100; // msec Mikrofon-(Re-)Initialisierung
+const MICRO_INIT_MS = 250; // msec Mikrofon-(Re-)Initialisierung - 100 reichen nicht
 const MIN_LEN_SPEECH_MS = 1400; // msec min. Sprachdauer (heuristisch, inkl. Pausen)
 
 let speechStateTime0; // Zeitstempel Sprachbeginn
