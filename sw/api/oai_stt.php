@@ -4,7 +4,10 @@
  * oai_stt.php - (C) JoEmbedded - 31.12.2025
  * Receives audio file via POST for OpenAI STT transcription.
  * Optional Parameter dbgpost>0: Nur speichern
- */
+*
+* Wichtig: Bei STT kann man auch Sprachen abfangen/erzwingen, 
+* siehe ChatGPT vom 28.1.28 und unten "response_format" *todo*
+*/
 
 declare(strict_types=1);
 
@@ -179,10 +182,10 @@ try {
         CURLOPT_POSTFIELDS => [
             'model' => 'gpt-4o-mini-transcribe',
             'language' => substr($lang, 0, 2),
-            'file' => new CURLFile($file['tmp_name'], $file['type'], $file['name']),
+            'file' => new CURLFile($file['tmp_name'], $file['type'], $file['name'])
+            //,"response_format" => "json" // Default
         ],
     ]);
-
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     // curl_close($ch); deprecated
@@ -198,6 +201,7 @@ try {
     if ($log > 1 && isset($filename)) {
         file_put_contents($uploadDir . '/stt_' . $filename . '.json', $response);
     }
+
 
     // Extract transcription text
     $data = json_decode($response, true);

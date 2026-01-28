@@ -20,7 +20,7 @@
 //--------- globals ------ 
 import * as I18 from './intmain_i18n.js'
 
-export const VERSION = 'V0.09 / 27.01.2026';
+export const VERSION = 'V0.10 / 28.01.2026';
 export const COPYRIGHT = '(C) JoEmbedded.de';
 let dbgLevel = 1; // 1;   // 0: Kein Debug, 1: Meta-Daten, 2: Terminal, 3: Terminal+Micro nur abspielen, sonst nix
 
@@ -77,7 +77,7 @@ function purifyText(text) {
 // Ersetze z.B. https durch externe target links
 function purifyToHTML(text) {
         // Links als HTML-Links ersetzen (ohne abschließende Klammern und Satzzeichen)
-        const htmlText = text.replace(/(https?:\/\/[^\s()<>]+)/g, '<a href="$1" target="_blank">$1</a>');
+        const htmlText = text.replace(/(https?:\/\/[^\s()<>]+?)([.,!?;:)\]]*(?=\s|$))/g, '<a href="$1" target="_blank">$1</a>$2');
         return htmlText;
 }
 
@@ -127,12 +127,17 @@ async function sendeNachricht() {
     safePlay(audioFxClick);
 
     setSendButtonGlyph('sending');
+    setChatStatus(`${ll('Wait')}...`, 'yellow');
+
     if (chatStateVar >= 4) {
         dbgPrint('sendeNachricht: Abbruch, chatStateVar=' + chatStateVar);
         chatStateVar = 9; // Alles Abbrechen
         return; // Bereits senden in Arbeit, abbrechen
     }
     let text = textEingabe.value.trim();
+
+    // Evtl. nochmal Sinn prüfen
+
     if (text.length === 0) {
         //text ='\u2424'; // NL-Symbol
         const help = helpTxts[hlpIdx];
@@ -224,8 +229,15 @@ function periodical() {
             setChatStatus(ll('Stop...'), 'orange');
             audioPlayer.pause();
             audioCache = [];
-            chatStateVar = 10; // Gleich weiter
             isLoading = false;
+            // Evtl. neue Nachricht gleich senden
+            if(textEingabe.value.trim().length!==0) {
+                chatStateVar = 3; // Gleich weiter
+                sendeNachricht(); 
+            }else{
+                chatStateVar = 10; // Gleich weiter
+            }
+
             // ERROR - frq_ping(220, 0.1, 0.1);
             break;
 

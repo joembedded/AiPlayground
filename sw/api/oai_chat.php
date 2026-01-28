@@ -3,17 +3,17 @@
 /**
  * OpenAI Chat mit Persona
  * http://localhost/wrk/ai/playground/sw/api/oai_chat.php?user=TESTUSER&sessionid=355c6639f2cfef7ab651286ef9a6d488&text=Wer_bist_Du
-*
-* Das Debuggen der Q/R mit dem Chatserver kann tückisch sein, Formatfehler im JSONinJSON, Refusals....
-* machen das Debuggen schwer. Das Script vesucht Schrott in jedem Fall aufzuzeichnen und
-* mit $SIMULATION_RESP ist ein einfaches Replay im ExpressChat.html möglich.
-*/
+ *
+ * Das Debuggen der Q/R mit dem Chatserver kann tückisch sein, Formatfehler im JSONinJSON, Refusals....
+ * machen das Debuggen schwer. Das Script vesucht Schrott in jedem Fall aufzuzeichnen und
+ * mit $SIMULATION_RESP ist ein einfaches Replay im ExpressChat.html möglich.
+ */
 
 declare(strict_types=1);
 
 // Configuration
 $log = 2; // 0: Silent, 1: Logfile schreiben, 2: Log complete Reply
-//$SIMULATION_RESP = "res_20260127_175159.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
+//$SIMULATION_RESP = "res_20260128_000257.json"; // Wenn gesetzt: Return Konserven-Datei statt OpenAI (***DEV***)
 
 $xlog = "oai_chat";
 include_once __DIR__ . '/../php_tools/logfile.php';
@@ -97,6 +97,14 @@ function extractAssistantTextFromResponses($result): array|string
     return "Ext-3";
   }
 
+  // Kann vorkommen, dass Amntwort fehlerfaht
+  $xerrtext = '';
+  $status = $data["status"] ?? ''; 
+  if ($status !== "completed") {
+    $icreason = $data["incomplete_details"]["reason"] ?? 'NoCompleted';
+    $xerrtext = "($status:$icreason)";
+  }
+
   $texts = []; // Leeres Array wird überliegend abgefangen
 
   foreach ($data["output"] as $item) {
@@ -120,10 +128,19 @@ function extractAssistantTextFromResponses($result): array|string
           //echo "\n-xx2----------\n" . json_encode($partText, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)."\n-----\n";
           if (!is_string($partText)) break;
           //echo "\nTXT:'" . $partText . "'\n\n"; // Koennt Nicht-JSON sein..
-          if(json_decode($partText, true) === null){
+          if (json_decode($partText, true) === null) {
             // Kein JSON
-            $texts[] = json_encode(["answer" => ["text" => "ERROR: " . $partText]], JSON_UNESCAPED_UNICODE);
-          }else{
+            $cleanedText = $partText;
+            $prefix = '{"answer":{"text":"';
+            if (str_starts_with($cleanedText, $prefix)) {
+              $cleanedText = substr($cleanedText, strlen($prefix));
+              // Eventuell auch das schließende "}} entfernen
+              if (str_ends_with($cleanedText, '"}}')) {
+                $cleanedText = substr($cleanedText, 0, -3);
+              }else $cleanedText .= '...';  // Fehlt was..
+            }
+            $texts[] = json_encode(["answer" => ["text" => "ERROR$xerrtext: " . $cleanedText]], JSON_UNESCAPED_UNICODE);
+          } else {
             $texts[] = $partText;
           }
           break;
@@ -134,7 +151,7 @@ function extractAssistantTextFromResponses($result): array|string
           break;
 
         default:
-        // Unbekannter Typ?
+          // Unbekannter Typ?
       }
     }
   }

@@ -12,8 +12,11 @@
         "vector_store_ids": ["vs_6978d02f699081919cde3886158c55f7"]
       }
     ],
-    "temperature": 0.2,
-    "max_output_tokens": 2000,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "presence_penalty": 0.0,
+    "frequency_penalty": 0.0,
+    "max_output_tokens": 500,
     "store": false,
     "text": {
       "format": {
@@ -26,7 +29,7 @@
             "answer": {
               "type": "object",
               "properties": {
-                "text": { "type": "string"}
+                "text": { "type": "string" }
               },
               "required": ["text"],
               "additionalProperties": false
@@ -37,5 +40,5 @@
         }
       }
     }
- }
+  }
 }
