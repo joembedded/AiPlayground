@@ -9,7 +9,7 @@
     "tools": [
       {
         "type": "file_search",
-        "vector_store_ids": ["vs_6978d02f699081919cde3886158c55f7"]
+        "vector_store_ids": ["vs_697cce1e02f48191afdcd2cc3d2fd520"]
       }
     ],
     "temperature": 0.0,

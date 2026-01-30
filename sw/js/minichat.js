@@ -501,7 +501,7 @@ async function talkWithServer(text, persona, concerningMessage = null) {
             let answerText = '?';
             // console.log('data:',data); // - Die Antwort der KI kann alles mögliche enthalten...
             try {
-                answerText = purifyText((data?.result?.answer?.text ?? '(Keine Antwort)'));
+                answerText = (data?.result?.answer?.text ?? '(Keine Antwort)');
                 lastServerText = answerText;
                 if (data.result) {
                     lastServerMeta = { ...data.result };
@@ -647,7 +647,7 @@ let maxPauseMs = 800; // >200 , msec max. Sprachpause - Ext. via Slider
 
 const MAX_SPEECH_MS = 30000; // msec max. Sprachdauer
 const STREAM_DELAY_SEC = 0.3; // sec Delay, ca. 150 msec Vorlauf mind. 
-const MICRO_INIT_MS = 250; // msec Mikrofon-(Re-)Initialisierung - 100 reichen nicht
+const MICRO_INIT_MS = 300; // msec Mikrofon-(Re-)Initialisierung - 100 reichen nicht
 const MIN_LEN_SPEECH_MS = 1400; // msec min. Sprachdauer (heuristisch, inkl. Pausen)
 
 let speechStateTime0; // Zeitstempel Sprachbeginn
