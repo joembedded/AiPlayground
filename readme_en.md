@@ -5,7 +5,7 @@ AI voice chat as game master, for storytelling and experienced guide through thi
 
 
 ## Core idea and Proof-of-Concept
-Often there ar situations, where it would be helpfull to have some kind of relable guide, game master or expert. Like for adventures or escape or narrative games, for "living stories" or just "someone", you could ask quickly dedicated expert question, that are too specific to find it in the Internet.
+Often there are situations, where it would be helpfull to have some kind of reliable guide, game master or expert. Like for adventures or escape or narrative games, for "living stories" or just "someone", you could ask quickly dedicated expert question, that are too specific to find it in the Internet.
 
 But you don't want to install an app for everyting! So, why not equip a pure and simple webpage with an personality, like some kind of oldstyle chatbots. But due to AI, much, much smarter.
 
@@ -13,7 +13,7 @@ And you can talk with it by natural voice! Wich makes it very convenient, much m
 And it has a "personality": E.g. for children safe replies or as your technical expert about a special datasheet or manual. 
 And you have your hands free, all the time!
 
-## My Proof-of-Concpet
+## My Proof-of-Concept
 For this I built a Proof-of-Concept (German and English and others)
 Using an standard AI layer with a lightwight own framework to build some "Personalities", e.g. - Jack, the anoyed car salesman, - Velo, the forrest elf or - Jana the Alpine Landlady. All are specialized to a specific personality. It works great!
 
